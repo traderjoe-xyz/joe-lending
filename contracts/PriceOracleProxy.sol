@@ -3,69 +3,62 @@ pragma solidity ^0.5.16;
 import "./CErc20.sol";
 import "./CToken.sol";
 import "./PriceOracle.sol";
+import "./Exponential.sol";
 
 interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint);
 }
 
-contract PriceOracleProxy is PriceOracle {
+interface AggregatorInterface {
+  function latestAnswer() external view returns (int256);
+  function latestTimestamp() external view returns (uint256);
+  function latestRound() external view returns (uint256);
+  function getAnswer(uint256 roundId) external view returns (int256);
+  function getTimestamp(uint256 roundId) external view returns (uint256);
+
+  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 timestamp);
+  event NewRound(uint256 indexed roundId, address indexed startedBy);
+}
+
+contract PriceOracleProxy is PriceOracle, Exponential {
+    uint constant usdScale = 1e12;
+
     /// @notice Indicator that this is a PriceOracle contract (for inspection)
     bool public constant isPriceOracle = true;
 
     /// @notice The v1 price oracle, which will continue to serve prices for v1 assets
     V1PriceOracleInterface public v1PriceOracle;
 
-    /// @notice Address of the guardian, which may set the SAI price once
-    address public guardian;
-
     /// @notice Address of the cEther contract, which has a constant price
     address public cEthAddress;
 
-    /// @notice Address of the cUSDC contract, which we hand pick a key for
+    /// @notice Address of the cUSDC contract, which uses Chainlink's price
     address public cUsdcAddress;
 
-    /// @notice Address of the cUSDT contract, which uses the cUSDC price
+    /// @notice Address of the cUSDT contract, which uses the Chainlink's price
     address public cUsdtAddress;
 
-    /// @notice Address of the cSAI contract, which may have its price set
-    address public cSaiAddress;
-
-    /// @notice Address of the cDAI contract, which we hand pick a key for
-    address public cDaiAddress;
-
-    /// @notice Handpicked key for USDC
-    address public constant usdcOracleKey = address(1);
-
-    /// @notice Handpicked key for DAI
-    address public constant daiOracleKey = address(2);
-
-    /// @notice Frozen SAI price (or 0 if not set yet)
-    uint public saiPrice;
+    /// @notice Address of the crLend contract, which uses the Chainlink's price
+    address public cLendAddress;
 
     /**
-     * @param guardian_ The address of the guardian, which may set the SAI price once
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
-     * @param cUsdcAddress_ The address of cUSDC, which will be read from a special oracle key
-     * @param cSaiAddress_ The address of cSAI, which may be read directly from storage
-     * @param cDaiAddress_ The address of cDAI, which will be read from a special oracle key
-     * @param cUsdtAddress_ The address of cUSDT, which uses the cUSDC price
+     * @param cUsdtAddress_ The address of cUSDC
+     * @param cUsdtAddress_ The address of cUSDT
+     * @param cLendAddress_ The address of cLend
      */
-    constructor(address guardian_,
-                address v1PriceOracle_,
+    constructor(address v1PriceOracle_,
                 address cEthAddress_,
                 address cUsdcAddress_,
-                address cSaiAddress_,
-                address cDaiAddress_,
-                address cUsdtAddress_) public {
-        guardian = guardian_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
+                address cUsdtAddress_,
+                address cLendAddress_) public {
 
+        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
         cUsdcAddress = cUsdcAddress_;
-        cSaiAddress = cSaiAddress_;
-        cDaiAddress = cDaiAddress_;
         cUsdtAddress = cUsdtAddress_;
+        cLendAddress = cLendAddress_;
     }
 
     /**
@@ -81,32 +74,75 @@ contract PriceOracleProxy is PriceOracle {
             return 1e18;
         }
 
-        if (cTokenAddress == cUsdcAddress || cTokenAddress == cUsdtAddress) {
-            return v1PriceOracle.assetPrices(usdcOracleKey);
+        if (cTokenAddress == cUsdcAddress) {
+            address aggregatorAddress = 0xdE54467873c3BCAA76421061036053e371721708;
+            MathError mathErr;
+            Exp memory price;
+
+            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            (mathErr, price) = mulScalar(price, usdScale);
+            if (mathErr != MathError.NO_ERROR ) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            if (price.mantissa <= 0) {
+                return getPriceFromV1(cTokenAddress);
+            }
+            return price.mantissa;
         }
 
-        if (cTokenAddress == cDaiAddress) {
-            return v1PriceOracle.assetPrices(daiOracleKey);
+        if (cTokenAddress == cUsdtAddress) {
+            address aggregatorAddress = 0xa874fe207DF445ff19E7482C746C4D3fD0CB9AcE;
+            MathError mathErr;
+            Exp memory price;
+
+            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            (mathErr, price) = mulScalar(price, usdScale);
+            if (mathErr != MathError.NO_ERROR ) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            if (price.mantissa <= 0) {
+                return getPriceFromV1(cTokenAddress);
+            }
+            return price.mantissa;
         }
 
-        if (cTokenAddress == cSaiAddress) {
-            // use the frozen SAI price if set, otherwise use the DAI price
-            return saiPrice > 0 ? saiPrice : v1PriceOracle.assetPrices(daiOracleKey);
-        }
+        if (cTokenAddress == cLendAddress) {
+            address aggregatorAddress = 0x1EeaF25f2ECbcAf204ECADc8Db7B0db9DA845327;
+            MathError mathErr;
+            Exp memory price;
 
+            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            return price.mantissa;
+        }
         // otherwise just read from v1 oracle
-        address underlying = CErc20(cTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
+        return getPriceFromV1(cTokenAddress);
     }
 
-    /**
-     * @notice Set the price of SAI, permanently
-     * @param price The price for SAI
-     */
-    function setSaiPrice(uint price) public {
-        require(msg.sender == guardian, "only guardian may set the SAI price");
-        require(saiPrice == 0, "SAI price may only be set once");
-        require(price < 0.1e18, "SAI price must be < 0.1 ETH");
-        saiPrice = price;
+    function getPriceFromChainlink(address aggregatorAddress) internal view returns (MathError, Exp memory) {
+        AggregatorInterface aggregator = AggregatorInterface(aggregatorAddress);
+        int256 chainLinkPrice = aggregator.latestAnswer();
+        if (chainLinkPrice <= 0) {
+            return (MathError.INTEGER_OVERFLOW, Exp({mantissa: 0}));
+        }
+        return (MathError.NO_ERROR, Exp({mantissa: uint(aggregator.latestAnswer())}));
+    }
+
+    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
+        address underlying = CErc20(cTokenAddress).underlying();
+        return v1PriceOracle.assetPrices(underlying);
     }
 }
