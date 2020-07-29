@@ -41,24 +41,37 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Address of the crLend contract, which uses the Chainlink's price
     address public cLendAddress;
 
+    address public usdcAggregator;
+    address public usdtAggregator;
+    address public lendAggregator;
+
     /**
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
      * @param cUsdtAddress_ The address of cUSDC
      * @param cUsdtAddress_ The address of cUSDT
      * @param cLendAddress_ The address of cLend
+     * @param usdcAggregator_ The address of USDC/ETH Aggregator
+     * @param usdtAggregator_ The address of USDT/ETH Aggregator
+     * @param lendAggregator_ The address of LEND/ETH Aggregator
      */
     constructor(address v1PriceOracle_,
                 address cEthAddress_,
                 address cUsdcAddress_,
                 address cUsdtAddress_,
-                address cLendAddress_) public {
+                address cLendAddress_,
+                address usdcAggregator_,
+                address usdtAggregator_,
+                address lendAggregator_) public {
 
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
         cUsdcAddress = cUsdcAddress_;
         cUsdtAddress = cUsdtAddress_;
         cLendAddress = cLendAddress_;
+        usdcAggregator = usdcAggregator_;
+        usdtAggregator = usdtAggregator_;
+        lendAggregator = lendAggregator_;
     }
 
     /**
@@ -75,11 +88,10 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
 
         if (cTokenAddress == cUsdcAddress) {
-            address aggregatorAddress = 0xdE54467873c3BCAA76421061036053e371721708;
             MathError mathErr;
             Exp memory price;
 
-            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            (mathErr, price) = getPriceFromChainlink(usdcAggregator);
             if (mathErr != MathError.NO_ERROR) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
@@ -96,11 +108,10 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
 
         if (cTokenAddress == cUsdtAddress) {
-            address aggregatorAddress = 0xa874fe207DF445ff19E7482C746C4D3fD0CB9AcE;
             MathError mathErr;
             Exp memory price;
 
-            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            (mathErr, price) = getPriceFromChainlink(usdtAggregator);
             if (mathErr != MathError.NO_ERROR) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
@@ -117,11 +128,10 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
 
         if (cTokenAddress == cLendAddress) {
-            address aggregatorAddress = 0x1EeaF25f2ECbcAf204ECADc8Db7B0db9DA845327;
             MathError mathErr;
             Exp memory price;
 
-            (mathErr, price) = getPriceFromChainlink(aggregatorAddress);
+            (mathErr, price) = getPriceFromChainlink(lendAggregator);
             if (mathErr != MathError.NO_ERROR) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
