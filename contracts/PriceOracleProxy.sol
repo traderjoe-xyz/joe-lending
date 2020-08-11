@@ -38,30 +38,40 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Address of the cUSDT contract, which uses the Chainlink's price
     address public cUsdtAddress;
 
+    /// @notice Address of the cLINK contract, which uses the Chainlink's price
+    address public cLinkAddress;
+
     address public usdcAggregator;
     address public usdtAggregator;
+    address public linkAggregator;
 
     /**
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
      * @param cUsdtAddress_ The address of cUSDC
      * @param cUsdtAddress_ The address of cUSDT
+     * @param cLinkAddress_ The address of cLINK
      * @param usdcAggregator_ The address of USDC/ETH Aggregator
      * @param usdtAggregator_ The address of USDT/ETH Aggregator
+     * @param linkAggregator_ The address of LINK/ETH Aggregator
      */
     constructor(address v1PriceOracle_,
                 address cEthAddress_,
                 address cUsdcAddress_,
                 address cUsdtAddress_,
+                address cLinkAddress_,
                 address usdcAggregator_,
-                address usdtAggregator_) public {
+                address usdtAggregator_,
+                address linkAggregator_) public {
 
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
         cUsdcAddress = cUsdcAddress_;
         cUsdtAddress = cUsdtAddress_;
+        cLinkAddress = cLinkAddress_;
         usdcAggregator = usdcAggregator_;
         usdtAggregator = usdtAggregator_;
+        linkAggregator = linkAggregator_;
     }
 
     /**
@@ -116,6 +126,19 @@ contract PriceOracleProxy is PriceOracle, Exponential {
             }
             return price.mantissa;
         }
+
+        if (cTokenAddress == cLinkAddress) {
+            MathError mathErr;
+            Exp memory price;
+
+            (mathErr, price) = getPriceFromChainlink(linkAggregator);
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            return price.mantissa;
+        }
+
         // otherwise just read from v1 oracle
         return getPriceFromV1(cTokenAddress);
     }
@@ -126,7 +149,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         if (chainLinkPrice <= 0) {
             return (MathError.INTEGER_OVERFLOW, Exp({mantissa: 0}));
         }
-        return (MathError.NO_ERROR, Exp({mantissa: uint(aggregator.latestAnswer())}));
+        return (MathError.NO_ERROR, Exp({mantissa: uint(chainLinkPrice)}));
     }
 
     function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
