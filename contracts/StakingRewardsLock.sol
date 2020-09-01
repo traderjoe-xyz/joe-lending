@@ -661,6 +661,13 @@ contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
         _;
     }
 
+    function seize(IERC20 _token, uint amount) external {
+        require(msg.sender == admin, "admin only");
+        require(_token != cream, "cream");
+        require(_token != lpToken, "bpt");
+        _token.safeTransfer(admin, amount);
+    }
+
     function lastTimeRewardApplicable() public view returns (uint256) {
         return Math.min(block.timestamp, periodFinish);
     }
