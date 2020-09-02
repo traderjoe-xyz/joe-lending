@@ -4,9 +4,18 @@ import "./CErc20.sol";
 import "./CToken.sol";
 import "./PriceOracle.sol";
 import "./Exponential.sol";
+import "./EIP20Interface.sol";
 
 interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint);
+}
+
+interface YSwapInterface {
+    function get_virtual_price() external view returns (uint256);
+}
+
+interface YVaultInterface {
+    function getPricePerFullShare() external view returns (uint256);
 }
 
 interface AggregatorInterface {
@@ -21,8 +30,7 @@ interface AggregatorInterface {
 }
 
 contract PriceOracleProxy is PriceOracle, Exponential {
-    /// @notice Decimal converter for USDT and USDC
-    uint constant usdScale = 1e12;
+    address public admin;
 
     /// @notice Indicator that this is a PriceOracle contract (for inspection)
     bool public constant isPriceOracle = true;
@@ -33,16 +41,12 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorInterface) public aggregators;
 
-    address public admin;
-
-    /// @notice Address of the cEther contract, which has a constant price
     address public cEthAddress;
-
-    /// @notice Address of the cUSDC contract, which uses Chainlink's price
     address public cUsdcAddress;
-
-    /// @notice Address of the cUSDT contract, which uses the Chainlink's price
     address public cUsdtAddress;
+    address public cYcrvAddress;
+    address public cYYcrvAddress;
+    address public cYethAddress;
 
     /**
      * @param admin_ The address of admin to set aggregators
@@ -50,17 +54,26 @@ contract PriceOracleProxy is PriceOracle, Exponential {
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
      * @param cUsdtAddress_ The address of cUSDC
      * @param cUsdtAddress_ The address of cUSDT
+     * @param cYcrvAddress_ The address of cYcrv
+     * @param cYYcrvAddress_ The address of cYYcrv
+     * @param cYEthAddress_ The address of cYYcrv
      */
     constructor(address admin_,
                 address v1PriceOracle_,
                 address cEthAddress_,
                 address cUsdcAddress_,
-                address cUsdtAddress_) public {
+                address cUsdtAddress_,
+                address cYcrvAddress_,
+                address cYYcrvAddress_,
+                address cYethAddress_) public {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
         cUsdcAddress = cUsdcAddress_;
         cUsdtAddress = cUsdtAddress_;
+        cYcrvAddress = cYcrvAddress_;
+        cYYcrvAddress = cYYcrvAddress_;
+        cYethAddress = cYethAddress_;
     }
 
     /**
@@ -75,31 +88,77 @@ contract PriceOracleProxy is PriceOracle, Exponential {
             // ether always worth 1
             return 1e18;
         }
+        
+        if (cTokenAddress == cYethAddress) {
+            uint yVaultPrice = YVaultInterface(0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7).getPricePerFullShare();
+            if (yVaultPrice <= 0) {
+                return getPriceFromV1(cTokenAddress);
+            }
+            return yVaultPrice;
+        }
+        
+        if (cTokenAddress == cYcrvAddress || cTokenAddress == cYYcrvAddress) {
+            MathError mathErr;
+            Exp memory price;
+            Exp memory usdEthPrice;
+            Exp memory yCrvPrice;
+
+            (mathErr, price) = getPriceFromChainlink(AggregatorInterface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419));
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            
+            // ETH/USD price decimal is 8
+            (mathErr, usdEthPrice) = getExp(1e8, price.mantissa);
+            uint virtualPrice = YSwapInterface(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51).get_virtual_price();
+            
+            (mathErr, yCrvPrice) = mulExp(usdEthPrice, Exp({mantissa: virtualPrice}));
+            if (mathErr != MathError.NO_ERROR || isZeroExp(yCrvPrice)) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
+            
+            if (cTokenAddress == cYYcrvAddress) {
+                uint yVaultPrice = YVaultInterface(0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c).getPricePerFullShare();
+                Exp memory yyCrvPrice;
+                (mathErr, yyCrvPrice) = mulExp(yCrvPrice, Exp({mantissa: yVaultPrice}));
+                if (mathErr != MathError.NO_ERROR || isZeroExp(yyCrvPrice)) {
+                    // Fallback to v1 PriceOracle
+                    return getPriceFromV1(cTokenAddress);
+                }
+                return yyCrvPrice.mantissa;
+            }
+            
+            return yCrvPrice.mantissa;
+        }
 
         AggregatorInterface aggregator = aggregators[cTokenAddress];
-        if (address(aggregator) == address(0)) {
-            // Aggregator not found
-            return getPriceFromV1(cTokenAddress);
-        }
+        if (address(aggregator) != address(0)) {
+            MathError mathErr;
+            Exp memory price;
+            (mathErr, price) = getPriceFromChainlink(aggregator);
+            if (mathErr != MathError.NO_ERROR) {
+                // Fallback to v1 PriceOracle
+                return getPriceFromV1(cTokenAddress);
+            }
 
-        MathError mathErr;
-        Exp memory price;
-        (mathErr, price) = getPriceFromChainlink(aggregator);
-        if (mathErr != MathError.NO_ERROR) {
-            // Fallback to v1 PriceOracle
-            return getPriceFromV1(cTokenAddress);
-        }
-        if (cTokenAddress == cUsdtAddress || cTokenAddress == cUsdcAddress) {
-            (mathErr, price) = mulScalar(price, usdScale);
+            if (price.mantissa <= 0) {
+                return getPriceFromV1(cTokenAddress);
+            }
+
+            uint underlyingDecimals;
+            underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+            (mathErr, price) = mulScalar(price, 10**(18 - underlyingDecimals));
             if (mathErr != MathError.NO_ERROR ) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
             }
+
+            return price.mantissa;
         }
-        if (price.mantissa <= 0) {
-            return getPriceFromV1(cTokenAddress);
-        }
-        return price.mantissa;
+
+        return getPriceFromV1(cTokenAddress);
     }
 
     function getPriceFromChainlink(AggregatorInterface aggregator) internal view returns (MathError, Exp memory) {
