@@ -56,7 +56,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
      * @param cUsdtAddress_ The address of cUSDT
      * @param cYcrvAddress_ The address of cYcrv
      * @param cYYcrvAddress_ The address of cYYcrv
-     * @param cYEthAddress_ The address of cYYcrv
+     * @param cYethAddress_ The address of cYeth
      */
     constructor(address admin_,
                 address v1PriceOracle_,
@@ -91,7 +91,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         
         if (cTokenAddress == cYethAddress) {
             uint yVaultPrice = YVaultInterface(0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7).getPricePerFullShare();
-            if (yVaultPrice <= 0) {
+            if (yVaultPrice == 0) {
                 return getPriceFromV1(cTokenAddress);
             }
             return yVaultPrice;
@@ -99,22 +99,26 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         
         if (cTokenAddress == cYcrvAddress || cTokenAddress == cYYcrvAddress) {
             MathError mathErr;
-            Exp memory price;
-            Exp memory usdEthPrice;
+            Exp memory ethUsdPrice;
+            Exp memory usdWeiPrice;
             Exp memory yCrvPrice;
 
-            (mathErr, price) = getPriceFromChainlink(AggregatorInterface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419));
+            // ETH/USD
+            (mathErr, ethUsdPrice) = getPriceFromChainlink(AggregatorInterface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419));
             if (mathErr != MathError.NO_ERROR) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
             }
-            
             // ETH/USD price decimal is 8
-            (mathErr, usdEthPrice) = getExp(1e8, price.mantissa);
+            (mathErr, usdWeiPrice) = getExp(1e8, ethUsdPrice.mantissa);
+
+
+            // YCRV/USD
             uint virtualPrice = YSwapInterface(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51).get_virtual_price();
             
-            (mathErr, yCrvPrice) = mulExp(usdEthPrice, Exp({mantissa: virtualPrice}));
-            if (mathErr != MathError.NO_ERROR || isZeroExp(yCrvPrice)) {
+            // YCRV/WEI = USD/WEI * YCRV/USD
+            (mathErr, yCrvPrice) = mulExp(usdWeiPrice, Exp({mantissa: virtualPrice}));
+            if (mathErr != MathError.NO_ERROR) {
                 // Fallback to v1 PriceOracle
                 return getPriceFromV1(cTokenAddress);
             }
@@ -123,7 +127,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
                 uint yVaultPrice = YVaultInterface(0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c).getPricePerFullShare();
                 Exp memory yyCrvPrice;
                 (mathErr, yyCrvPrice) = mulExp(yCrvPrice, Exp({mantissa: yVaultPrice}));
-                if (mathErr != MathError.NO_ERROR || isZeroExp(yyCrvPrice)) {
+                if (mathErr != MathError.NO_ERROR) {
                     // Fallback to v1 PriceOracle
                     return getPriceFromV1(cTokenAddress);
                 }
@@ -143,7 +147,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
                 return getPriceFromV1(cTokenAddress);
             }
 
-            if (price.mantissa <= 0) {
+            if (price.mantissa == 0) {
                 return getPriceFromV1(cTokenAddress);
             }
 
