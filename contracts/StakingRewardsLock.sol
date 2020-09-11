@@ -567,7 +567,7 @@ pragma solidity ^0.5.0;
 contract IRewardDistributionRecipient is Ownable {
     address rewardDistribution;
 
-    function notifyRewardAmount(uint256 reward) external;
+    function notifyRewardAmount(uint256 reward, uint256 _duration) external;
 
     modifier onlyRewardDistribution() {
         require(_msgSender() == rewardDistribution, "Caller is not reward distribution");
@@ -622,7 +622,7 @@ contract LPTokenWrapper {
 
 contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public cream = IERC20(0x2ba592F78dB6436527729929AAf6c908497cB200);
-    uint256 public constant DURATION = 7 days;
+    uint256 public DURATION = 7 days;
 
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
     bool public breaker = false;
@@ -725,11 +725,13 @@ contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
+    function notifyRewardAmount(uint256 reward, uint256 _duration)
         external
         onlyRewardDistribution
         updateReward(address(0))
     {
+        require(_duration > 0, "Duration must not be 0");
+        DURATION = _duration.mul(1 days);
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(DURATION);
         } else {
