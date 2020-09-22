@@ -627,7 +627,7 @@ contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
     bool public breaker = false;
     mapping(address => uint) public stakeLock; // period that your sake it locked to keep it for staking
-    uint public lock = 17280; // stake lock in blocks ~ 17280 3 days for 15s/block
+    uint public lock = 19756; // stake lock in blocks ~ 19756 3 days for 13.12s/block
     address public admin;
 
     uint256 public periodFinish = 0;
@@ -649,6 +649,11 @@ contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
     function setBreaker(bool _breaker) external {
         require(msg.sender == admin, "admin only");
         breaker = _breaker;
+    }
+    
+    function setLockTime(uint _lock) external {
+        require(msg.sender == admin, "admin only");
+        lock = _lock;
     }
 
     modifier updateReward(address account) {
@@ -704,7 +709,7 @@ contract StakingRewardsLock is LPTokenWrapper, IRewardDistributionRecipient {
     function withdraw(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
         if (breaker == false) {
-            require(stakeLock[msg.sender] < block.number,"!locked");
+            require(stakeLock[msg.sender] < block.number,"locked");
         }
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
