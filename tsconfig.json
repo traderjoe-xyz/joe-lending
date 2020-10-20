@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "strict": true,
+    "outDir": "./build",
+  },
+  "include": ["./scripts", "./test"],
+  "files": [
+    "./buidler.config.ts",
+  ]
+}

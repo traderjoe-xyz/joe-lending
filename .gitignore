@@ -40,3 +40,6 @@ junit.xml
 .build
 .last_confs
 .saddle_history
+#Buidler files
+cache
+artifacts
