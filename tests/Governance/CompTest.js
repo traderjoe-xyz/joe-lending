@@ -9,8 +9,8 @@ const {
 const EIP712 = require('../Utils/EIP712');
 
 describe('Comp', () => {
-  const name = 'Compound';
-  const symbol = 'COMP';
+  const name = 'Cream';
+  const symbol = 'CREAM';
 
   let root, a1, a2, accounts, chainId;
   let comp;
@@ -33,7 +33,7 @@ describe('Comp', () => {
 
   describe('balanceOf', () => {
     it('grants to initial account', async () => {
-      expect(await call(comp, 'balanceOf', [root])).toEqual("10000000000000000000000000");
+      expect(await call(comp, 'balanceOf', [root])).toEqual("9000000000000000000000000");
     });
   });
 
@@ -140,8 +140,8 @@ describe('Comp', () => {
       await mineBlock();
       await mineBlock();
 
-      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber])).toEqual('10000000000000000000000000');
-      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('10000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber])).toEqual('9000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('9000000000000000000000000');
     });
 
     it('returns zero if < first checkpoint block', async () => {
@@ -151,7 +151,7 @@ describe('Comp', () => {
       await mineBlock();
 
       expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber - 1])).toEqual('0');
-      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('10000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('9000000000000000000000000');
     });
 
     it('generally returns the voting balance at the appropriate checkpoint', async () => {
@@ -169,14 +169,14 @@ describe('Comp', () => {
       await mineBlock();
 
       expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber - 1])).toEqual('0');
-      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber])).toEqual('10000000000000000000000000');
-      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('10000000000000000000000000');
-      expect(await call(comp, 'getPriorVotes', [a1, t2.blockNumber])).toEqual('9999999999999999999999990');
-      expect(await call(comp, 'getPriorVotes', [a1, t2.blockNumber + 1])).toEqual('9999999999999999999999990');
-      expect(await call(comp, 'getPriorVotes', [a1, t3.blockNumber])).toEqual('9999999999999999999999980');
-      expect(await call(comp, 'getPriorVotes', [a1, t3.blockNumber + 1])).toEqual('9999999999999999999999980');
-      expect(await call(comp, 'getPriorVotes', [a1, t4.blockNumber])).toEqual('10000000000000000000000000');
-      expect(await call(comp, 'getPriorVotes', [a1, t4.blockNumber + 1])).toEqual('10000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber])).toEqual('9000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t1.blockNumber + 1])).toEqual('9000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t2.blockNumber])).toEqual('8999999999999999999999990');
+      expect(await call(comp, 'getPriorVotes', [a1, t2.blockNumber + 1])).toEqual('8999999999999999999999990');
+      expect(await call(comp, 'getPriorVotes', [a1, t3.blockNumber])).toEqual('8999999999999999999999980');
+      expect(await call(comp, 'getPriorVotes', [a1, t3.blockNumber + 1])).toEqual('8999999999999999999999980');
+      expect(await call(comp, 'getPriorVotes', [a1, t4.blockNumber])).toEqual('9000000000000000000000000');
+      expect(await call(comp, 'getPriorVotes', [a1, t4.blockNumber + 1])).toEqual('9000000000000000000000000');
     });
   });
 });

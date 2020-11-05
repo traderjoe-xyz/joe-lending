@@ -1,7 +1,4 @@
-const BigNumber = require('bignumber.js');
-
 const {
-  address,
   etherMantissa
 } = require('./Utils/Ethereum');
 
@@ -12,16 +9,17 @@ const {
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cSai, cDai, cUsdt, cOther;
-  let daiOracleKey = address(2);
+  let oracle, backingOracle, cEth, cUsdc, cDai, cUsdt, cYcrv, cYycrv, cYeth, cOther;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
     cUsdc = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
-    cSai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cUsdt = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYcrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYycrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYeth = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
 
     backingOracle = await makePriceOracle();
@@ -31,16 +29,17 @@ describe('PriceOracleProxy', () => {
         backingOracle._address,
         cEth._address,
         cUsdc._address,
-        cSai._address,
-        cDai._address,
-        cUsdt._address
+        cUsdt._address,
+        cYcrv._address,
+        cYycrv._address,
+        cYeth._address,
       ]
      );
   });
 
   describe("constructor", () => {
-    it("sets address of guardian", async () => {
-      let configuredGuardian = await call(oracle, "guardian");
+    it("sets address of admin", async () => {
+      let configuredGuardian = await call(oracle, "admin");
       expect(configuredGuardian).toEqual(root);
     });
 
@@ -59,19 +58,24 @@ describe('PriceOracleProxy', () => {
       expect(configuredCUSD).toEqual(cUsdc._address);
     });
 
-    it("sets address of cSAI", async () => {
-      let configuredCSAI = await call(oracle, "cSaiAddress");
-      expect(configuredCSAI).toEqual(cSai._address);
-    });
-
-    it("sets address of cDAI", async () => {
-      let configuredCDAI = await call(oracle, "cDaiAddress");
-      expect(configuredCDAI).toEqual(cDai._address);
-    });
-
     it("sets address of cUSDT", async () => {
       let configuredCUSDT = await call(oracle, "cUsdtAddress");
       expect(configuredCUSDT).toEqual(cUsdt._address);
+    });
+
+    it("sets address of cYcrv", async () => {
+      let configuredCYCRV = await call(oracle, "cYcrvAddress");
+      expect(configuredCYCRV).toEqual(cYcrv._address);
+    });
+
+    it("sets address of cYycrv", async () => {
+      let configuredCYYCRV = await call(oracle, "cYYcrvAddress");
+      expect(configuredCYYCRV).toEqual(cYycrv._address);
+    });
+
+    it("sets address of cYeth", async () => {
+      let configuredCYETH = await call(oracle, "cYethAddress");
+      expect(configuredCYETH).toEqual(cYeth._address);
     });
   });
 
@@ -92,19 +96,11 @@ describe('PriceOracleProxy', () => {
 
     let readAndVerifyProxyPrice = async (token, price) =>{
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [token._address]);
-      expect(Number(proxyPrice)).toEqual(price * 1e18);;
+      expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
     it("always returns 1e18 for cEth", async () => {
       await readAndVerifyProxyPrice(cEth, 1);
-    });
-
-    it("uses address(1) for USDC and address(2) for cdai", async () => {
-      await send(backingOracle, "setDirectPrice", [address(1), etherMantissa(5e12)]);
-      await send(backingOracle, "setDirectPrice", [address(2), etherMantissa(8)]);
-      await readAndVerifyProxyPrice(cDai, 8);
-      await readAndVerifyProxyPrice(cUsdc, 5e12);
-      await readAndVerifyProxyPrice(cUsdt, 5e12);
     });
 
     it("proxies for whitelisted tokens", async () => {
@@ -120,27 +116,5 @@ describe('PriceOracleProxy', () => {
 
       await readAndVerifyProxyPrice(unlistedToken, 0);
     });
-
-    it("correctly handle setting SAI price", async () => {
-      await send(backingOracle, "setDirectPrice", [daiOracleKey, etherMantissa(0.01)]);
-
-      await readAndVerifyProxyPrice(cDai, 0.01);
-      await readAndVerifyProxyPrice(cSai, 0.01);
-
-      await send(oracle, "setSaiPrice", [etherMantissa(0.05)]);
-
-      await readAndVerifyProxyPrice(cDai, 0.01);
-      await readAndVerifyProxyPrice(cSai, 0.05);
-
-      await expect(send(oracle, "setSaiPrice", [1])).rejects.toRevert("revert SAI price may only be set once");
-    });
-
-    it("only guardian may set the sai price", async () => {
-      await expect(send(oracle, "setSaiPrice", [1], {from: accounts[0]})).rejects.toRevert("revert only guardian may set the SAI price");
-    });
-
-    it("sai price must be bounded", async () => {
-      await expect(send(oracle, "setSaiPrice", [etherMantissa(10)])).rejects.toRevert("revert SAI price must be < 0.1 ETH");
-    });
-});
+  });
 });
