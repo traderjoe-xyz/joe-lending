@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-const smallEnoughNumber = new BigNumber('100000000');
+const BN = BigNumber.clone({ EXPONENTIAL_AT: 1e9 })
+const smallEnoughNumber = new BN('100000000');
 
 export type encodedNumber = number | BigNumber;
 
@@ -13,6 +14,6 @@ export function getExpMantissa(float: number): encodedNumber {
 }
 
 export function toEncodableNum(amountArgRaw: string | encodedNumber): encodedNumber {
-    const bigNumber = new BigNumber(amountArgRaw);
+    const bigNumber = new BN(amountArgRaw);
     return bigNumber.lt(smallEnoughNumber) ? bigNumber.toNumber() : bigNumber;
 }
