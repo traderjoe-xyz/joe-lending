@@ -313,7 +313,7 @@ describe('CompoundLens', () => {
         expect(
           cullTuple(await call(compoundLens, 'getCompBalanceMetadata', [comp._address, acct]))
         ).toEqual({
-          balance: "10000000000000000000000000",
+          balance: "9000000000000000000000000",
           delegate: "0x0000000000000000000000000000000000000000",
           votes: "0",
         });
@@ -328,7 +328,7 @@ describe('CompoundLens', () => {
         expect(
           cullTuple(await call(compoundLens, 'getCompBalanceMetadataExt', [comp._address, comptroller._address, acct]))
         ).toEqual({
-          balance: "10000000000000000000000000",
+          balance: "9000000000000000000000000",
           delegate: "0x0000000000000000000000000000000000000000",
           votes: "0",
           allocated: "5"
