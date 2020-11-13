@@ -8,7 +8,7 @@ contract SimplePriceOracle is PriceOracle {
     event PricePosted(address asset, uint previousPriceMantissa, uint requestedPriceMantissa, uint newPriceMantissa);
 
     function getUnderlyingPrice(CToken cToken) public view returns (uint) {
-        if (compareStrings(cToken.symbol(), "cETH")) {
+        if (compareStrings(cToken.symbol(), "crETH")) {
             return 1e18;
         } else {
             return prices[address(CErc20(address(cToken)).underlying())];

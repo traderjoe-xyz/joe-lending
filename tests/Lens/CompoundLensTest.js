@@ -54,13 +54,13 @@ describe('CompoundLens', () => {
       );
     });
 
-    it('is correct for cEth', async () => {
-      let cEth = await makeCToken({kind: 'cether'});
+    it('is correct for crEth', async () => {
+      let crEth = await makeCToken({kind: 'cether'});
       expect(
-        cullTuple(await call(compoundLens, 'cTokenMetadata', [cEth._address]))
+        cullTuple(await call(compoundLens, 'cTokenMetadata', [crEth._address]))
       ).toEqual({
         borrowRatePerBlock: "0",
-        cToken: cEth._address,
+        cToken: crEth._address,
         cTokenDecimals: "8",
         collateralFactorMantissa: "0",
         exchangeRateCurrent: "1000000000000000000",
@@ -80,9 +80,9 @@ describe('CompoundLens', () => {
   describe('cTokenMetadataAll', () => {
     it('is correct for a cErc20 and cEther', async () => {
       let cErc20 = await makeCToken();
-      let cEth = await makeCToken({kind: 'cether'});
+      let crEth = await makeCToken({kind: 'cether'});
       expect(
-        (await call(compoundLens, 'cTokenMetadataAll', [[cErc20._address, cEth._address]])).map(cullTuple)
+        (await call(compoundLens, 'cTokenMetadataAll', [[cErc20._address, crEth._address]])).map(cullTuple)
       ).toEqual([
         {
           cToken: cErc20._address,
@@ -102,7 +102,7 @@ describe('CompoundLens', () => {
         },
         {
           borrowRatePerBlock: "0",
-          cToken: cEth._address,
+          cToken: crEth._address,
           cTokenDecimals: "8",
           collateralFactorMantissa: "0",
           exchangeRateCurrent: "1000000000000000000",
