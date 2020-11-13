@@ -59,6 +59,7 @@ jobs:
       - store_artifacts:
           path: ~/junit
     parallelism: 3
+    resource_class: xlarge
 
   verify:
     docker:
@@ -132,7 +133,8 @@ jobs:
           destination: coverage
       - codecov/upload:
           file: ~/repo/coverage/coverage-final.json
-    parallelism: 4
+    parallelism: 10
+    resource_class: xlarge
 
   lint:
     docker:
@@ -184,10 +186,8 @@ workflows:
   build-test-and-deploy:
     jobs:
       - test
-      - coverage
       - lint
-      - verify
-      - docker:
+      - verify:
           filters:
             tags:
               only: /^v.*/
