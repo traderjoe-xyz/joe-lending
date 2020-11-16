@@ -187,7 +187,4 @@ workflows:
     jobs:
       - test
       - lint
-      - verify:
-          filters:
-            tags:
-              only: /^v.*/
+      - verify
