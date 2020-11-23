@@ -27,10 +27,8 @@ async function makeComptroller(opts = {}) {
     const comptroller = await deploy('ComptrollerHarness');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
 
     await send(comptroller, '_setCloseFactor', [closeFactor]);
-    await send(comptroller, '_setMaxAssets', [maxAssets]);
     await send(comptroller, '_setPriceOracle', [priceOracle._address]);
 
     return Object.assign(comptroller, { priceOracle });
@@ -41,7 +39,6 @@ async function makeComptroller(opts = {}) {
     const comptroller = await deploy('ComptrollerScenarioG2');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
 
     await send(unitroller, '_setPendingImplementation', [comptroller._address]);
@@ -49,7 +46,6 @@ async function makeComptroller(opts = {}) {
     mergeInterface(unitroller, comptroller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setPriceOracle', [priceOracle._address]);
 
     return Object.assign(unitroller, { priceOracle });
@@ -60,7 +56,6 @@ async function makeComptroller(opts = {}) {
     const comptroller = await deploy('ComptrollerScenarioG3');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
     const compRate = etherUnsigned(dfn(opts.compRate, 1e18));
     const compMarkets = opts.compMarkets || [];
@@ -71,7 +66,6 @@ async function makeComptroller(opts = {}) {
     mergeInterface(unitroller, comptroller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setPriceOracle', [priceOracle._address]);
 
     return Object.assign(unitroller, { priceOracle });
@@ -82,20 +76,16 @@ async function makeComptroller(opts = {}) {
     const comptroller = await deploy('ComptrollerHarness');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
     const comp = opts.comp || await deploy('Comp', [opts.compOwner || root]);
-    const compRate = etherUnsigned(dfn(opts.compRate, 1e18));
 
     await send(unitroller, '_setPendingImplementation', [comptroller._address]);
     await send(comptroller, '_become', [unitroller._address]);
     mergeInterface(unitroller, comptroller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setPriceOracle', [priceOracle._address]);
     await send(unitroller, 'setCompAddress', [comp._address]); // harness only
-    await send(unitroller, '_setCompRate', [compRate]);
 
     return Object.assign(unitroller, { priceOracle, comp });
   }
