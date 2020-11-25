@@ -47,10 +47,6 @@ contract ComptrollerHarness is Comptroller {
         return compAddress;
     }
 
-    function setCompSpeed(address cToken, uint compSpeed) public {
-        compSpeeds[cToken] = compSpeed;
-    }
-
     function setCompBorrowerIndex(address cToken, address borrower, uint index) public {
         compBorrowerIndex[cToken][borrower] = index;
     }
