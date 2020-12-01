@@ -44,9 +44,6 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when an action is paused on a market
     event ActionPaused(CToken cToken, string action, bool pauseState);
 
-    /// @notice Emitted when market comped status is changed
-    event MarketComped(CToken cToken, bool isComped);
-
     /// @notice Emitted when a new COMP speed is calculated for a market
     event CompSpeedUpdated(CToken indexed cToken, uint newSpeed);
 
@@ -934,7 +931,8 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        markets[address(cToken)] = Market({isListed: true, isComped: false, collateralFactorMantissa: 0});
+        // TODO: isComped is unused. Remove it in v2.
+        markets[address(cToken)] = Market({isListed: true, isComped: true, collateralFactorMantissa: 0});
 
         _addMarketInternal(address(cToken));
 
@@ -1270,31 +1268,22 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         require(numMarkets != 0 && numMarkets == numSpeeds, "invalid input");
 
         for (uint i = 0; i < numMarkets; i++) {
-            compSpeeds[cTokens[i]] = speeds[i];
-            emit CompSpeedUpdated(CToken(cTokens[i]), speeds[i]);
+            if (speeds[i] > 0) {
+                _initCompState(cTokens[i]);
+            }
+
+            // Update supply and borrow index.
+            CToken cToken = CToken(cTokens[i]);
+            Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+            updateCompSupplyIndex(address(cToken));
+            updateCompBorrowIndex(address(cToken), borrowIndex);
+
+            compSpeeds[address(cToken)] = speeds[i];
+            emit CompSpeedUpdated(cToken, speeds[i]);
         }
     }
 
-    /**
-     * @notice Add markets to compMarkets, allowing them to earn COMP in the flywheel
-     * @param cTokens The addresses of the markets to add
-     */
-    function _addCompMarkets(address[] memory cTokens) public {
-        require(adminOrInitializing(), "only admin can add comp market");
-
-        for (uint i = 0; i < cTokens.length; i++) {
-            _addCompMarketInternal(cTokens[i]);
-        }
-    }
-
-    function _addCompMarketInternal(address cToken) internal {
-        Market storage market = markets[cToken];
-        require(market.isListed == true, "comp market is not listed");
-        require(market.isComped == false, "comp market already added");
-
-        market.isComped = true;
-        emit MarketComped(CToken(cToken), true);
-
+    function _initCompState(address cToken) internal {
         if (compSupplyState[cToken].index == 0 && compSupplyState[cToken].block == 0) {
             compSupplyState[cToken] = CompMarketState({
                 index: compInitialIndex,
@@ -1308,20 +1297,6 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
                 block: safe32(getBlockNumber(), "block number exceeds 32 bits")
             });
         }
-    }
-
-    /**
-     * @notice Remove a market from compMarkets, preventing it from earning COMP in the flywheel
-     * @param cToken The address of the market to drop
-     */
-    function _dropCompMarket(address cToken) public {
-        require(msg.sender == admin, "only admin can drop comp market");
-
-        Market storage market = markets[cToken];
-        require(market.isComped == true, "market is not a comp market");
-
-        market.isComped = false;
-        emit MarketComped(CToken(cToken), false);
     }
 
     /**
