@@ -18,7 +18,6 @@ describe.skip('Flywheel trace ops', () => {
     [root, a1, a2, a3, ...accounts] = saddle.accounts;
     comptroller = await makeComptroller();
     market = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
-    await send(comptroller, '_addCompMarkets', [[market].map(c => c._address)]);
   });
 
   it('update supply index SSTOREs', async () => {

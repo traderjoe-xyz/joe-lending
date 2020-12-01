@@ -3,11 +3,11 @@ Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e1
     Unitroller Deploy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    ----g2
+    -- g2
     ComptrollerImpl Deploy ScenarioG2 ComptrollerScenG2
     Unitroller SetPendingImpl ComptrollerScenG2
     ComptrollerImpl ComptrollerScenG2 BecomeG2
-    --list some tokens
+    -- list some tokens
     Comptroller SetPriceOracle (PriceOracleProxy Address)
     Comptroller SetMaxAssets 20
     Comptroller SetCloseFactor 0.5
@@ -16,10 +16,10 @@ Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e1
     NewCToken BAT cBAT
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
-    -- final
-    ComptrollerImpl Deploy ScenarioG3 ComptrollerScen
-    Unitroller SetPendingImpl ComptrollerScen
-    ComptrollerImpl ComptrollerScen BecomeG3 1e18 [cZRX cBAT]
+    -- g3
+    ComptrollerImpl Deploy ScenarioG3 ComptrollerScenG3
+    Unitroller SetPendingImpl ComptrollerScenG3
+    ComptrollerImpl ComptrollerScenG3 BecomeG3 1e18 [cZRX cBAT]
     Erc20 Deploy Standard COMP "COMP Token" 18
     Give (Address Comptroller) compInitAmount COMP
     Comptroller Send "setCompAddress(address)" (Address COMP)
@@ -32,6 +32,13 @@ Macro InitSpeeds
     EnterMarkets Coburn cBAT
     Borrow Coburn 1e18 cZRX
     Comptroller RefreshCompSpeeds
+
+Macro UpgradeComptroller
+    -- g6
+    ComptrollerImpl Deploy Scenario ComptrollerScenG6
+    Unitroller SetPendingImpl ComptrollerScenG6
+    ComptrollerImpl ComptrollerScenG6 Become
+    Comptroller Send "setCompAddress(address)" (Address COMP)
 
 Test "Accrue COMP during a mint"
     FlywheelComptroller
@@ -207,15 +214,33 @@ Test "TransferComp handles running out of COMP in Comptroller correctly"
     Assert Equal (Comptroller CompAccrued Geoff) 0
     Assert Equal (Erc20 COMP TokenBalance Geoff) 2e18
 
-Test "Changing COMP rate continues to distribute at the correct speed"
+Test "Changing COMP speed continues to distribute at the correct speed"
     FlywheelComptroller
     InitSpeeds
     --
     Assert Equal (Comptroller CompSpeed cZRX) 1e18
     FastForward 10 Blocks
-    Comptroller SetCompRate 2e18
+    Assert Equal (Comptroller BlockNumber) 10
+    -- upgrade comptroller to g6 for SetCompSpeeds
+    UpgradeComptroller
+    Comptroller SetBlockNumber 10
+    Assert Equal (Comptroller BlockNumber) 10
+    Comptroller SetCompSpeeds (cZRX) (2e18)
     Assert Equal (Comptroller CompSpeed cZRX) 2e18
+    -- 10 + 20 = 30
     FastForward 10 Blocks
     Comptroller ClaimComp Geoff
     Assert Equal (Comptroller CompAccrued Geoff) 0
     Assert Equal (Erc20 COMP TokenBalance Geoff) 30e18
+    -- 30 + 20 = 50
+    FastForward 10 Blocks
+    Comptroller SetCompSpeeds (cZRX) (0)
+    Assert Equal (Comptroller CompSpeed cZRX) 0
+    Comptroller ClaimComp Geoff
+    Assert Equal (Comptroller CompAccrued Geoff) 0
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 50e18
+    -- 50 + 0 = 50
+    FastForward 10 Blocks
+    Comptroller ClaimComp Geoff
+    Assert Equal (Comptroller CompAccrued Geoff) 0
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 50e18
