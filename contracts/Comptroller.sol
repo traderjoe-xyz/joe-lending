@@ -13,7 +13,7 @@ import "./Governance/Comp.sol";
  * @title Compound's Comptroller Contract
  * @author Compound (modified by Arr00)
  */
-contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
+contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -267,7 +267,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -403,7 +403,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -459,7 +459,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -528,7 +528,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -591,7 +591,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -638,7 +638,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -931,8 +931,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        // TODO: isComped is unused. Remove it in v2.
-        markets[address(cToken)] = Market({isListed: true, isComped: true, collateralFactorMantissa: 0});
+        markets[address(cToken)] = Market({isListed: true, collateralFactorMantissa: 0});
 
         _addMarketInternal(address(cToken));
 

@@ -87,25 +87,6 @@ contract ComptrollerHarness is Comptroller {
     function getBlockNumber() public view returns (uint) {
         return blockNumber;
     }
-
-    function getCompMarkets() public view returns (address[] memory) {
-        uint m = allMarkets.length;
-        uint n = 0;
-        for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
-                n++;
-            }
-        }
-
-        address[] memory compMarkets = new address[](n);
-        uint k = 0;
-        for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
-                compMarkets[k++] = address(allMarkets[i]);
-            }
-        }
-        return compMarkets;
-    }
 }
 
 contract ComptrollerBorked {
