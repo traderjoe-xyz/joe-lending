@@ -34,7 +34,6 @@ describe('Flywheel upgrade', () => {
       }));
       compMarkets = compMarkets.map(c => c._address);
       unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, compMarkets});
-      expect(await call(unitroller, 'getCompMarkets')).toEqual(compMarkets);
     });
 
     it('adds the other markets', async () => {
@@ -51,7 +50,6 @@ describe('Flywheel upgrade', () => {
         otherMarkets: allMarkets.slice(1)
       });
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets);
-      expect(await call(unitroller, 'getCompMarkets')).toEqual(allMarkets.slice(0, 1));
     });
 
     it('_supportMarket() adds to all markets, and only once', async () => {
@@ -84,15 +82,6 @@ describe('Flywheel', () => {
     cREP = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
     cZRX = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
     cEVIL = await makeCToken({comptroller, supportMarket: false, underlyingPrice: 3, interestRateModelOpts});
-    await send(comptroller, '_addCompMarkets', [[cLOW, cREP, cZRX].map(c => c._address)]);
-  });
-
-  describe('getCompMarkets()', () => {
-    it('should return the comp markets', async () => {
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cLOW, cREP, cZRX].map((c) => c._address)
-      );
-    });
   });
 
   describe('updateCompBorrowIndex()', () => {
@@ -101,6 +90,7 @@ describe('Flywheel', () => {
       await send(comptroller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalBorrows', [etherUnsigned(11e18)]);
       await send(comptroller, '_setCompSpeeds', [[mkt._address], [etherExp(0.5)]]);
+      await send(comptroller, 'setBlockNumber', [200]);
       await send(comptroller, 'harnessUpdateCompBorrowIndex', [
         mkt._address,
         etherExp(1.1),
@@ -118,7 +108,7 @@ describe('Flywheel', () => {
 
       const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
       expect(index).toEqualNumber(6e36);
-      expect(block).toEqualNumber(100);
+      expect(block).toEqualNumber(200);
     });
 
     it('should not revert or update compBorrowState index if cToken not in COMP markets', async () => {
@@ -163,7 +153,7 @@ describe('Flywheel', () => {
       ]);
 
       const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
-      expect(index).toEqualNumber(1e36);
+      expect(index).toEqualNumber(0);
       expect(block).toEqualNumber(100);
     });
   });
@@ -174,6 +164,7 @@ describe('Flywheel', () => {
       await send(comptroller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
       await send(comptroller, '_setCompSpeeds', [[mkt._address], [etherExp(0.5)]]);
+      await send(comptroller, 'setBlockNumber', [200]);
       await send(comptroller, 'harnessUpdateCompSupplyIndex', [mkt._address]);
       /*
         suppyTokens = 10e18
@@ -184,7 +175,7 @@ describe('Flywheel', () => {
       */
       const {index, block} = await call(comptroller, 'compSupplyState', [mkt._address]);
       expect(index).toEqualNumber(6e36);
-      expect(block).toEqualNumber(100);
+      expect(block).toEqualNumber(200);
     });
 
     it('should not update index on non-COMP markets', async () => {
@@ -623,78 +614,6 @@ describe('Flywheel', () => {
       await expect(
         send(comptroller, 'claimComp', [[a1, a2], [cNOT._address], true, true])
       ).rejects.toRevert('revert market must be listed');
-    });
-  });
-
-  describe('_addCompMarkets', () => {
-    it('should correctly add a comp market if called by admin', async () => {
-      const cBAT = await makeCToken({comptroller, supportMarket: true});
-      const tx = await send(comptroller, '_addCompMarkets', [[cBAT._address]]);
-      const markets = await call(comptroller, 'getCompMarkets');
-      expect(markets).toEqual([cLOW, cREP, cZRX, cBAT].map((c) => c._address));
-      expect(tx).toHaveLog('MarketComped', {
-        cToken: cBAT._address,
-        isComped: true
-      });
-    });
-
-    it('should revert if not called by admin', async () => {
-      const cBAT = await makeCToken({ comptroller, supportMarket: true });
-      await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]], {from: a1})
-      ).rejects.toRevert('revert only admin can add comp market');
-    });
-
-    it('should not add non-listed markets', async () => {
-      const cBAT = await makeCToken({ comptroller, supportMarket: false });
-      await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert comp market is not listed');
-
-      const markets = await call(comptroller, 'getCompMarkets');
-      expect(markets).toEqual([cLOW, cREP, cZRX].map((c) => c._address));
-    });
-
-    it('should not add duplicate markets', async () => {
-      const cBAT = await makeCToken({comptroller, supportMarket: true});
-      await send(comptroller, '_addCompMarkets', [[cBAT._address]]);
-
-      await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert comp market already added');
-    });
-  });
-
-  describe('_dropCompMarket', () => {
-    it('should correctly drop a comp market if called by admin', async () => {
-      const tx = await send(comptroller, '_dropCompMarket', [cLOW._address]);
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cREP, cZRX].map((c) => c._address)
-      );
-      expect(tx).toHaveLog('MarketComped', {
-        cToken: cLOW._address,
-        isComped: false
-      });
-    });
-
-    it('should correctly drop a comp market from middle of array', async () => {
-      await send(comptroller, '_dropCompMarket', [cREP._address]);
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cLOW, cZRX].map((c) => c._address)
-      );
-    });
-
-    it('should not drop a comp market unless called by admin', async () => {
-      await expect(
-        send(comptroller, '_dropCompMarket', [cLOW._address], {from: a1})
-      ).rejects.toRevert('revert only admin can drop comp market');
-    });
-
-    it('should not drop a comp market already dropped', async () => {
-      await send(comptroller, '_dropCompMarket', [cLOW._address]);
-      await expect(
-        send(comptroller, '_dropCompMarket', [cLOW._address])
-      ).rejects.toRevert('revert market is not a comp market');
     });
   });
 });

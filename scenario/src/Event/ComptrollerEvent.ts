@@ -260,6 +260,18 @@ async function setCompRate(world: World, from: string, comptroller: Comptroller,
   return world;
 }
 
+async function setCompSpeeds(world: World, from: string, comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setCompSpeeds(cTokens.map(c => c._address), speeds.map(s => s.encode())), from, ComptrollerErrorReporter);
+
+  world = addAction(
+    world,
+    `Set COMP markets ${cTokens.map(c => c.name)} speeds to ${speeds}`,
+    invokation
+  );
+
+  return world;
+}
+
 async function printLiquidity(world: World, comptroller: Comptroller): Promise<World> {
   let enterEvents = await getPastEvents(world, comptroller, 'StdComptroller', 'MarketEntered');
   let addresses = enterEvents.map((event) => event.returnValues['account']);
@@ -400,6 +412,18 @@ async function setBorrowCapGuardian(world: World, from: string, comptroller: Com
   world = addAction(
     world,
     `Comptroller: ${describeUser(world, from)} sets borrow cap guardian to ${newBorrowCapGuardian}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function setBlockNumber(world: World, from: string, comptroller: Comptroller, blockNumber: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods.setBlockNumber(blockNumber.encode()), from, ComptrollerErrorReporter);
+
+  return addAction(
+    world,
+    `Set Governor blockNumber to ${blockNumber.show()}`,
     invokation
   );
 
@@ -684,7 +708,7 @@ export function comptrollerCommands() {
         new Arg("cTokens", getCTokenV, {mapped: true})
       ],
       (world, from, {comptroller, cTokens}) => addCompMarkets(world, from, comptroller, cTokens)
-     ),
+    ),
     new Command<{comptroller: Comptroller, cToken: CToken}>(`
       #### DropCompMarket
 
@@ -697,7 +721,7 @@ export function comptrollerCommands() {
         new Arg("cToken", getCTokenV)
       ],
       (world, from, {comptroller, cToken}) => dropCompMarket(world, from, comptroller, cToken)
-     ),
+    ),
 
     new Command<{comptroller: Comptroller}>(`
       #### RefreshCompSpeeds
@@ -736,6 +760,20 @@ export function comptrollerCommands() {
         new Arg("rate", getNumberV)
       ],
       (world, from, {comptroller, rate}) => setCompRate(world, from, comptroller, rate)
+    ),
+    new Command<{comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]}>(`
+      #### SetCompSpeeds
+
+      * "Comptroller SetCompSpeeds (<CToken> ...) (<speed> ...)" - Set the COMP market speeds
+      * E.g. "Comptroller SetCompSpeeds (cZRX cBAT) (1e18, 1e18)
+      `,
+      "SetCompSpeeds",
+      [
+        new Arg("comptroller", getComptroller, {implicit: true}),
+        new Arg("cTokens", getCTokenV, {mapped: true}),
+        new Arg("speeds", getNumberV, {mapped: true})
+      ],
+      (world, from, {comptroller, cTokens, speeds}) => setCompSpeeds(world, from, comptroller, cTokens, speeds)
     ),
     new Command<{comptroller: Comptroller, cTokens: CToken[], supplyCaps: NumberV[]}>(`
       #### SetMarketSupplyCaps
@@ -790,7 +828,20 @@ export function comptrollerCommands() {
         new Arg("newBorrowCapGuardian", getAddressV)
       ],
       (world, from, {comptroller, newBorrowCapGuardian}) => setBorrowCapGuardian(world, from, comptroller, newBorrowCapGuardian.val)
-    )
+    ),
+    new Command<{comptroller: Comptroller, blockNumber: NumberV}>(`
+        #### SetBlockNumber
+
+        * "Comptroller SetBlockNumber <BlockNumber>" - Sets the blockNumber of the Comptroller
+        * E.g. "Comptroller SetBlockNumber 500"
+      `,
+      'SetBlockNumber',
+      [
+        new Arg('comptroller', getComptroller, {implicit: true}),
+        new Arg('blockNumber', getNumberV)
+      ],
+      (world, from, {comptroller, blockNumber}) => setBlockNumber(world, from, comptroller, blockNumber)
+    ),
   ];
 }
 
