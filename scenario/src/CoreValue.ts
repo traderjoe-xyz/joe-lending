@@ -29,7 +29,6 @@ import { getInterestRateModelValue, interestRateModelFetchers } from './Value/In
 import { getPriceOracleValue, priceOracleFetchers } from './Value/PriceOracleValue';
 import { getPriceOracleProxyValue, priceOracleProxyFetchers } from './Value/PriceOracleProxyValue';
 import { getTimelockValue, timelockFetchers, getTimelockAddress } from './Value/TimelockValue';
-import { getMaximillionValue, maximillionFetchers } from './Value/MaximillionValue';
 import { getCompValue, compFetchers } from './Value/CompValue';
 import { getGovernorValue, governorFetchers } from './Value/GovernorValue';
 import { getAddress } from './ContractLookup';
@@ -920,17 +919,6 @@ const fetchers = [
     [new Arg('res', getTimelockValue, { variadic: true })],
     async (world, { res }) => res,
     { subExpressions: timelockFetchers() }
-  ),
-  new Fetcher<{ res: Value }, Value>(
-    `
-      #### Maximillion
-
-      * "Maximillion ...maximillionArgs" - Returns Maximillion value
-    `,
-    'Maximillion',
-    [new Arg('res', getMaximillionValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: maximillionFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
     `

@@ -23,8 +23,6 @@ export interface CTokenMethods {
   borrow(amount: encodedNumber): Sendable<number>;
   repayBorrow(): Sendable<number>;
   repayBorrow(amount: encodedNumber): Sendable<number>;
-  repayBorrowBehalf(amount: string): Sendable<number>;
-  repayBorrowBehalf(address: string, amount: encodedNumber): Sendable<number>;
   liquidateBorrow(borrower: string, cTokenCollateral: string): Sendable<number>;
   liquidateBorrow(borrower: string, repayAmount: encodedNumber, cTokenCollateral: string): Sendable<number>;
   seize(liquidator: string, borrower: string, seizeTokens: encodedNumber): Sendable<number>;

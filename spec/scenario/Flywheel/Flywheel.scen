@@ -85,21 +85,6 @@ Test "Accrue COMP during a repayBorrow"
     Assert Equal (Erc20 COMP TokenBalance Coburn) 300000e18
     Assert Equal (Comptroller CompBorrowerIndex cZRX Coburn) 3.00001e41
 
-Test "Accrue COMP during a repayBorrowBehalf of 0"
-    FlywheelComptroller
-    InitSpeeds
-    FastForward 300000 Blocks
-    Assert Equal (Comptroller CompAccrued Geoff) 0
-    -- confirm we can init all flywheel accounts for free
-    RepayBorrowBehalf Jared Coburn 0 cZRX
-    -- new index = initVal + deltaBlocks * borrowSpeed * 1e36 / totalBorrows
-    -- new index = 1e36 + 300000 * 1e18 * 1e36 / 1e18 = 3.00001e41
-    Assert Equal (Comptroller CompAccrued Coburn) 0
-    Assert Equal (Comptroller CompBorrowState cZRX "index") 3.00001e41
-    Assert Equal (Comptroller CompBorrowState cZRX "block") 300000
-    Assert Equal (Erc20 COMP TokenBalance Coburn) 300000e18
-    Assert Equal (Comptroller CompBorrowerIndex cZRX Coburn) 3.00001e41
-
 Test "Accrue COMP during a liquidation"
     FlywheelComptroller
     InitSpeeds

@@ -60,11 +60,6 @@ async function repayBorrow(cToken, borrower, repayAmount) {
   return send(cToken, 'repayBorrow', [], {from: borrower, value: repayAmount});
 }
 
-async function repayBorrowBehalf(cToken, payer, borrower, repayAmount) {
-  await send(cToken, 'harnessFastForward', [1]);
-  return send(cToken, 'repayBorrowBehalf', [borrower], {from: payer, value: repayAmount});
-}
-
 describe('CEther', function () {
   let cToken, root, borrower, benefactor, accounts;
   beforeEach(async () => {
@@ -296,33 +291,6 @@ describe('CEther', function () {
       let tooMuch = new BigNumber(beforeAccountBorrowSnap.principal).plus(1);
       await expect(repayBorrow(cToken, borrower, tooMuch)).rejects.toRevert("revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
       // await assert.toRevertWithError(repayBorrow(cToken, borrower, tooMuch), 'MATH_ERROR', "revert repayBorrow failed");
-    });
-  });
-
-  describe('repayBorrowBehalf', () => {
-    let payer;
-
-    beforeEach(async () => {
-      payer = benefactor;
-      await preRepay(cToken, payer, borrower, repayAmount);
-    });
-
-    it("reverts if interest accrual fails", async () => {
-      await send(cToken.interestRateModel, 'setFailBorrowRate', [true]);
-      await expect(repayBorrowBehalf(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert INTEREST_RATE_MODEL_ERROR");
-    });
-
-    it("reverts from within repay borrow fresh", async () => {
-      await send(cToken.comptroller, 'setRepayBorrowAllowed', [false]);
-      await expect(repayBorrowBehalf(cToken, payer, borrower, repayAmount)).rejects.toRevertWithError('COMPTROLLER_REJECTION', "revert repayBorrowBehalf failed");
-    });
-
-    it("returns success from repayBorrowFresh and repays the right amount", async () => {
-      await fastForward(cToken);
-      const beforeAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
-      expect(await repayBorrowBehalf(cToken, payer, borrower, repayAmount)).toSucceed();
-      const afterAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
-      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
     });
   });
 });

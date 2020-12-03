@@ -60,12 +60,6 @@ async function repayBorrow(cToken, borrower, repayAmount) {
   return send(cToken, 'repayBorrow', [repayAmount], {from: borrower});
 }
 
-async function repayBorrowBehalf(cToken, payer, borrower, repayAmount) {
-  // make sure to have a block delta so we accrue interest
-  await send(cToken, 'harnessFastForward', [1]);
-  return send(cToken, 'repayBorrowBehalf', [borrower, repayAmount], {from: payer});
-}
-
 describe('CToken', function () {
   let cToken, root, borrower, benefactor, accounts;
   beforeEach(async () => {
@@ -294,33 +288,6 @@ describe('CToken', function () {
       await setBalance(cToken.underlying, borrower, 3);
       await fastForward(cToken);
       await expect(repayBorrow(cToken, borrower, UInt256Max())).rejects.toRevert('revert Insufficient balance');
-    });
-  });
-
-  describe('repayBorrowBehalf', () => {
-    let payer;
-
-    beforeEach(async () => {
-      payer = benefactor;
-      await preRepay(cToken, payer, borrower, repayAmount);
-    });
-
-    it("emits a repay borrow failure if interest accrual fails", async () => {
-      await send(cToken.interestRateModel, 'setFailBorrowRate', [true]);
-      await expect(repayBorrowBehalf(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert INTEREST_RATE_MODEL_ERROR");
-    });
-
-    it("returns error from repayBorrowFresh without emitting any extra logs", async () => {
-      await setBalance(cToken.underlying, payer, 1);
-      await expect(repayBorrowBehalf(cToken, payer, borrower, repayAmount)).rejects.toRevert('revert Insufficient balance');
-    });
-
-    it("returns success from repayBorrowFresh and repays the right amount", async () => {
-      await fastForward(cToken);
-      const beforeAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
-      expect(await repayBorrowBehalf(cToken, payer, borrower, repayAmount)).toSucceed();
-      const afterAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
-      expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
     });
   });
 });

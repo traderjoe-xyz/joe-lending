@@ -81,10 +81,6 @@ export async function getUnitroller(world: World): Promise<Comptroller> {
   return getWorldContract(world, [['Contracts', 'Unitroller']]);
 }
 
-export async function getMaximillion(world: World): Promise<Comptroller> {
-  return getWorldContract(world, [['Contracts', 'Maximillion']]);
-}
-
 export async function getComptroller(world: World): Promise<Comptroller> {
   return getWorldContract(world, [['Contracts', 'Comptroller']]);
 }
