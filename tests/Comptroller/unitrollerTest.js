@@ -4,7 +4,6 @@ const {
 } = require('../Utils/Ethereum');
 
 const {
-  makeComptroller,
   makePriceOracle
 } = require('../Utils/Compound');
 
@@ -17,7 +16,7 @@ describe('Unitroller', () => {
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
-    brains = await deploy('ComptrollerG1');
+    brains = await deploy('Comptroller');
     unitroller = await deploy('Unitroller');
   });
 
@@ -90,7 +89,7 @@ describe('Unitroller', () => {
       let result;
       beforeEach(async () => {
         await setPending(brains, root);
-        result = await send(brains, '_become', [unitroller._address, oracle._address, etherMantissa(.051), 10, false]);
+        result = await send(brains, '_become', [unitroller._address]);
         expect(result).toSucceed();
       });
 

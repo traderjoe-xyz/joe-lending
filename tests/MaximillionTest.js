@@ -5,9 +5,7 @@ const {
 } = require('./Utils/Ethereum');
 
 const {
-  makeComptroller,
   makeCToken,
-  makePriceOracle,
   pretendBorrow,
   borrowSnapshot
 } = require('./Utils/Compound');

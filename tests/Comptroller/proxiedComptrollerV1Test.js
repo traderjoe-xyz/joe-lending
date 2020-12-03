@@ -1,8 +1,7 @@
-const { address, etherMantissa } = require('../Utils/Ethereum');
+const { etherMantissa, mergeInterface } = require('../Utils/Ethereum');
+const { makeCToken, makePriceOracle } = require('../Utils/Compound');
 
-const { makeComptroller, makeCToken, makePriceOracle } = require('../Utils/Compound');
-
-describe('ComptrollerV1', function() {
+describe('Comptroller', function() {
   let root, accounts;
   let unitroller;
   let brains;
@@ -11,25 +10,27 @@ describe('ComptrollerV1', function() {
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     oracle = await makePriceOracle();
-    brains = await deploy('ComptrollerG1');
+    brains = await deploy('Comptroller');
     unitroller = await deploy('Unitroller');
   });
 
-  let initializeBrains = async (priceOracle, closeFactor, maxAssets) => {
+  let initializeBrains = async (priceOracle, closeFactor) => {
     await send(unitroller, '_setPendingImplementation', [brains._address]);
-    await send(brains, '_become', [unitroller._address, priceOracle._address, closeFactor, maxAssets, false]);
-    return await saddle.getContractAt('ComptrollerG1', unitroller._address);
+    await send(brains, '_become', [unitroller._address]);
+    mergeInterface(unitroller, brains);
+    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
+    await send(unitroller, '_setCloseFactor', [closeFactor]);
+    return await saddle.getContractAt('Comptroller', unitroller._address);
   };
 
   let reinitializeBrains = async () => {
     await send(unitroller, '_setPendingImplementation', [brains._address]);
-    await send(brains, '_become', [unitroller._address, address(0), 0, 0, true]);
-    return await saddle.getContractAt('ComptrollerG1', unitroller._address);
+    await send(brains, '_become', [unitroller._address]);
+    return await saddle.getContractAt('Comptroller', unitroller._address);
   };
 
   describe('delegating to comptroller v1', () => {
     const closeFactor = etherMantissa(0.051);
-    const maxAssets = 10;
     let unitrollerAsComptroller, cToken;
 
     beforeEach(async () => {
@@ -40,7 +41,7 @@ describe('ComptrollerV1', function() {
     describe('becoming brains sets initial state', () => {
       it('reverts if this is not the pending implementation', async () => {
         await expect(
-          send(brains, '_become', [unitroller._address, oracle._address, 0, 10, false])
+          send(brains, '_become', [unitroller._address])
         ).rejects.toRevert('revert change not authorized');
       });
 
@@ -49,43 +50,22 @@ describe('ComptrollerV1', function() {
         expect(await call(unitrollerAsComptroller, 'pendingAdmin')).toBeAddressZero();
       });
 
-      it('on success it sets closeFactor and maxAssets as specified', async () => {
-        const comptroller = await initializeBrains(oracle, closeFactor, maxAssets);
+      it('on success it sets closeFactor as specified', async () => {
+        const comptroller = await initializeBrains(oracle, closeFactor);
         expect(await call(comptroller, 'closeFactorMantissa')).toEqualNumber(closeFactor);
-        expect(await call(comptroller, 'maxAssets')).toEqualNumber(maxAssets);
       });
 
-      it("on reinitialization success, it doesn't set closeFactor or maxAssets", async () => {
-        let comptroller = await initializeBrains(oracle, closeFactor, maxAssets);
+      it("on reinitialization success, it doesn't set closeFactor", async () => {
+        let comptroller = await initializeBrains(oracle, closeFactor);
         expect(await call(unitroller, 'comptrollerImplementation')).toEqual(brains._address);
         expect(await call(comptroller, 'closeFactorMantissa')).toEqualNumber(closeFactor);
-        expect(await call(comptroller, 'maxAssets')).toEqualNumber(maxAssets);
 
         // Create new brains
-        brains = await deploy('ComptrollerG1');
+        brains = await deploy('Comptroller');
         comptroller = await reinitializeBrains();
 
         expect(await call(unitroller, 'comptrollerImplementation')).toEqual(brains._address);
         expect(await call(comptroller, 'closeFactorMantissa')).toEqualNumber(closeFactor);
-        expect(await call(comptroller, 'maxAssets')).toEqualNumber(maxAssets);
-      });
-
-      it('reverts on invalid closeFactor', async () => {
-        await send(unitroller, '_setPendingImplementation', [brains._address]);
-        await expect(
-          send(brains, '_become', [unitroller._address, oracle._address, 0, maxAssets, false])
-        ).rejects.toRevert('revert set close factor error');
-      });
-
-      it('allows 0 maxAssets', async () => {
-        const comptroller = await initializeBrains(oracle, closeFactor, 0);
-        expect(await call(comptroller, 'maxAssets')).toEqualNumber(0);
-      });
-
-      it('allows 5000 maxAssets', async () => {
-        // 5000 is an arbitrary number larger than what we expect to ever actually use
-        const comptroller = await initializeBrains(oracle, closeFactor, 5000);
-        expect(await call(comptroller, 'maxAssets')).toEqualNumber(5000);
       });
     });
 

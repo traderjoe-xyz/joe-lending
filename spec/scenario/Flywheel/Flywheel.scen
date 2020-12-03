@@ -3,42 +3,30 @@ Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e1
     Unitroller Deploy
     PriceOracle Deploy Fixed price
     PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
-    -- g2
-    ComptrollerImpl Deploy ScenarioG2 ComptrollerScenG2
-    Unitroller SetPendingImpl ComptrollerScenG2
-    ComptrollerImpl ComptrollerScenG2 BecomeG2
+    ComptrollerImpl Deploy Scenario ComptrollerScen
+    Unitroller SetPendingImpl ComptrollerScen
+    ComptrollerImpl ComptrollerScen Become
     -- list some tokens
     Comptroller SetPriceOracle (PriceOracleProxy Address)
-    Comptroller SetMaxAssets 20
     Comptroller SetCloseFactor 0.5
     Comptroller LiquidationIncentive 1.1
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
-    -- g3
-    ComptrollerImpl Deploy ScenarioG3 ComptrollerScenG3
-    Unitroller SetPendingImpl ComptrollerScenG3
-    ComptrollerImpl ComptrollerScenG3 BecomeG3 1e18 [cZRX cBAT]
+    --
     Erc20 Deploy Standard COMP "COMP Token" 18
     Give (Address Comptroller) compInitAmount COMP
     Comptroller Send "setCompAddress(address)" (Address COMP)
 
 Macro InitSpeeds
+    Comptroller SetCompSpeeds (cZRX cBAT) (1e18 0)
     Prep Geoff 100e18 ZRX cZRX
     Mint Geoff 50e18 cZRX--tokenbalance = 50e18 / 2e9 = 2.5e10
     Prep Coburn Some BAT cBAT
     Mint Coburn 6e18 cBAT--tokenbalance = 6e18 / 2e9 = 3e9
     EnterMarkets Coburn cBAT
     Borrow Coburn 1e18 cZRX
-    Comptroller RefreshCompSpeeds
-
-Macro UpgradeComptroller
-    -- g6
-    ComptrollerImpl Deploy Scenario ComptrollerScenG6
-    Unitroller SetPendingImpl ComptrollerScenG6
-    ComptrollerImpl ComptrollerScenG6 Become
-    Comptroller Send "setCompAddress(address)" (Address COMP)
 
 Test "Accrue COMP during a mint"
     FlywheelComptroller
@@ -131,18 +119,18 @@ Test "Accrue COMP during a liquidation"
     Assert Equal (Comptroller CompSupplyState cZRX "block") 0
     Assert Equal (Comptroller CompSupplierIndex cZRX Geoff) 1e36--no change, minted in init
     -- bat supply/borrow index is not updated, since there is no comp speed
-    Assert Equal (Comptroller CompSupplyState cBAT "index") 1e36
+    Assert Equal (Comptroller CompSupplyState cBAT "index") 0
     Assert Equal (Comptroller CompSupplyState cBAT "block") 600000
     -- neither is borrow state. block is 0 because update fn is never even called
-    Assert Equal (Comptroller CompBorrowState cBAT "index") 1e36
+    Assert Equal (Comptroller CompBorrowState cBAT "index") 0
     Assert Equal (Comptroller CompBorrowState cBAT "block") 0
     --
-    Assert Equal (Comptroller CompSupplierIndex cBAT Coburn) 1e36
+    Assert Equal (Comptroller CompSupplierIndex cBAT Coburn) 0
     Assert Equal (Comptroller CompBorrowerIndex cZRX Coburn) 6.00001e41
     Assert Equal (Erc20 COMP TokenBalance Coburn) 600000e18
     Assert Equal (Comptroller CompAccrued Coburn) 0
     --
-    Assert Equal (Comptroller CompSupplierIndex cBAT Geoff) 1e36
+    Assert Equal (Comptroller CompSupplierIndex cBAT Geoff) 0
     Assert Equal (Erc20 COMP TokenBalance Geoff) 0
     Assert Equal (Comptroller CompAccrued Geoff) 0
 
@@ -172,38 +160,36 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     NewCToken DAI cDAI
     --
     Support cDAI collateralFactor:0.5
-    Comptroller AddCompMarkets cDAI
-    Assert Equal (Comptroller GetCompMarkets) [(Address cZRX) (Address cBAT) (Address cDAI)]
+    Comptroller SetCompSpeeds (cZRX cBAT cDAI) (0.5e18 0.5e18 0.5e18)
     Prep Jared Some DAI cDAI
     Mint Jared 6e18 cDAI
     EnterMarkets Geoff cZRX
     Borrow Geoff 0.5e18 cDAI
     Borrow Coburn 0.5e18 cDAI
-    Comptroller RefreshCompSpeeds
     Assert Equal (Comptroller CompSpeed cZRX) 0.5e18
+    Assert Equal (Comptroller CompSpeed cBAT) 0.5e18
     Assert Equal (Comptroller CompSpeed cDAI) 0.5e18
     --
     FastForward 100 Blocks
-    Comptroller DropCompMarket cDAI
+    Comptroller SetCompSpeeds (cDAI) (0)
     Comptroller ClaimComp Geoff
     Assert Equal (Erc20 COMP TokenBalance Geoff) 75e18--half of cdai, all of zrx(.25e18 + .5e18) * 100
-    Assert Equal (Comptroller GetCompMarkets) [(Address cZRX) (Address cBAT)]
-    Assert Equal (Comptroller CompSpeed cZRX) 1e18
+    Assert Equal (Comptroller CompSpeed cZRX) 0.5e18
     Assert Equal (Comptroller CompSpeed cDAI) 0
     --
     FastForward 100 Blocks
     Comptroller ClaimComp Geoff
-    Assert Equal (Erc20 COMP TokenBalance Geoff) 175e18-- += 1e18 * 100
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 125e18-- += 0.5e18 * 100
     Assert Equal (Comptroller CompAccrued Geoff) 0
     --
-    Comptroller AddCompMarkets cDAI
+    Comptroller SetCompSpeeds (cDAI) (0.5e18)
     FastForward 100 Blocks
     Comptroller ClaimComp Geoff
-    Assert Equal (Erc20 COMP TokenBalance Geoff) 250e18--half of cdai, all of zrx. += (.25 + .5) * 100
+    Assert Equal (Erc20 COMP TokenBalance Geoff) 200e18--half of cdai, all of zrx. += (.25 + .5) * 100
     Assert Equal (Comptroller CompAccrued Geoff) 0
 
 Test "TransferComp handles running out of COMP in Comptroller correctly"
-    FlywheelComptroller price:1.0 borrowRate:0.000005 compInitAmount:1e18
+    FlywheelComptroller price:1.0 compInitAmount:1e18
     InitSpeeds
     FastForward 2 Blocks
     Comptroller ClaimComp Geoff
@@ -220,10 +206,6 @@ Test "Changing COMP speed continues to distribute at the correct speed"
     --
     Assert Equal (Comptroller CompSpeed cZRX) 1e18
     FastForward 10 Blocks
-    Assert Equal (Comptroller BlockNumber) 10
-    -- upgrade comptroller to g6 for SetCompSpeeds
-    UpgradeComptroller
-    Comptroller SetBlockNumber 10
     Assert Equal (Comptroller BlockNumber) 10
     Comptroller SetCompSpeeds (cZRX) (2e18)
     Assert Equal (Comptroller CompSpeed cZRX) 2e18

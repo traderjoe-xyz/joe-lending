@@ -50,10 +50,6 @@ async function getCloseFactor(world: World, comptroller: Comptroller): Promise<N
   return new NumberV(await comptroller.methods.closeFactorMantissa().call(), 1e18);
 }
 
-async function getMaxAssets(world: World, comptroller: Comptroller): Promise<NumberV> {
-  return new NumberV(await comptroller.methods.maxAssets().call());
-}
-
 async function getLiquidationIncentive(world: World, comptroller: Comptroller): Promise<NumberV> {
   return new NumberV(await comptroller.methods.liquidationIncentiveMantissa().call(), 1e18);
 }
@@ -91,12 +87,6 @@ async function getAssetsIn(world: World, comptroller: Comptroller, user: string)
   let assetsList = await comptroller.methods.getAssetsIn(user).call();
 
   return new ListV(assetsList.map((a) => new AddressV(a)));
-}
-
-async function getCompMarkets(world: World, comptroller: Comptroller): Promise<ListV> {
-  let mkts = await comptroller.methods.getCompMarkets().call();
-
-  return new ListV(mkts.map((a) => new AddressV(a)));
 }
 
 async function checkListed(world: World, comptroller: Comptroller, cToken: CToken): Promise<BoolV> {
@@ -211,16 +201,6 @@ export function comptrollerFetchers() {
       "CloseFactor",
       [new Arg("comptroller", getComptroller, {implicit: true})],
       (world, {comptroller}) => getCloseFactor(world, comptroller)
-    ),
-    new Fetcher<{comptroller: Comptroller}, NumberV>(`
-        #### MaxAssets
-
-        * "Comptroller MaxAssets" - Returns the Comptrollers's price oracle
-          * E.g. "Comptroller MaxAssets"
-      `,
-      "MaxAssets",
-      [new Arg("comptroller", getComptroller, {implicit: true})],
-      (world, {comptroller}) => getMaxAssets(world, comptroller)
     ),
     new Fetcher<{comptroller: Comptroller}, NumberV>(`
         #### LiquidationIncentive
@@ -412,29 +392,6 @@ export function comptrollerFetchers() {
         ],
         async (world, {comptroller, cToken}) => new BoolV(await comptroller.methods.borrowGuardianPaused(cToken._address).call())
     ),
-
-    new Fetcher<{comptroller: Comptroller}, ListV>(`
-      #### GetCompMarkets
-
-      * "GetCompMarkets" - Returns an array of the currently enabled Comp markets. To use the auto-gen array getter compMarkets(uint), use CompMarkets
-      * E.g. "Comptroller GetCompMarkets"
-      `,
-      "GetCompMarkets",
-      [new Arg("comptroller", getComptroller, {implicit: true})],
-      async(world, {comptroller}) => await getCompMarkets(world, comptroller)
-     ),
-
-    new Fetcher<{comptroller: Comptroller}, NumberV>(`
-      #### CompRate
-
-      * "CompRate" - Returns the current comp rate.
-      * E.g. "Comptroller CompRate"
-      `,
-      "CompRate",
-      [new Arg("comptroller", getComptroller, {implicit: true})],
-      async(world, {comptroller}) => new NumberV(await comptroller.methods.compRate().call())
-    ),
-
     new Fetcher<{comptroller: Comptroller, signature: StringV, callArgs: StringV[]}, NumberV>(`
         #### CallNum
 
