@@ -3,9 +3,6 @@ pragma solidity ^0.5.16;
 import "./CToken.sol";
 
 contract PriceOracle {
-    /// @notice Indicator that this is a PriceOracle contract (for inspection)
-    bool public constant isPriceOracle = true;
-
     /**
       * @notice Get the underlying price of a cToken asset
       * @param cToken The cToken to get the underlying price of

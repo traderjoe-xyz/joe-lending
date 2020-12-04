@@ -6,11 +6,7 @@ import "./PriceOracle.sol";
 import "./Exponential.sol";
 import "./EIP20Interface.sol";
 
-interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint);
-}
-
-interface YSwapInterface {
+interface CurveSwapInterface {
     function get_virtual_price() external view returns (uint256);
 }
 
@@ -18,62 +14,54 @@ interface YVaultInterface {
     function getPricePerFullShare() external view returns (uint256);
 }
 
-interface AggregatorInterface {
-  function latestAnswer() external view returns (int256);
-  function latestTimestamp() external view returns (uint256);
-  function latestRound() external view returns (uint256);
-  function getAnswer(uint256 roundId) external view returns (int256);
-  function getTimestamp(uint256 roundId) external view returns (uint256);
+interface AggregatorV3Interface {
+    function decimals() external view returns (uint8);
+    function description() external view returns (string memory);
+    function version() external view returns (uint256);
 
-  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 timestamp);
-  event NewRound(uint256 indexed roundId, address indexed startedBy);
+    // getRoundData and latestRoundData should both raise "No data present"
+    // if they do not have data to report, instead of returning unset values
+    // which could be misinterpreted as actual reported values.
+    function getRoundData(uint80 _roundId) external view returns (
+        uint80 roundId,
+        int256 answer,
+        uint256 startedAt,
+        uint256 updatedAt,
+        uint80 answeredInRound
+    );
+
+    function latestRoundData() external view returns (
+        uint80 roundId,
+        int256 answer,
+        uint256 startedAt,
+        uint256 updatedAt,
+        uint80 answeredInRound
+    );
 }
 
 contract PriceOracleProxy is PriceOracle, Exponential {
+    /// @notice Admin address
     address public admin;
 
-    /// @notice Indicator that this is a PriceOracle contract (for inspection)
-    bool public constant isPriceOracle = true;
-
-    /// @notice The v1 price oracle, which will continue to serve prices for v1 assets
-    V1PriceOracleInterface public v1PriceOracle;
-
     /// @notice Chainlink Aggregators
-    mapping(address => AggregatorInterface) public aggregators;
+    mapping(address => AggregatorV3Interface) public aggregators;
 
-    address public cEthAddress;
-    address public cUsdcAddress;
-    address public cUsdtAddress;
-    address public cYcrvAddress;
-    address public cYYcrvAddress;
-    address public cYethAddress;
+    /// @notice Mapping of crToken to y-vault token
+    mapping(address => address) public yVaults;
+
+    /// @notice Mapping of crToken to curve swap
+    mapping(address => address) public curveSwap;
+
+    address public constant cyY3CRVAddress = 0x7589C9E17BCFcE1Ccaa1f921196FDa177F0207Fc;
 
     /**
      * @param admin_ The address of admin to set aggregators
-     * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
-     * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
-     * @param cUsdtAddress_ The address of cUSDC
-     * @param cUsdtAddress_ The address of cUSDT
-     * @param cYcrvAddress_ The address of cYcrv
-     * @param cYYcrvAddress_ The address of cYYcrv
-     * @param cYethAddress_ The address of cYeth
      */
-    constructor(address admin_,
-                address v1PriceOracle_,
-                address cEthAddress_,
-                address cUsdcAddress_,
-                address cUsdtAddress_,
-                address cYcrvAddress_,
-                address cYYcrvAddress_,
-                address cYethAddress_) public {
+    constructor(address admin_) public {
         admin = admin_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
-        cEthAddress = cEthAddress_;
-        cUsdcAddress = cUsdcAddress_;
-        cUsdtAddress = cUsdtAddress_;
-        cYcrvAddress = cYcrvAddress_;
-        cYYcrvAddress = cYYcrvAddress_;
-        cYethAddress = cYethAddress_;
+
+        yVaults[cyY3CRVAddress] = 0x9cA85572E6A3EbF24dEDd195623F188735A5179f; // y-vault 3Crv
+        curveSwap[cyY3CRVAddress] = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7; // curve 3 pool
     }
 
     /**
@@ -84,106 +72,43 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     function getUnderlyingPrice(CToken cToken) public view returns (uint) {
         address cTokenAddress = address(cToken);
 
-        if (cTokenAddress == cEthAddress) {
-            // ether always worth 1
-            return 1e18;
-        }
-        
-        if (cTokenAddress == cYethAddress) {
-            uint yVaultPrice = YVaultInterface(0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7).getPricePerFullShare();
-            if (yVaultPrice == 0) {
-                return getPriceFromV1(cTokenAddress);
-            }
-            return yVaultPrice;
-        }
-        
-        if (cTokenAddress == cYcrvAddress || cTokenAddress == cYYcrvAddress) {
-            MathError mathErr;
-            Exp memory ethUsdPrice;
-            Exp memory usdWeiPrice;
-            Exp memory yCrvPrice;
-
-            // ETH/USD
-            (mathErr, ethUsdPrice) = getPriceFromChainlink(AggregatorInterface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419));
-            if (mathErr != MathError.NO_ERROR) {
-                // Fallback to v1 PriceOracle
-                return getPriceFromV1(cTokenAddress);
-            }
-            // ETH/USD price decimal is 8
-            (mathErr, usdWeiPrice) = getExp(1e8, ethUsdPrice.mantissa);
-
-
-            // YCRV/USD
-            uint virtualPrice = YSwapInterface(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51).get_virtual_price();
-            
-            // YCRV/WEI = USD/WEI * YCRV/USD
-            (mathErr, yCrvPrice) = mulExp(usdWeiPrice, Exp({mantissa: virtualPrice}));
-            if (mathErr != MathError.NO_ERROR) {
-                // Fallback to v1 PriceOracle
-                return getPriceFromV1(cTokenAddress);
-            }
-            
-            if (cTokenAddress == cYYcrvAddress) {
-                uint yVaultPrice = YVaultInterface(0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c).getPricePerFullShare();
-                Exp memory yyCrvPrice;
-                (mathErr, yyCrvPrice) = mulExp(yCrvPrice, Exp({mantissa: yVaultPrice}));
-                if (mathErr != MathError.NO_ERROR) {
-                    // Fallback to v1 PriceOracle
-                    return getPriceFromV1(cTokenAddress);
-                }
-                return yyCrvPrice.mantissa;
-            }
-            
-            return yCrvPrice.mantissa;
+        if (cTokenAddress == cyY3CRVAddress) {
+            uint yVaultPrice = YVaultInterface(yVaults[cyY3CRVAddress]).getPricePerFullShare();
+            uint virtualPrice = CurveSwapInterface(curveSwap[cyY3CRVAddress]).get_virtual_price();
+            return mul_(yVaultPrice, Exp({mantissa: virtualPrice}));
         }
 
-        AggregatorInterface aggregator = aggregators[cTokenAddress];
+        AggregatorV3Interface aggregator = aggregators[cTokenAddress];
         if (address(aggregator) != address(0)) {
-            MathError mathErr;
-            Exp memory price;
-            (mathErr, price) = getPriceFromChainlink(aggregator);
-            if (mathErr != MathError.NO_ERROR) {
-                // Fallback to v1 PriceOracle
-                return getPriceFromV1(cTokenAddress);
-            }
+            uint price = getPriceFromChainlink(aggregator);
 
-            if (price.mantissa == 0) {
-                return getPriceFromV1(cTokenAddress);
-            }
-
-            uint underlyingDecimals;
-            underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
-            (mathErr, price) = mulScalar(price, 10**(18 - underlyingDecimals));
-            if (mathErr != MathError.NO_ERROR ) {
-                // Fallback to v1 PriceOracle
-                return getPriceFromV1(cTokenAddress);
-            }
-
-            return price.mantissa;
+            uint underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+            return mul_(price, 10**(18 - underlyingDecimals));
         }
 
-        return getPriceFromV1(cTokenAddress);
+        // Raise error.
+        assert(false);
     }
 
-    function getPriceFromChainlink(AggregatorInterface aggregator) internal view returns (MathError, Exp memory) {
-        int256 chainLinkPrice = aggregator.latestAnswer();
-        if (chainLinkPrice <= 0) {
-            return (MathError.INTEGER_OVERFLOW, Exp({mantissa: 0}));
-        }
-        return (MathError.NO_ERROR, Exp({mantissa: uint(chainLinkPrice)}));
-    }
+    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint) {
+        ( , int price, , , ) = aggregator.latestRoundData();
+        require(price > 0, "invalid price");
 
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
-        address underlying = CErc20(cTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
+        // Extend the decimals to 1e18.
+        return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
     }
 
     event AggregatorUpdated(address cTokenAddress, address source);
 
+    function _setAdmin(address _admin) external {
+        require(msg.sender == admin, "!admin");
+        admin = _admin;
+    }
+
     function _setAggregators(address[] calldata cTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin, "only the admin may set the aggregators");
         for (uint i = 0; i < cTokenAddresses.length; i++) {
-            aggregators[cTokenAddresses[i]] = AggregatorInterface(sources[i]);
+            aggregators[cTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
             emit AggregatorUpdated(cTokenAddresses[i], sources[i]);
         }
     }
