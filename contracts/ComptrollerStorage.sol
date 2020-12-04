@@ -121,4 +121,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 
     // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint) public supplyCaps;
+
+    // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
+    mapping(address => uint) public creditLimits;
 }
