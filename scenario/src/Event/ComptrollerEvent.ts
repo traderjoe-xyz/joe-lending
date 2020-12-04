@@ -368,6 +368,16 @@ async function setBlockNumber(world: World, from: string, comptroller: Comptroll
   return world;
 }
 
+async function setCreditLimit(world: World, from: string, comptroller: Comptroller, protocol: string, creditLimit: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setCreditLimit(protocol, creditLimit.encode()), from, ComptrollerErrorReporter);
+
+  return addAction(
+    world,
+    `Set ${protocol} credit limit to ${creditLimit.show()}`,
+    invokation
+  );
+}
+
 export function comptrollerCommands() {
   return [
     new Command<{comptrollerParams: EventV}>(`
@@ -714,6 +724,20 @@ export function comptrollerCommands() {
         new Arg('blockNumber', getNumberV)
       ],
       (world, from, {comptroller, blockNumber}) => setBlockNumber(world, from, comptroller, blockNumber)
+    ),
+    new Command<{comptroller: Comptroller, protocol: AddressV, creditLimit: NumberV}>(`
+        #### SetCreditLimit
+
+        * "Comptroller SetCreditLimit <Protocol> <CreditLimit>" - Sets the credit limit of a protocol
+        * E.g. "Comptroller SetCreditLimit Geoff 100"
+      `,
+      'SetCreditLimit',
+      [
+        new Arg('comptroller', getComptroller, {implicit: true}),
+        new Arg('protocol', getAddressV),
+        new Arg('creditLimit', getNumberV)
+      ],
+      (world, from, {comptroller, protocol, creditLimit}) => setCreditLimit(world, from, comptroller, protocol.val, creditLimit)
     ),
   ];
 }

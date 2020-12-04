@@ -47,3 +47,29 @@ Test "Calculates hypothetical account liquidity"
     --       we could consider testing this, but it would be out of the scope of scenarios
     Assert Equal (Comptroller Hypothetical Geoff Redeems 100e18 cREP) 3.0e18 -- No effect
     Assert Equal (Comptroller Hypothetical Geoff Borrows 100e18 cREP) 3.0e18 -- No effect
+
+Test "Hypothetical account liquidity with credit limit"
+    PricedComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    SetPriceCF cZRX 0.002 0.4
+    ListedEtherToken cETH initialExchangeRate:1e9
+    Comptroller SetCollateralFactor cEth 0.8
+    -- Mint some cZRX and cETH
+    Prep Geoff 1250e18 ZRX cZRX
+    Mint Geoff 1250e18 cZRX -- Liquidity -> 0.4 * 0.002 * 1250e18 = 1.0e18
+    SendMintEth Geoff 2.5e18 cETH -- Liqiuidity -> 0.8 * 1.0 * 2.5e18 = 2.0e18
+    -- Check liquidity is zero when not in any markets
+    Assert Equal (Comptroller Liquidity Geoff) Zero
+    -- Set credit limit to 100e18
+    Comptroller SetCreditLimit Geoff 100e18
+    Assert Equal (Comptroller Liquidity Geoff) 100e18
+    -- Enter markets
+    EnterMarkets Geoff cZRX
+    Assert Equal (Comptroller Liquidity Geoff) 100e18
+    Assert Equal (Comptroller Hypothetical Geoff Redeems 100000e9 cZRX) 20e18 -- 0.4 * 0.002 * -100000e18 = -80e18
+    Assert Equal (Comptroller Hypothetical Geoff Borrows 100000e18 cZRX) -100e18 -- 0.002 * -100000e18 = -200e18
+    -- Set credit limit to 0
+    Comptroller SetCreditLimit Geoff 0
+    Assert Equal (Comptroller Liquidity Geoff) 1.0e18
+    Assert Equal (Comptroller Hypothetical Geoff Redeems 1000e9 cZRX) 0.2e18 -- 0.4 * 0.002 * -1000e18 = -0.8e18
+    Assert Equal (Comptroller Hypothetical Geoff Borrows 1000e18 cZRX) -1e18 -- 0.002 * -1000e18 = -2e18

@@ -85,6 +85,39 @@ describe('Comptroller', () => {
       expect(liquidity).toEqualNumber(Math.floor(c2));
       expect(shortfall).toEqualNumber(0);
     });
+
+    it("has account liquidity with credit limit", async () => {
+      const collateralFactor = 0.5, underlyingPrice = 1, user = accounts[1], amount = 1e6, creditLimit = 500;
+      const cToken = await makeCToken({supportMarket: true, collateralFactor, underlyingPrice});
+      let error, liquidity, shortfall;
+
+      ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
+      expect(error).toEqualNumber(0);
+      expect(liquidity).toEqualNumber(0);
+      expect(shortfall).toEqualNumber(0);
+
+      await send(cToken.comptroller, '_setCreditLimit', [user, creditLimit]);
+
+      ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
+      expect(error).toEqualNumber(0);
+      expect(liquidity).toEqualNumber(creditLimit);
+      expect(shortfall).toEqualNumber(0);
+
+      await enterMarkets([cToken], user);
+      await quickMint(cToken, user, amount);
+
+      ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
+      expect(error).toEqualNumber(0);
+      expect(liquidity).toEqualNumber(creditLimit);
+      expect(shortfall).toEqualNumber(0);
+
+      await send(cToken.comptroller, '_setCreditLimit', [user, 0]);
+
+      ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
+      expect(error).toEqualNumber(0);
+      expect(liquidity).toEqualNumber(amount * collateralFactor);
+      expect(shortfall).toEqualNumber(0);
+    })
   });
 
   describe("getAccountLiquidity", () => {
