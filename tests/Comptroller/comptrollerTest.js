@@ -33,8 +33,6 @@ describe('Comptroller', () => {
   describe('_setLiquidationIncentive', () => {
     const initialIncentive = etherMantissa(1.0);
     const validIncentive = etherMantissa(1.1);
-    const tooSmallIncentive = etherMantissa(0.99999);
-    const tooLargeIncentive = etherMantissa(1.50000001);
 
     let comptroller;
     beforeEach(async () => {
@@ -183,6 +181,21 @@ describe('Comptroller', () => {
       const result2 = await send(cToken1.comptroller, '_supportMarket', [cToken2._address]);
       expect(result1).toHaveLog('MarketListed', {cToken: cToken1._address});
       expect(result2).toHaveLog('MarketListed', {cToken: cToken2._address});
+    });
+  });
+
+  describe('_setCreditLimit', () => {
+    const creditLimit = etherMantissa(500);
+
+    it("fails if not called by admin", async () => {
+      const cToken = await makeCToken(root);
+      await expect(send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit], {from: accounts[0]})).rejects.toRevert("revert only admin can set protocol credit limit");
+    });
+
+    it("succeeds and sets credit limit", async () => {
+      const cToken = await makeCToken();
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: creditLimit.toString()});
     });
   });
 

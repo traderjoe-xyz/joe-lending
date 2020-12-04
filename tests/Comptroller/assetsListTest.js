@@ -11,7 +11,7 @@ describe('assetListTest', () => {
 
   beforeEach(async () => {
     [root, customer, ...accounts] = saddle.accounts;
-    comptroller = await makeComptroller({maxAssets: 10});
+    comptroller = await makeComptroller();
     allTokens = [OMG, ZRX, BAT, REP, DAI, SKT] = await Promise.all(
       ['OMG', 'ZRX', 'BAT', 'REP', 'DAI', 'sketch']
         .map(async (name) => makeCToken({comptroller, name, symbol: name, supportMarket: name != 'sketch', underlyingPrice: 0.5}))

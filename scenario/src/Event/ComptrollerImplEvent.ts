@@ -1,9 +1,9 @@
 import { Event } from '../Event';
-import { addAction, describeUser, World } from '../World';
+import { addAction, World } from '../World';
 import { ComptrollerImpl } from '../Contract/ComptrollerImpl';
 import { Unitroller } from '../Contract/Unitroller';
 import { invoke } from '../Invokation';
-import { getAddressV, getArrayV, getEventV, getExpNumberV, getNumberV, getStringV, getCoreValue } from '../CoreValue';
+import { getAddressV, getArrayV, getEventV, getExpNumberV, getNumberV, getStringV } from '../CoreValue';
 import { ArrayV, AddressV, EventV, NumberV, StringV } from '../Value';
 import { Arg, Command, View, processCommandEvent } from '../Command';
 import { buildComptrollerImpl } from '../Builder/ComptrollerImplBuilder';
@@ -11,8 +11,6 @@ import { ComptrollerErrorReporter } from '../ErrorReporter';
 import { getComptrollerImpl, getComptrollerImplData, getUnitroller } from '../ContractLookup';
 import { verify } from '../Verify';
 import { mergeContractABI } from '../Networks';
-import { encodedNumber } from '../Encoding';
-import { encodeABI } from '../Utils';
 
 async function genComptrollerImpl(world: World, from: string, params: Event): Promise<World> {
   let { world: nextWorld, comptrollerImpl, comptrollerImplData } = await buildComptrollerImpl(
@@ -41,111 +39,6 @@ async function mergeABI(
     // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
     world = await mergeContractABI(world, 'Comptroller', unitroller, unitroller.name, comptrollerImpl.name);
   }
-
-  return world;
-}
-
-async function becomeG1(
-  world: World,
-  from: string,
-  comptrollerImpl: ComptrollerImpl,
-  unitroller: Unitroller,
-  priceOracleAddr: string,
-  closeFactor: encodedNumber,
-  maxAssets: encodedNumber
-): Promise<World> {
-  let invokation = await invoke(
-    world,
-    comptrollerImpl.methods._become(unitroller._address, priceOracleAddr, closeFactor, maxAssets, false),
-    from,
-    ComptrollerErrorReporter
-  );
-  if (!world.dryRun) {
-    // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
-    world = await mergeContractABI(world, 'Comptroller', unitroller, unitroller.name, comptrollerImpl.name);
-  }
-
-  world = addAction(
-    world,
-    `Become ${unitroller._address}'s Comptroller Impl with priceOracle=${priceOracleAddr},closeFactor=${closeFactor},maxAssets=${maxAssets}`,
-    invokation
-  );
-
-  return world;
-}
-
-// Recome calls `become` on the G1 Comptroller, but passes a flag to not modify any of the initialization variables.
-async function recome(
-  world: World,
-  from: string,
-  comptrollerImpl: ComptrollerImpl,
-  unitroller: Unitroller
-): Promise<World> {
-  let invokation = await invoke(
-    world,
-    comptrollerImpl.methods._become(
-      unitroller._address,
-      '0x0000000000000000000000000000000000000000',
-      0,
-      0,
-      true
-    ),
-    from,
-    ComptrollerErrorReporter
-  );
-
-  world = await mergeContractABI(world, 'Comptroller', unitroller, unitroller.name, comptrollerImpl.name);
-
-  world = addAction(world, `Recome ${unitroller._address}'s Comptroller Impl`, invokation);
-
-  return world;
-}
-
-async function becomeG2(
-  world: World,
-  from: string,
-  comptrollerImpl: ComptrollerImpl,
-  unitroller: Unitroller
-): Promise<World> {
-  let invokation = await invoke(
-    world,
-    comptrollerImpl.methods._become(unitroller._address),
-    from,
-    ComptrollerErrorReporter
-  );
-
-  if (!world.dryRun) {
-    // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
-    world = await mergeContractABI(world, 'Comptroller', unitroller, unitroller.name, comptrollerImpl.name);
-  }
-
-  world = addAction(world, `Become ${unitroller._address}'s Comptroller Impl`, invokation);
-
-  return world;
-}
-
-async function becomeG3(
-  world: World,
-  from: string,
-  comptrollerImpl: ComptrollerImpl,
-  unitroller: Unitroller,
-  compRate: encodedNumber,
-  compMarkets: string[],
-  otherMarkets: string[]
-): Promise<World> {
-  let invokation = await invoke(
-    world,
-    comptrollerImpl.methods._become(unitroller._address, compRate, compMarkets, otherMarkets),
-    from,
-    ComptrollerErrorReporter
-  );
-
-  if (!world.dryRun) {
-    // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
-    world = await mergeContractABI(world, 'Comptroller', unitroller, unitroller.name, comptrollerImpl.name);
-  }
-
-  world = addAction(world, `Become ${unitroller._address}'s Comptroller Impl`, invokation);
 
   return world;
 }
@@ -218,85 +111,6 @@ export function comptrollerImplCommands() {
       },
       { namePos: 1 }
     ),
-    new Command<{
-      unitroller: Unitroller;
-      comptrollerImpl: ComptrollerImpl;
-      priceOracle: AddressV;
-      closeFactor: NumberV;
-      maxAssets: NumberV;
-    }>(
-      `
-        #### BecomeG1
-
-        * "ComptrollerImpl <Impl> BecomeG1 priceOracle:<Number> closeFactor:<Exp> maxAssets:<Number>" - Become the comptroller, if possible.
-          * E.g. "ComptrollerImpl MyImpl BecomeG1
-      `,
-      'BecomeG1',
-      [
-        new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('comptrollerImpl', getComptrollerImpl),
-        new Arg('priceOracle', getAddressV),
-        new Arg('closeFactor', getExpNumberV),
-        new Arg('maxAssets', getNumberV)
-      ],
-      (world, from, { unitroller, comptrollerImpl, priceOracle, closeFactor, maxAssets }) =>
-        becomeG1(
-          world,
-          from,
-          comptrollerImpl,
-          unitroller,
-          priceOracle.val,
-          closeFactor.encode(),
-          maxAssets.encode()
-        ),
-      { namePos: 1 }
-    ),
-
-    new Command<{
-      unitroller: Unitroller;
-      comptrollerImpl: ComptrollerImpl;
-    }>(
-      `
-        #### BecomeG2
-
-        * "ComptrollerImpl <Impl> BecomeG2" - Become the comptroller, if possible.
-          * E.g. "ComptrollerImpl MyImpl BecomeG2
-      `,
-      'BecomeG2',
-      [
-        new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('comptrollerImpl', getComptrollerImpl)
-      ],
-      (world, from, { unitroller, comptrollerImpl }) => becomeG2(world, from, comptrollerImpl, unitroller),
-      { namePos: 1 }
-    ),
-
-    new Command<{
-      unitroller: Unitroller;
-      comptrollerImpl: ComptrollerImpl;
-      compRate: NumberV;
-      compMarkets: ArrayV<AddressV>;
-      otherMarkets: ArrayV<AddressV>;
-    }>(
-      `
-        #### BecomeG3
-
-        * "ComptrollerImpl <Impl> BecomeG3 <Rate> <CompMarkets> <OtherMarkets>" - Become the comptroller, if possible.
-          * E.g. "ComptrollerImpl MyImpl BecomeG3 0.1e18 [cDAI, cETH, cUSDC]
-      `,
-      'BecomeG3',
-      [
-        new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('comptrollerImpl', getComptrollerImpl),
-        new Arg('compRate', getNumberV, { default: new NumberV(1e18) }),
-        new Arg('compMarkets', getArrayV(getAddressV),  {default: new ArrayV([]) }),
-        new Arg('otherMarkets', getArrayV(getAddressV), { default: new ArrayV([]) })
-      ],
-      (world, from, { unitroller, comptrollerImpl, compRate, compMarkets, otherMarkets }) => {
-        return becomeG3(world, from, comptrollerImpl, unitroller, compRate.encode(), compMarkets.val.map(a => a.val), otherMarkets.val.map(a => a.val))
-      },
-      { namePos: 1 }
-    ),
 
     new Command<{
       unitroller: Unitroller;
@@ -335,21 +149,6 @@ export function comptrollerImplCommands() {
         new Arg('comptrollerImpl', getComptrollerImpl)
       ],
       (world, from, { unitroller, comptrollerImpl }) => mergeABI(world, from, comptrollerImpl, unitroller),
-      { namePos: 1 }
-    ),
-    new Command<{ unitroller: Unitroller; comptrollerImpl: ComptrollerImpl }>(
-      `
-        #### Recome
-
-        * "ComptrollerImpl <Impl> Recome" - Recome the comptroller
-          * E.g. "ComptrollerImpl MyImpl Recome
-      `,
-      'Recome',
-      [
-        new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('comptrollerImpl', getComptrollerImpl)
-      ],
-      (world, from, { unitroller, comptrollerImpl }) => recome(world, from, comptrollerImpl, unitroller),
       { namePos: 1 }
     )
   ];

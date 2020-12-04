@@ -92,31 +92,6 @@ Test "Borrow, and get a negative total cash situation"
     Assert Equal (Erc20 WBTC TokenBalance Geoff) 0e8
     Assert Equal (Erc20 WBTC TokenBalance cWBTC) 10e8
 
-Test "Borrow, hold a few blocks, and repay behalf part"
-    Invariant Success
-    NewBorrow borrowAmount:1e8 borrowRate:0.000005
-    Assert Equal (CToken cWBTC BorrowBalance Geoff) 1e8
-    Assert Equal (CToken cWBTC TotalBorrowsCurrent) 1e8
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 1e8
-    Assert Equal (Erc20 WBTC TokenBalance cWBTC) 9e8
-    -- Now let's add some blocks and see what happs
-    FastForward 300000 Blocks -- 1e8 * (1 + 300000 * 0.000005)
-    Assert Equal (CToken cWBTC BorrowBalance Geoff) 2.5e8
-    -- Now let's repay one full token from another user
-    Prep Torrey 1.0e8 WBTC cWBTC
-    RepayBorrowBehalf Torrey Geoff 1.0e8 cWBTC
-    Assert Equal (CToken cWBTC BorrowBalance Torrey) Zero
-    Assert Equal (CToken cWBTC BorrowBalance Geoff) 1.5e8
-    -- Let's check the overall numbers
-    Assert Equal (Erc20 WBTC TokenBalance Torrey) 0e8
-    Assert Equal (Erc20 WBTC TokenBalance Geoff) 1e8
-    Assert Equal (Erc20 WBTC TokenBalance cWBTC) 10e8
-    Assert Equal (CToken cWBTC TotalBorrowsCurrent) 1.5e8
-    FastForward 200000 Blocks -- 1.5e8 * (1 + 200000 * 0.000005)
-    Assert Equal (CToken cWBTC BorrowBalance Torrey) Zero
-    Assert Equal (CToken cWBTC BorrowBalance Geoff) 3e8
-    Assert Equal (CToken cWBTC TotalBorrowsCurrent) 3e8
-
 Test "Prohibit repay by comptroller rejection due to mock unlist"
     NewBorrow borrowAmount:1e8 borrowRate:0.000005
     Assert Equal (CToken cWBTC BorrowBalance Geoff) 1e8

@@ -85,16 +85,6 @@ contract CEther is CToken {
     }
 
     /**
-     * @notice Sender repays a borrow belonging to borrower
-     * @dev Reverts upon any failure
-     * @param borrower the account with the debt being payed off
-     */
-    function repayBorrowBehalf(address borrower) external payable {
-        (uint err,) = repayBorrowBehalfInternal(borrower, msg.value);
-        requireNoError(err, "repayBorrowBehalf failed");
-    }
-
-    /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
      * @dev Reverts upon any failure

@@ -43,18 +43,10 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     uint public liquidationIncentiveMantissa;
 
     /**
-     * @notice Max number of assets a single account can participate in (borrow or use as collateral)
-     */
-    uint public maxAssets;
-
-    /**
      * @notice Per-account mapping of "assets you are in", capped by maxAssets
      */
     mapping(address => CToken[]) public accountAssets;
 
-}
-
-contract ComptrollerV2Storage is ComptrollerV1Storage {
     struct Market {
         /// @notice Whether or not this market is listed
         bool isListed;
@@ -68,9 +60,6 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
 
         /// @notice Per-market mapping of "accounts in this asset"
         mapping(address => bool) accountMembership;
-
-        /// @notice Whether or not this market receives COMP
-        bool isComped;
     }
 
     /**
@@ -78,7 +67,6 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
      * @dev Used e.g. to determine if a market is supported
      */
     mapping(address => Market) public markets;
-
 
     /**
      * @notice The Pause Guardian can pause certain actions as a safety mechanism.
@@ -92,9 +80,7 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
     bool public seizeGuardianPaused;
     mapping(address => bool) public mintGuardianPaused;
     mapping(address => bool) public borrowGuardianPaused;
-}
 
-contract ComptrollerV3Storage is ComptrollerV2Storage {
     struct CompMarketState {
         /// @notice The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
@@ -105,9 +91,6 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
 
     /// @notice A list of all markets
     CToken[] public allMarkets;
-
-    /// @notice The rate at which the flywheel distributes COMP, per block
-    uint public compRate;
 
     /// @notice The portion of compRate that each market currently receives
     mapping(address => uint) public compSpeeds;
@@ -126,20 +109,19 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
 
     /// @notice The COMP accrued but not yet transferred to each user
     mapping(address => uint) public compAccrued;
-}
 
-contract ComptrollerV4Storage is ComptrollerV3Storage {
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
     // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
     mapping(address => uint) public borrowCaps;
-}
 
-contract ComptrollerV5Storage is ComptrollerV4Storage {
     // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
     address public supplyCapGuardian;
 
     // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint) public supplyCaps;
+
+    // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
+    mapping(address => uint) public creditLimits;
 }

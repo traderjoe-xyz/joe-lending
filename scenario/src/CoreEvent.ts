@@ -22,7 +22,6 @@ import { erc20Commands, processErc20Event } from './Event/Erc20Event';
 import { interestRateModelCommands, processInterestRateModelEvent } from './Event/InterestRateModelEvent';
 import { priceOracleCommands, processPriceOracleEvent } from './Event/PriceOracleEvent';
 import { priceOracleProxyCommands, processPriceOracleProxyEvent } from './Event/PriceOracleProxyEvent';
-import { maximillionCommands, processMaximillionEvent } from './Event/MaximillionEvent';
 import { invariantCommands, processInvariantEvent } from './Event/InvariantEvent';
 import { expectationCommands, processExpectationEvent } from './Event/ExpectationEvent';
 import { timelockCommands, processTimelockEvent } from './Event/TimelockEvent';
@@ -748,21 +747,6 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
       return processPriceOracleProxyEvent(world, event.val, from);
     },
     { subExpressions: priceOracleProxyCommands() }
-  ),
-
-  new Command<{ event: EventV }>(
-    `
-      #### Maximillion
-
-      * "Maximillion ...event" - Runs given Maximillion event
-      * E.g. "Maximillion Deploy (CToken cETH Address)"
-    `,
-    'Maximillion',
-    [new Arg('event', getEventV, { variadic: true })],
-    (world, from, { event }) => {
-      return processMaximillionEvent(world, event.val, from);
-    },
-    { subExpressions: maximillionCommands() }
   ),
 
   new Command<{ event: EventV }>(

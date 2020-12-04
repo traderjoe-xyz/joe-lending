@@ -24,53 +24,6 @@ async function totalCompAccrued(comptroller, user) {
   return (await compAccrued(comptroller, user)).plus(await compBalance(comptroller, user));
 }
 
-describe('Flywheel upgrade', () => {
-  describe('becomes the comptroller', () => {
-    it('adds the comp markets', async () => {
-      let root = saddle.accounts[0];
-      let unitroller = await makeComptroller({kind: 'unitroller-g2'});
-      let compMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
-      }));
-      compMarkets = compMarkets.map(c => c._address);
-      unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, compMarkets});
-    });
-
-    it('adds the other markets', async () => {
-      let root = saddle.accounts[0];
-      let unitroller = await makeComptroller({kind: 'unitroller-g2'});
-      let allMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
-      }));
-      allMarkets = allMarkets.map(c => c._address);
-      unitroller = await makeComptroller({
-        kind: 'unitroller-g3',
-        unitroller,
-        compMarkets: allMarkets.slice(0, 1),
-        otherMarkets: allMarkets.slice(1)
-      });
-      expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets);
-    });
-
-    it('_supportMarket() adds to all markets, and only once', async () => {
-      let root = saddle.accounts[0];
-      let unitroller = await makeComptroller({kind: 'unitroller-g3'});
-      let allMarkets = [];
-      for (let _ of Array(10)) {
-        allMarkets.push(await makeCToken({comptroller: unitroller, supportMarket: true}));
-      }
-      expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets.map(c => c._address));
-      expect(
-        makeComptroller({
-          kind: 'unitroller-g3',
-          unitroller,
-          otherMarkets: [allMarkets[0]._address]
-        })
-      ).rejects.toRevert('revert market already added');
-    });
-  });
-});
-
 describe('Flywheel', () => {
   let root, a1, a2, a3, accounts;
   let comptroller, cLOW, cREP, cZRX, cEVIL;
@@ -115,7 +68,6 @@ describe('Flywheel', () => {
       const mkt = await makeCToken({
         comptroller: comptroller,
         supportMarket: true,
-        addCompMarket: false,
       });
       await send(comptroller, 'setBlockNumber', [100]);
       await send(comptroller, 'harnessUpdateCompBorrowIndex', [
@@ -181,8 +133,7 @@ describe('Flywheel', () => {
     it('should not update index on non-COMP markets', async () => {
       const mkt = await makeCToken({
         comptroller: comptroller,
-        supportMarket: true,
-        addCompMarket: false
+        supportMarket: true
       });
       await send(comptroller, 'setBlockNumber', [100]);
       await send(comptroller, 'harnessUpdateCompSupplyIndex', [
@@ -321,8 +272,7 @@ describe('Flywheel', () => {
     it('should not revert or distribute when called with non-COMP market', async () => {
       const mkt = await makeCToken({
         comptroller: comptroller,
-        supportMarket: true,
-        addCompMarket: false,
+        supportMarket: true
       });
 
       await send(comptroller, "harnessDistributeBorrowerComp", [mkt._address, a1, etherExp(1.1)]);
@@ -402,8 +352,7 @@ describe('Flywheel', () => {
     it('should not revert or distribute when called with non-COMP market', async () => {
       const mkt = await makeCToken({
         comptroller: comptroller,
-        supportMarket: true,
-        addCompMarket: false,
+        supportMarket: true
       });
 
       await send(comptroller, "harnessDistributeSupplierComp", [mkt._address, a1]);

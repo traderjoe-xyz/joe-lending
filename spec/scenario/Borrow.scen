@@ -17,6 +17,19 @@ Test "Borrow some BAT and enters BAT if BAT not entered"
     Assert True (Comptroller CheckMembership Geoff cZRX)
     Assert True (Comptroller CheckMembership Geoff cBAT)
 
+Test "Borrow some BAT with credit limit and enters BAT if BAT not entered"
+    NewComptroller price:1.0
+    NewCToken BAT cBAT
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    Support cBAT collateralFactor:0.5
+    Comptroller SetCreditLimit Geoff 100e18
+    Borrow Geoff 1e18 cBAT
+    Assert Equal (cToken cBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance cBAT) (Exactly 9e18)
+    Assert Equal (Comptroller MembershipLength Geoff) (Exactly 1)
+    Assert True (Comptroller CheckMembership Geoff cBAT)
+
 Test "Borrow some BAT fails, but user still entered"
     NewComptroller price:1.0
     NewCToken ZRX cZRX

@@ -34,43 +34,6 @@ async function makeComptroller(opts = {}) {
     return Object.assign(comptroller, { priceOracle });
   }
 
-  if (kind == 'unitroller-g2') {
-    const unitroller = opts.unitroller || await deploy('Unitroller');
-    const comptroller = await deploy('ComptrollerScenarioG2');
-    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
-    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const liquidationIncentive = etherMantissa(1);
-
-    await send(unitroller, '_setPendingImplementation', [comptroller._address]);
-    await send(comptroller, '_become', [unitroller._address]);
-    mergeInterface(unitroller, comptroller);
-    await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
-    await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
-
-    return Object.assign(unitroller, { priceOracle });
-  }
-
-  if (kind == 'unitroller-g3') {
-    const unitroller = opts.unitroller || await deploy('Unitroller');
-    const comptroller = await deploy('ComptrollerScenarioG3');
-    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
-    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-    const liquidationIncentive = etherMantissa(1);
-    const compRate = etherUnsigned(dfn(opts.compRate, 1e18));
-    const compMarkets = opts.compMarkets || [];
-    const otherMarkets = opts.otherMarkets || [];
-
-    await send(unitroller, '_setPendingImplementation', [comptroller._address]);
-    await send(comptroller, '_become', [unitroller._address, compRate, compMarkets, otherMarkets]);
-    mergeInterface(unitroller, comptroller);
-    await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
-    await send(unitroller, '_setCloseFactor', [closeFactor]);
-    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
-
-    return Object.assign(unitroller, { priceOracle });
-  }
-
   if (kind == 'unitroller') {
     const unitroller = opts.unitroller || await deploy('Unitroller');
     const comptroller = await deploy('ComptrollerHarness');
@@ -167,10 +130,6 @@ async function makeCToken(opts = {}) {
 
   if (opts.supportMarket) {
     await send(comptroller, '_supportMarket', [cToken._address]);
-  }
-
-  if (opts.addCompMarket) {
-    await send(comptroller, '_addCompMarket', [cToken._address]);
   }
 
   if (opts.underlyingPrice) {

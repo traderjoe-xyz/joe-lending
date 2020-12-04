@@ -13,7 +13,7 @@ import "./Governance/Comp.sol";
  * @title Compound's Comptroller Contract
  * @author Compound (modified by Arr00)
  */
-contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
+contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
@@ -64,6 +64,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
     /// @notice Emitted when supply cap guardian is changed
     event NewSupplyCapGuardian(address oldSupplyCapGuardian, address newSupplyCapGuardian);
+
+    /// @notice Emitted when protocol's credit limit has changed
+    event CreditLimitChanged(address protocol, uint creditLimit);
 
     /// @notice The threshold above which the flywheel transfers COMP, in wei
     uint public constant compClaimThreshold = 0.001e18;
@@ -267,7 +270,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -403,7 +406,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -459,7 +462,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -528,7 +531,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -591,7 +594,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -638,7 +641,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // Shh - we don't ever want this hook to be marked pure
         if (false) {
-            maxAssets = maxAssets;
+            closeFactorMantissa = closeFactorMantissa;
         }
     }
 
@@ -763,6 +766,11 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
                 // sumBorrowPlusEffects += oraclePrice * borrowAmount
                 vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(vars.oraclePrice, borrowAmount, vars.sumBorrowPlusEffects);
             }
+        }
+
+        // If credit limit is set, no need to consider collateral.
+        if (creditLimits[account] > 0) {
+            vars.sumCollateral = creditLimits[account];
         }
 
         // These are safe, as the underflow condition is checked first
@@ -931,8 +939,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        // TODO: isComped is unused. Remove it in v2.
-        markets[address(cToken)] = Market({isListed: true, isComped: true, collateralFactorMantissa: 0});
+        markets[address(cToken)] = Market({isListed: true, collateralFactorMantissa: 0});
 
         _addMarketInternal(address(cToken));
 
@@ -1085,6 +1092,18 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     function _become(Unitroller unitroller) public {
         require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
         require(unitroller._acceptImplementation() == 0, "change not authorized");
+    }
+
+    /**
+      * @notice Sets whitelisted protocol's credit limit
+      * @param protocol The address of the protocol
+      * @param creditLimit The credit limit
+      */
+    function _setCreditLimit(address protocol, uint creditLimit) public {
+        require(msg.sender == admin, "only admin can set protocol credit limit");
+
+        creditLimits[protocol] = creditLimit;
+        emit CreditLimitChanged(protocol, creditLimit);
     }
 
     /**
