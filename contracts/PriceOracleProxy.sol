@@ -43,6 +43,9 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Admin address
     address public admin;
 
+    /// @notice cEthAddress address
+    address public cEthAddress;
+
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorV3Interface) public aggregators;
 
@@ -57,8 +60,9 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /**
      * @param admin_ The address of admin to set aggregators
      */
-    constructor(address admin_) public {
+    constructor(address admin_, address cEthAddress_) public {
         admin = admin_;
+        cEthAddress = cEthAddress_;
 
         yVaults[cyY3CRVAddress] = 0x9cA85572E6A3EbF24dEDd195623F188735A5179f; // y-vault 3Crv
         curveSwap[cyY3CRVAddress] = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7; // curve 3 pool
@@ -81,6 +85,11 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         AggregatorV3Interface aggregator = aggregators[cTokenAddress];
         if (address(aggregator) != address(0)) {
             uint price = getPriceFromChainlink(aggregator);
+
+            // cETH doesn't have underlying token.
+            if (cTokenAddress == cEthAddress) {
+                return price;
+            }
 
             uint underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
             return mul_(price, 10**(18 - underlyingDecimals));
