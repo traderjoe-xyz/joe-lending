@@ -6,6 +6,7 @@ interface PriceOracleProxyMethods {
   getUnderlyingPrice(asset: string): Callable<number>
   v1PriceOracle(): Callable<string>;
   setSaiPrice(amount: encodedNumber): Sendable<number>
+  _setAggregators(cTokens:string[], aggregators:string[]): Sendable<void>
 }
 
 export interface PriceOracleProxy extends Contract {

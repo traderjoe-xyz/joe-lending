@@ -3,6 +3,7 @@
 Test "Change the delegate"
     NewComptroller
     NewCToken DEL cDEL
+    PriceOracleProxy SetAggregators (cDEL) (MockAggregator)
     Support cDEL collateralFactor:0.5
     Prep Jared Some DEL cDEL
     Mint Jared 100e18 cDEL

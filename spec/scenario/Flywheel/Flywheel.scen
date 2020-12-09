@@ -1,8 +1,8 @@
 -- NewComptroller, but with markets listed so that we can make them comp markets in constructor
 Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e18
     Unitroller Deploy
-    PriceOracle Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    MockAggregator Deploy Fixed price
+    PriceOracleProxy Deploy Admin (Address Zero)
     ComptrollerImpl Deploy Scenario ComptrollerScen
     Unitroller SetPendingImpl ComptrollerScen
     ComptrollerImpl ComptrollerScen Become
@@ -12,6 +12,7 @@ Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e1
     Comptroller LiquidationIncentive 1.1
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
+    PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     --
@@ -143,6 +144,7 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     FlywheelComptroller
     InitSpeeds
     NewCToken DAI cDAI
+    PriceOracleProxy SetAggregators (cDAI) (MockAggregator)
     --
     Support cDAI collateralFactor:0.5
     Comptroller SetCompSpeeds (cZRX cBAT cDAI) (0.5e18 0.5e18 0.5e18)

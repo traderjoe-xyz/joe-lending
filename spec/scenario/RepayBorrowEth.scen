@@ -2,8 +2,8 @@
 
 Macro SetupBorrow borrowRate
     NewComptroller price:1.0 -- TODO: This should really be a price for a specific asset
-    ListedCToken ZRX cZRX borrowRate
     ListedEtherToken cETH borrowRate 0.005e9
+    ListedCToken ZRX cZRX borrowRate
     SetCollateralFactor cZRX collateralFactor:0.5
     SetCollateralFactor cETH collateralFactor:0.5
     Donate cETH 0.003e18

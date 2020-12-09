@@ -3,6 +3,7 @@ Test "Attempt to borrow over set cap ERC20"
     NewComptroller price:1.0
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
+    PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
     Comptroller SetMarketBorrowCaps (cBAT) (0.5e18)
     Assert Equal (Comptroller BorrowCaps cBAT) (Exactly 0.5e18)
     Give cBAT 10e18 BAT -- Faucet some bat to borrow
@@ -22,6 +23,7 @@ Test "Attempt to borrow at set cap ERC20"
     NewComptroller price:1.0
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
+    PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
     Comptroller SetMarketBorrowCaps (cBAT) (1000000000000000001)
     Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
@@ -41,6 +43,7 @@ Test "Attempt to borrow below set cap ERC20"
     NewComptroller price:1.0
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
+    PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
     Comptroller SetMarketBorrowCaps (cBAT) (10e18)
     Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
@@ -57,11 +60,9 @@ Test "Attempt to borrow below set cap ERC20"
     Assert True (Comptroller CheckMembership Geoff cBAT)
 
 Test "Borrow some Eth over cap"
-    NewComptroller price:1.0
+    EthComptroller price:1.0 initialExchangeRate:0.005e9 collateralFactor:0.5
     ListedCToken ZRX cZRX
-    ListedEtherToken cETH initialExchangeRate:0.005e9
     SetCollateralFactor cZRX collateralFactor:0.5
-    SetCollateralFactor cETH collateralFactor:0.5
     Comptroller SetMarketBorrowCaps (cETH) (0.0001e18)
     Donate cETH 0.003e18
     Prep Geoff Some ZRX cZRX
@@ -73,11 +74,10 @@ Test "Borrow some Eth over cap"
     Assert Equal (EtherBalance cETH) 0.003e18
 
 Test "Borrow some Eth enters Eth and succeeds when Eth not entered. At borrow cap"
-    NewComptroller price:1.0
+    EthComptroller price:1.0 initialExchangeRate:0.005e9 collateralFactor:0.5
     ListedCToken ZRX cZRX
-    ListedEtherToken cETH initialExchangeRate:0.005e9
+    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     SetCollateralFactor cZRX collateralFactor:0.5
-    SetCollateralFactor cETH collateralFactor:0.5
     Comptroller SetMarketBorrowCaps (cETH) (1000000000000001)
     Donate cETH 0.003e18
     Prep Geoff Some ZRX cZRX
@@ -91,11 +91,10 @@ Test "Borrow some Eth enters Eth and succeeds when Eth not entered. At borrow ca
     Assert True (Comptroller CheckMembership Geoff cETH)
 
 Test "Borrow some Eth enters Eth and succeeds when Eth not entered. At under borrow cap"
-    NewComptroller price:1.0
+    EthComptroller price:1.0 initialExchangeRate:0.005e9 collateralFactor:0.5
     ListedCToken ZRX cZRX
-    ListedEtherToken cETH initialExchangeRate:0.005e9
+    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     SetCollateralFactor cZRX collateralFactor:0.5
-    SetCollateralFactor cETH collateralFactor:0.5
     Comptroller SetMarketBorrowCaps (cETH) (0.01e18)
     Donate cETH 0.003e18
     Prep Geoff Some ZRX cZRX
@@ -109,21 +108,19 @@ Test "Borrow some Eth enters Eth and succeeds when Eth not entered. At under bor
     Assert True (Comptroller CheckMembership Geoff cETH)
 
 Test "Setting borrow cap restricted to admin"
-    NewComptroller price:1.0
+    EthComptroller price:1.0 initialExchangeRate:0.005e9 collateralFactor:0.5
     ListedCToken ZRX cZRX
-    ListedEtherToken cETH initialExchangeRate:0.005e9
+    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     SetCollateralFactor cZRX collateralFactor:0.5
-    SetCollateralFactor cETH collateralFactor:0.5
     AllowFailures
     From Robert (Comptroller SetMarketBorrowCaps (cETH) (0.01e18))
     Assert Revert
 
 Test "Borrow cap guardian can set borrow caps"
-    NewComptroller price:1.0
+    EthComptroller price:1.0 initialExchangeRate:0.005e9 collateralFactor:0.5
     ListedCToken ZRX cZRX
-    ListedEtherToken cETH initialExchangeRate:0.005e9
+    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     SetCollateralFactor cZRX collateralFactor:0.5
-    SetCollateralFactor cETH collateralFactor:0.5
     Comptroller SetBorrowCapGuardian Geoff
     From Geoff (Comptroller SetMarketBorrowCaps (cZRX) (0.5e18))
     AllowFailures
@@ -145,6 +142,7 @@ Test "SetBorrowCaps works correctly too"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     NewCToken USDC cUSDC
+    PriceOracleProxy SetAggregators (cZRX cBAT cUSDC) (MockAggregator MockAggregator MockAggregator)
     Comptroller SetMarketBorrowCaps (cBAT cUSDC) (0.5e18 1000001)
     Assert Equal (Comptroller BorrowCaps cBAT) (Exactly 0.5e18)
     Assert Equal (Comptroller BorrowCaps cUSDC) (Exactly 1000001)
@@ -167,4 +165,3 @@ Test "SetBorrowCaps works correctly too"
     Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 0)
     Assert Equal (Erc20 BAT TokenBalance cBAT) (Exactly 10e18)
     Assert Equal (Erc20 USDC TokenBalance Geoff) (Exactly 1e6)
-

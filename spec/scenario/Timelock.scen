@@ -143,6 +143,7 @@ Test "Reduce reserves for CErc20 from Timelock and send reserves to external add
 Test "Reduce reserves for CEther from Timelock and send reserves to external address"
     NewComptroller
     ListedEtherToken cETH initialExchangeRate:1e9
+    PriceOracleProxy SetAggregators (cETH) (MockAggregator)
     CallMintEth Geoff 50e18 cETH
     Assert Equal (Erc20 cETH TokenBalance Geoff) (Exactly 500e8)
     Assert Equal (CToken cETH UnderlyingBalance Geoff) (Exactly 50e18)
@@ -185,8 +186,7 @@ Test "Reduce reserves for CEther from Timelock and send reserves to external add
 
 Test "Set Pending Comptroller implementation on Unitroller from Timelock"
     Unitroller Deploy
-    PriceOracle Deploy Simple
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero) -- if listing cEther use ListedEtherToken to replace proxy
+    PriceOracleProxy Deploy Admin (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become

@@ -15,12 +15,12 @@ Test "Fail when is not a comptroller"
     NewCToken ZRX cZRX
     Invariant Remains (CToken cZRX Comptroller) (Unitroller Address)
     AllowFailures
-    From Root (CToken cZRX SetComptroller (PriceOracle Address))
+    From Root (CToken cZRX SetComptroller (PriceOracleProxy Address))
     Assert Revert
 
 Test "Fail to set comptroller as not admin"
     NewComptroller
     NewCToken ZRX cZRX
     AllowFailures
-    From Geoff (CToken cZRX SetComptroller (PriceOracle Address))
+    From Geoff (CToken cZRX SetComptroller (PriceOracleProxy Address))
     Assert Failure UNAUTHORIZED SET_COMPTROLLER_OWNER_CHECK
