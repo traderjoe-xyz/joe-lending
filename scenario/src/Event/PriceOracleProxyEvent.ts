@@ -3,6 +3,7 @@ import {addAction, World} from '../World';
 import {PriceOracleProxy} from '../Contract/PriceOracleProxy';
 import {buildPriceOracleProxy} from '../Builder/PriceOracleProxyBuilder';
 import {invoke} from '../Invokation';
+import {CToken} from '../Contract/CToken';
 import {
   getAddressV,
   getEventV,
@@ -17,8 +18,8 @@ import {
 } from '../Value';
 import {Arg, Command, processCommandEvent, View} from '../Command';
 import {getPriceOracleProxy} from '../ContractLookup';
+import {getCTokenV} from '../Value/CTokenValue';
 import {verify} from '../Verify';
-import {encodedNumber} from '../Encoding';
 
 async function genPriceOracleProxy(world: World, from: string, params: Event): Promise<World> {
   let priceOracleProxy;
@@ -53,13 +54,21 @@ async function setSaiPrice(world: World, from: string, priceOracleProxy: PriceOr
   );
 }
 
+async function setAggregators(world: World, from: string, priceOracleProxy: PriceOracleProxy, cTokens: CToken[], aggregators: string[]): Promise<World> {
+  return addAction(
+    world,
+    `Set cToken's aggregator to ${aggregators}`,
+    await invoke(world, priceOracleProxy.methods._setAggregators(cTokens.map(c => c._address), aggregators), from)
+  );
+}
+
 export function priceOracleProxyCommands() {
   return [
     new Command<{params: EventV}>(`
         #### Deploy
 
         * "Deploy ...params" - Generates a new price oracle proxy
-          * E.g. "PriceOracleProxy Deploy (Unitroller Address) (PriceOracle Address) (cEther Address)"
+          * E.g. "PriceOracleProxy Deploy (Unitroller Address) (cEther Address)"
       `,
       "Deploy",
       [
@@ -95,6 +104,21 @@ export function priceOracleProxyCommands() {
         new Arg("amount", getExpNumberV)
       ],
       (world, from, {priceOracleProxy, amount}) => setSaiPrice(world, from, priceOracleProxy, amount)
+    ),
+
+    new Command<{priceOracleProxy: PriceOracleProxy, cTokens: CToken[], aggregators: AddressV[]}>(`
+        #### SetAggregators
+
+        * "SetAggregators (<CToken> ...) (<aggregators> ...)" - Sets the CToken's aggregator
+          * E.g. "PriceOracleProxy SetAggregators (cZRX cUSDC) (Address, Address)"
+      `,
+      "SetAggregators",
+      [
+        new Arg("priceOracleProxy", getPriceOracleProxy, {implicit: true}),
+        new Arg("cTokens", getCTokenV, {mapped: true}),
+        new Arg("aggregators", getAddressV, {mapped: true})
+      ],
+      (world, from, {priceOracleProxy, cTokens, aggregators}) => setAggregators(world, from, priceOracleProxy, cTokens, aggregators.map(a => a.val))
     )
   ];
 }

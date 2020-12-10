@@ -23,17 +23,6 @@ async function makeComptroller(opts = {}) {
     return await deploy('FalseMarkerMethodComptroller');
   }
 
-  if (kind == 'v1-no-proxy') {
-    const comptroller = await deploy('ComptrollerHarness');
-    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
-    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
-
-    await send(comptroller, '_setCloseFactor', [closeFactor]);
-    await send(comptroller, '_setPriceOracle', [priceOracle._address]);
-
-    return Object.assign(comptroller, { priceOracle });
-  }
-
   if (kind == 'unitroller') {
     const unitroller = opts.unitroller || await deploy('Unitroller');
     const comptroller = await deploy('ComptrollerHarness');
@@ -185,6 +174,11 @@ async function makePriceOracle(opts = {}) {
   if (kind == 'simple') {
     return await deploy('SimplePriceOracle');
   }
+}
+
+async function makeMockAggregator(opts = {}) {
+  const answer = dfn(opts.answer, etherMantissa(1));
+  return await deploy('MockAggregator', [answer]);
 }
 
 async function makeToken(opts = {}) {
@@ -359,6 +353,7 @@ module.exports = {
   makeCToken,
   makeInterestRateModel,
   makePriceOracle,
+  makeMockAggregator,
   makeToken,
 
   balanceOf,

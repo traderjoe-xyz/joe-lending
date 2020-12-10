@@ -3,7 +3,6 @@ import {
   checkExpectations,
   checkInvariants,
   clearInvariants,
-  describeUser,
   holdInvariants,
   setEvent,
   World
@@ -22,6 +21,7 @@ import { erc20Commands, processErc20Event } from './Event/Erc20Event';
 import { interestRateModelCommands, processInterestRateModelEvent } from './Event/InterestRateModelEvent';
 import { priceOracleCommands, processPriceOracleEvent } from './Event/PriceOracleEvent';
 import { priceOracleProxyCommands, processPriceOracleProxyEvent } from './Event/PriceOracleProxyEvent';
+import { mockAggregatorCommands, processMockAggregatorEvent } from './Event/AggregatorEvent';
 import { invariantCommands, processInvariantEvent } from './Event/InvariantEvent';
 import { expectationCommands, processExpectationEvent } from './Event/ExpectationEvent';
 import { timelockCommands, processTimelockEvent } from './Event/TimelockEvent';
@@ -41,7 +41,6 @@ import { buildContractEvent } from './EventBuilder';
 import { Counter } from './Contract/Counter';
 import { CompoundLens } from './Contract/CompoundLens';
 import { Reservoir } from './Contract/Reservoir';
-import Web3 from 'web3';
 
 export class EventProcessingError extends Error {
   error: Error;
@@ -739,7 +738,7 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
       #### PriceOracleProxy
 
       * "PriceOracleProxy ...event" - Runs given Price Oracle event
-      * E.g. "PriceOracleProxy Deploy (Unitroller Address) (PriceOracle Address) (CToken cETH Address)"
+      * E.g. "PriceOracleProxy Deploy (Unitroller Address) (CToken cETH Address)"
     `,
     'PriceOracleProxy',
     [new Arg('event', getEventV, { variadic: true })],
@@ -747,6 +746,21 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
       return processPriceOracleProxyEvent(world, event.val, from);
     },
     { subExpressions: priceOracleProxyCommands() }
+  ),
+
+  new Command<{ event: EventV }>(
+    `
+      #### MockAggregator
+
+      * "MockAggregator ...event" - Runs given Mock Aggregator event
+      * E.g. "MockAggregator Deploy"
+    `,
+    'MockAggregator',
+    [new Arg('event', getEventV, { variadic: true })],
+    (world, from, { event }) => {
+      return processMockAggregatorEvent(world, event.val, from);
+    },
+    { subExpressions: mockAggregatorCommands() }
   ),
 
   new Command<{ event: EventV }>(
