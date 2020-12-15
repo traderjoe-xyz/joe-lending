@@ -724,6 +724,11 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint redeemTokens,
         uint borrowAmount) internal view returns (Error, uint, uint) {
 
+        // If credit limit is set to MAX, no need to check account liquidity.
+        if (creditLimits[account] == uint(-1)) {
+            return (Error.NO_ERROR, uint(-1), 0);
+        }
+
         AccountLiquidityLocalVars memory vars; // Holds all our calculation results
         uint oErr;
 
