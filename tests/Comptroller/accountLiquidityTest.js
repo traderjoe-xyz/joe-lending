@@ -4,6 +4,7 @@ const {
   enterMarkets,
   quickMint
 } = require('../Utils/Compound');
+const { UInt256Max } = require('../Utils/Ethereum');
 
 describe('Comptroller', () => {
   let root, accounts;
@@ -153,4 +154,24 @@ describe('Comptroller', () => {
       expect(shortfall).toEqualNumber(0);
     });
   });
+
+  it.skip("max credit limit saves gas", async () => {
+    const collateralFactor = 0.5, exchangeRate = 1, underlyingPrice = 1;
+    const cToken = await makeCToken({supportMarket: true, collateralFactor, exchangeRate, underlyingPrice});
+    const from = accounts[0], balance = 1e7, amount = 1e6, borrowAmount = 1e4;
+    await enterMarkets([cToken], from);
+    await send(cToken.underlying, 'harnessSetBalance', [from, balance], {from});
+    await send(cToken.underlying, 'approve', [cToken._address, balance], {from});
+    await send(cToken, 'mint', [amount], {from});
+
+    const result1 = await send(cToken, 'borrow', [borrowAmount], {from});
+    expect(result1).toSucceed();
+    console.log('result1', result1.gasUsed); // 192278
+
+    await send(cToken.comptroller, '_setCreditLimit', [from, UInt256Max()]);
+
+    const result2 = await send(cToken, 'borrow', [borrowAmount], {from});
+    expect(result2).toSucceed();
+    console.log('result2', result2.gasUsed); // 107694
+  })
 });

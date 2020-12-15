@@ -1,6 +1,7 @@
 const {
   etherMantissa,
-  both
+  both,
+  UInt256Max
 } = require('../Utils/Ethereum');
 
 const {
@@ -196,6 +197,18 @@ describe('Comptroller', () => {
       const cToken = await makeCToken();
       const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit]);
       expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: creditLimit.toString()});
+    });
+
+    it("succeeds and sets to max credit limit", async () => {
+      const cToken = await makeCToken();
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], UInt256Max()]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: UInt256Max().toString()});
+    });
+
+    it("succeeds and sets to 0 credit limit", async () => {
+      const cToken = await makeCToken();
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], 0]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: '0'});
     });
   });
 
