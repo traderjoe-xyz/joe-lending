@@ -166,12 +166,12 @@ describe('Comptroller', () => {
 
     const result1 = await send(cToken, 'borrow', [borrowAmount], {from});
     expect(result1).toSucceed();
-    console.log('result1', result1.gasUsed); // 192278
+    console.log('result1', result1.gasUsed); // 180466
 
     await send(cToken.comptroller, '_setCreditLimit', [from, UInt256Max()]);
 
     const result2 = await send(cToken, 'borrow', [borrowAmount], {from});
     expect(result2).toSucceed();
-    console.log('result2', result2.gasUsed); // 107694
+    console.log('result2', result2.gasUsed); // 95882
   })
 });
