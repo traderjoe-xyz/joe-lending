@@ -43,7 +43,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     uint public liquidationIncentiveMantissa;
 
     /**
-     * @notice Per-account mapping of "assets you are in", capped by maxAssets
+     * @notice Per-account mapping of "assets you are in"
      */
     mapping(address => CToken[]) public accountAssets;
 

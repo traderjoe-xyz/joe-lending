@@ -354,7 +354,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             require(msg.sender == cToken, "sender must be cToken");
 
             // attempt to add borrower to the market
-            Error err = addToMarketInternal(CToken(msg.sender), borrower);
+            Error err = addToMarketInternal(CToken(cToken), borrower);
             if (err != Error.NO_ERROR) {
                 return uint(err);
             }
@@ -362,11 +362,6 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             // it should be impossible to break the important invariant
             assert(markets[cToken].accountMembership[borrower]);
         }
-
-        if (oracle.getUnderlyingPrice(CToken(cToken)) == 0) {
-            return uint(Error.PRICE_ERROR);
-        }
-
 
         uint borrowCap = borrowCaps[cToken];
         // Borrow cap of 0 corresponds to unlimited borrowing
