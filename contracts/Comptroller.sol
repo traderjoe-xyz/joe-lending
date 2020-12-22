@@ -65,8 +65,8 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when supply cap guardian is changed
     event NewSupplyCapGuardian(address oldSupplyCapGuardian, address newSupplyCapGuardian);
 
-    /// @notice Emitted when protocol's credit limit has changed
-    event CreditLimitChanged(address protocol, uint creditLimit);
+    /// @notice Emitted when allow list is changed
+    event AllowListChanged(address protocol, bool allow);
 
     /// @notice The threshold above which the flywheel transfers COMP, in wei
     uint public constant compClaimThreshold = 0.001e18;
@@ -719,8 +719,8 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint redeemTokens,
         uint borrowAmount) internal view returns (Error, uint, uint) {
 
-        // If credit limit is set to MAX, no need to check account liquidity.
-        if (creditLimits[account] == uint(-1)) {
+        // If it's in allowlist, no need to check liquidity.
+        if (allowlist[account]) {
             return (Error.NO_ERROR, uint(-1), 0);
         }
 
@@ -766,11 +766,6 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
                 // sumBorrowPlusEffects += oraclePrice * borrowAmount
                 vars.sumBorrowPlusEffects = mul_ScalarTruncateAddUInt(vars.oraclePrice, borrowAmount, vars.sumBorrowPlusEffects);
             }
-        }
-
-        // If credit limit is set, no need to consider collateral.
-        if (creditLimits[account] > 0) {
-            vars.sumCollateral = creditLimits[account];
         }
 
         // These are safe, as the underflow condition is checked first
@@ -1095,15 +1090,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     /**
-      * @notice Sets whitelisted protocol's credit limit
+      * @notice Adds or removes protocol to allowlist
       * @param protocol The address of the protocol
-      * @param creditLimit The credit limit
+      * @param allow Add to allowlist or remove
       */
-    function _setCreditLimit(address protocol, uint creditLimit) public {
-        require(msg.sender == admin, "only admin can set protocol credit limit");
+    function _setAllowlist(address protocol, bool allow) public {
+        require(msg.sender == admin, "only admin can set allowlist");
 
-        creditLimits[protocol] = creditLimit;
-        emit CreditLimitChanged(protocol, creditLimit);
+        allowlist[protocol] = allow;
+        emit AllowListChanged(protocol, allow);
     }
 
     /**
