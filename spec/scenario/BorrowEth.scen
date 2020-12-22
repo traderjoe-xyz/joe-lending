@@ -17,15 +17,15 @@ Test "Borrow some Eth enters Eth and succeeds when Eth not entered"
     Assert Equal (Comptroller MembershipLength Geoff) (Exactly 2)
     Assert True (Comptroller CheckMembership Geoff cETH)
 
-Test "Borrow some Eth with credit limit and enters Eth if Eth not entered"
+Test "Borrow some Eth with allowlist and enters Eth if Eth not entered"
     NewComptroller price:1.0
     ListedEtherToken cETH initialExchangeRate:0.005e9
     PriceOracleProxy SetAggregators (cETH) (MockAggregator)
     Donate cETH 0.003e18
-    Comptroller SetCreditLimit Geoff 0.5e18
+    Comptroller SetAllowlist Geoff True
     BorrowEth Geoff 0.001e18 cETH
     Assert Equal (EtherBalance cETH) 0.002e18
-    Assert Equal (Comptroller Liquidity Geoff) 4.99e17
+    Assert Equal (Comptroller Liquidity Geoff) 1.157920892373162e77 -- Can't use UInt256Max since NumberV() will truncate the number
     Assert Equal (Comptroller MembershipLength Geoff) (Exactly 1)
     Assert True (Comptroller CheckMembership Geoff cETH)
 

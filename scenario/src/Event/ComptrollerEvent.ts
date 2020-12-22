@@ -364,16 +364,14 @@ async function setBlockNumber(world: World, from: string, comptroller: Comptroll
     `Set Governor blockNumber to ${blockNumber.show()}`,
     invokation
   );
-
-  return world;
 }
 
-async function setCreditLimit(world: World, from: string, comptroller: Comptroller, protocol: string, creditLimit: NumberV): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCreditLimit(protocol, creditLimit.encode()), from, ComptrollerErrorReporter);
+async function setAllowlist(world: World, from: string, comptroller: Comptroller, protocol: string, allow: boolean): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setAllowlist(protocol, allow), from, ComptrollerErrorReporter);
 
   return addAction(
     world,
-    `Set ${protocol} credit limit to ${creditLimit.show()}`,
+    `Add or remove ${protocol} to allowlist`,
     invokation
   );
 }
@@ -725,19 +723,19 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, blockNumber}) => setBlockNumber(world, from, comptroller, blockNumber)
     ),
-    new Command<{comptroller: Comptroller, protocol: AddressV, creditLimit: NumberV}>(`
-        #### SetCreditLimit
+    new Command<{comptroller: Comptroller, protocol: AddressV, allow: BoolV}>(`
+        #### SetAllowlist
 
-        * "Comptroller SetCreditLimit <Protocol> <CreditLimit>" - Sets the credit limit of a protocol
-        * E.g. "Comptroller SetCreditLimit Geoff 100"
+        * "Comptroller SetAllowlist <Protocol> <Allow>" - Adds or removes protocol to allowlist
+        * E.g. "Comptroller SetAllowlist Geoff True"
       `,
-      'SetCreditLimit',
+      'SetAllowlist',
       [
         new Arg('comptroller', getComptroller, {implicit: true}),
         new Arg('protocol', getAddressV),
-        new Arg('creditLimit', getNumberV)
+        new Arg('allow', getBoolV)
       ],
-      (world, from, {comptroller, protocol, creditLimit}) => setCreditLimit(world, from, comptroller, protocol.val, creditLimit)
+      (world, from, {comptroller, protocol, allow}) => setAllowlist(world, from, comptroller, protocol.val, allow.val)
     ),
   ];
 }

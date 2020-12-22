@@ -185,30 +185,22 @@ describe('Comptroller', () => {
     });
   });
 
-  describe('_setCreditLimit', () => {
-    const creditLimit = etherMantissa(500);
-
+  describe('_setAllowlist', () => {
     it("fails if not called by admin", async () => {
       const cToken = await makeCToken(root);
-      await expect(send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit], {from: accounts[0]})).rejects.toRevert("revert only admin can set protocol credit limit");
+      await expect(send(cToken.comptroller, '_setAllowlist', [accounts[0], true], {from: accounts[0]})).rejects.toRevert("revert only admin can set allowlist");
     });
 
-    it("succeeds and sets credit limit", async () => {
+    it("succeeds and adds account to allowlist", async () => {
       const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit]);
-      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: creditLimit.toString()});
+      const result = await send(cToken.comptroller, '_setAllowlist', [accounts[0], true]);
+      expect(result).toHaveLog('AllowListChanged', {protocol: accounts[0], allow: true});
     });
 
-    it("succeeds and sets to max credit limit", async () => {
+    it("succeeds and removes account from allowlist", async () => {
       const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], UInt256Max()]);
-      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: UInt256Max().toString()});
-    });
-
-    it("succeeds and sets to 0 credit limit", async () => {
-      const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], 0]);
-      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: '0'});
+      const result = await send(cToken.comptroller, '_setAllowlist', [accounts[0], false]);
+      expect(result).toHaveLog('AllowListChanged', {protocol: accounts[0], allow: false});
     });
   });
 
