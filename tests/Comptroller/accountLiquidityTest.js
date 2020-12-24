@@ -87,8 +87,8 @@ describe('Comptroller', () => {
       expect(shortfall).toEqualNumber(0);
     });
 
-    it("has account liquidity with allowlist", async () => {
-      const collateralFactor = 0.5, underlyingPrice = 1, user = accounts[1], amount = 1e6;
+    it("has account liquidity with credit limit", async () => {
+      const collateralFactor = 0.5, underlyingPrice = 1, user = accounts[1], amount = 1e6, creditLimit = 500;
       const cToken = await makeCToken({supportMarket: true, collateralFactor, underlyingPrice});
       let error, liquidity, shortfall;
 
@@ -97,11 +97,11 @@ describe('Comptroller', () => {
       expect(liquidity).toEqualNumber(0);
       expect(shortfall).toEqualNumber(0);
 
-      await send(cToken.comptroller, '_setAllowlist', [user, true]);
+      await send(cToken.comptroller, '_setCreditLimit', [user, creditLimit]);
 
       ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
       expect(error).toEqualNumber(0);
-      expect(liquidity).toEqualNumber(UInt256Max());
+      expect(liquidity).toEqualNumber(creditLimit);
       expect(shortfall).toEqualNumber(0);
 
       await enterMarkets([cToken], user);
@@ -109,10 +109,10 @@ describe('Comptroller', () => {
 
       ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
       expect(error).toEqualNumber(0);
-      expect(liquidity).toEqualNumber(UInt256Max());
+      expect(liquidity).toEqualNumber(creditLimit);
       expect(shortfall).toEqualNumber(0);
 
-      await send(cToken.comptroller, '_setAllowlist', [user, false]);
+      await send(cToken.comptroller, '_setCreditLimit', [user, 0]);
 
       ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
       expect(error).toEqualNumber(0);
@@ -155,7 +155,7 @@ describe('Comptroller', () => {
     });
   });
 
-  it.skip("allowlist saves gas", async () => {
+  it.skip("max credit limit saves gas", async () => {
     const collateralFactor = 0.5, exchangeRate = 1, underlyingPrice = 1;
     const cToken = await makeCToken({supportMarket: true, collateralFactor, exchangeRate, underlyingPrice});
     const from = accounts[0], balance = 1e7, amount = 1e6, borrowAmount = 1e4;
@@ -166,12 +166,12 @@ describe('Comptroller', () => {
 
     const result1 = await send(cToken, 'borrow', [borrowAmount], {from});
     expect(result1).toSucceed();
-    console.log('result1', result1.gasUsed); // 179666
+    console.log('result1', result1.gasUsed); // 180466
 
-    await send(cToken.comptroller, '_setAllowlist', [from, true]);
+    await send(cToken.comptroller, '_setCreditLimit', [from, UInt256Max()]);
 
     const result2 = await send(cToken, 'borrow', [borrowAmount], {from});
     expect(result2).toSucceed();
-    console.log('result2', result2.gasUsed); // 95989
+    console.log('result2', result2.gasUsed); // 95882
   })
 });

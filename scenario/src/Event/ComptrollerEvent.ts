@@ -364,14 +364,16 @@ async function setBlockNumber(world: World, from: string, comptroller: Comptroll
     `Set Governor blockNumber to ${blockNumber.show()}`,
     invokation
   );
+
+  return world;
 }
 
-async function setAllowlist(world: World, from: string, comptroller: Comptroller, protocol: string, allow: boolean): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setAllowlist(protocol, allow), from, ComptrollerErrorReporter);
+async function setCreditLimit(world: World, from: string, comptroller: Comptroller, protocol: string, creditLimit: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setCreditLimit(protocol, creditLimit.encode()), from, ComptrollerErrorReporter);
 
   return addAction(
     world,
-    `Add or remove ${protocol} to allowlist`,
+    `Set ${protocol} credit limit to ${creditLimit.show()}`,
     invokation
   );
 }
@@ -723,19 +725,19 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, blockNumber}) => setBlockNumber(world, from, comptroller, blockNumber)
     ),
-    new Command<{comptroller: Comptroller, protocol: AddressV, allow: BoolV}>(`
-        #### SetAllowlist
+    new Command<{comptroller: Comptroller, protocol: AddressV, creditLimit: NumberV}>(`
+        #### SetCreditLimit
 
-        * "Comptroller SetAllowlist <Protocol> <Allow>" - Adds or removes protocol to allowlist
-        * E.g. "Comptroller SetAllowlist Geoff True"
+        * "Comptroller SetCreditLimit <Protocol> <CreditLimit>" - Sets the credit limit of a protocol
+        * E.g. "Comptroller SetCreditLimit Geoff 100"
       `,
-      'SetAllowlist',
+      'SetCreditLimit',
       [
         new Arg('comptroller', getComptroller, {implicit: true}),
         new Arg('protocol', getAddressV),
-        new Arg('allow', getBoolV)
+        new Arg('creditLimit', getNumberV)
       ],
-      (world, from, {comptroller, protocol, allow}) => setAllowlist(world, from, comptroller, protocol.val, allow.val)
+      (world, from, {comptroller, protocol, creditLimit}) => setCreditLimit(world, from, comptroller, protocol.val, creditLimit)
     ),
   ];
 }
