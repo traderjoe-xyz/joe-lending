@@ -1,9 +1,37 @@
-const {makeCToken} = require('../Utils/Compound');
+const {
+  etherUnsigned,
+  etherMantissa
+} = require('../Utils/Ethereum');
+
+const {
+  makeCToken,
+  preApprove,
+  balanceOf,
+  fastForward
+} = require('../Utils/Compound');
+
+const exchangeRate = 50e3;
+const mintAmount = etherUnsigned(10e4);
+const mintTokens = mintAmount.div(exchangeRate);
+
+async function preMint(cToken, minter, mintAmount, exchangeRate) {
+  await preApprove(cToken, minter, mintAmount);
+  await send(cToken.comptroller, 'setMintAllowed', [true]);
+  await send(cToken.comptroller, 'setMintVerify', [true]);
+  await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
+  await send(cToken.underlying, 'harnessSetFailTransferFromAddress', [minter, false]);
+  await send(cToken, 'harnessSetBalance', [minter, 0]);
+  await send(cToken, 'harnessSetExchangeRate', [etherMantissa(exchangeRate)]);
+}
+
+async function mintFresh(cToken, minter, mintAmount) {
+  return send(cToken, 'harnessMintFresh', [minter, mintAmount]);
+}
 
 describe('CToken', function () {
-  let root, accounts;
+  let root, minter, accounts;
   beforeEach(async () => {
-    [root, ...accounts] = saddle.accounts;
+    [root, minter, ...accounts] = saddle.accounts;
   });
 
   describe('transfer', () => {
@@ -40,6 +68,37 @@ describe('CToken', function () {
       await send(cToken.comptroller, 'setTransferAllowed', [true])
       await send(cToken.comptroller, 'setTransferVerify', [false])
       await expect(send(cToken, 'transfer', [accounts[0], 50])).rejects.toRevert("revert transferVerify rejected transfer");
+    });
+
+    it("transfers cslp token", async () => {
+      const cToken = await makeCToken({kind: 'cslp', comptrollerOpts: {kind: 'bool'}});
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      await preMint(cToken, minter, mintAmount, exchangeRate);
+      expect(await mintFresh(cToken, minter, mintAmount)).toSucceed();
+      expect(await call(cToken, 'balanceOf', [minter])).toEqualNumber(mintTokens);
+
+      await fastForward(cToken, 1);
+      await fastForward(masterChef, 1);
+
+      // cToken contract doesn't have enough sushi. User sushi rewards will be saved in sushiUserAccrued.
+      await send(cToken, 'transfer', [accounts[0], mintTokens], { from: minter });
+      expect(await call(cToken, 'balanceOf', [minter])).toEqualNumber(0);
+      expect(await call(cToken, 'balanceOf', [accounts[0]])).toEqualNumber(mintTokens);
+
+      expect(await balanceOf(sushi, minter)).toEqualNumber(etherMantissa(0));
+      expect(await call(cToken, 'sushiUserAccrued', [minter])).toEqualNumber(etherMantissa(1));
+
+      // Mint some sushi to cToken.
+      await send(sushi, 'mint', [cToken._address, etherMantissa(1)]);
+
+      await send(cToken, 'claimSushi', [], { from: minter });
+      expect(await balanceOf(sushi, minter)).toEqualNumber(etherMantissa(1));
+      expect(await call(cToken, 'sushiUserAccrued', [minter])).toEqualNumber(etherMantissa(0));
     });
   });
 });

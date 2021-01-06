@@ -84,6 +84,7 @@ describe('CEther', () => {
         expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
           [cToken, 'eth', mintAmount],
           [cToken, 'tokens', mintTokens],
+          [cToken, 'cash', mintAmount],
           [cToken, minter, 'eth', -mintAmount.plus(await etherGasCost(receipt))],
           [cToken, minter, 'tokens', mintTokens]
         ]));
@@ -116,6 +117,7 @@ describe('CEther', () => {
         expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
           [cToken, 'eth', -redeemAmount],
           [cToken, 'tokens', -redeemTokens],
+          [cToken, 'cash', -redeemAmount],
           [cToken, redeemer, 'eth', redeemAmount.minus(await etherGasCost(receipt))],
           [cToken, redeemer, 'tokens', -redeemTokens]
         ]));

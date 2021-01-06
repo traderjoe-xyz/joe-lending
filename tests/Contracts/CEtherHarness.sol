@@ -139,10 +139,6 @@ contract CEtherHarness is CEther {
         interestRateModel = InterestRateModel(newInterestRateModelAddress);
     }
 
-    function harnessGetCashPrior() public payable returns (uint) {
-        return getCashPrior();
-    }
-
     function harnessDoTransferIn(address from, uint amount) public payable returns (uint) {
         return doTransferIn(from, amount);
     }

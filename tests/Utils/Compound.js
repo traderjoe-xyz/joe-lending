@@ -124,7 +124,6 @@ async function makeCToken(opts = {}) {
 
     case 'ccapable':
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      console.log('underlying', underlying)
       cDelegatee = await deploy('CCapableErc20Delegate');
       cDelegator = await deploy('CErc20Delegator',
         [
@@ -141,6 +140,30 @@ async function makeCToken(opts = {}) {
         ]
       );
       cToken = await saddle.getContractAt('CCapableErc20Delegate', cDelegator._address);
+      break;
+
+    case 'cslp':
+      underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      const sushiToken = await deploy('SushiToken');
+      const masterChef = await deploy('MasterChef', [sushiToken._address]);
+      await send(masterChef, 'add', [1, underlying._address]);
+
+      cDelegatee = await deploy('CSLPDelegateHarness');
+      cDelegator = await deploy('CErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          encodeParameters(['address', 'uint'], [masterChef._address, 0]) // pid = 0
+        ]
+      );
+      cToken = await saddle.getContractAt('CSLPDelegateHarness', cDelegator._address); // XXXS at
       break;
 
     case 'cerc20':
@@ -241,6 +264,10 @@ async function balanceOf(token, account) {
   return etherUnsigned(await call(token, 'balanceOf', [account]));
 }
 
+async function cash(token) {
+  return etherUnsigned(await call(token, 'getCash', []));
+}
+
 async function totalSupply(token) {
   return etherUnsigned(await call(token, 'totalSupply'));
 }
@@ -291,7 +318,7 @@ async function getBalances(cTokens, accounts) {
     }
     cBalances[cToken._address] = {
       eth: await etherBalance(cToken._address),
-      cash: cToken.underlying && await balanceOf(cToken.underlying, cToken._address),
+      cash: await cash(cToken),
       tokens: await totalSupply(cToken),
       borrows: await totalBorrows(cToken),
       reserves: await totalReserves(cToken)
