@@ -60,7 +60,7 @@ interface ComptrollerMethods {
   _setBorrowCapGuardian(string): Sendable<void>
   borrowCapGuardian(): Callable<string>
   borrowCaps(string): Callable<string>
-  _setAllowlist(protocol: string, allow: boolean): Sendable<void>
+  _setCreditLimit(protocol: string, creditLimit: encodedNumber): Sendable<void>
 }
 
 export interface Comptroller extends Contract {

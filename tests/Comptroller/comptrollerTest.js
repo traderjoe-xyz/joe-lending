@@ -185,22 +185,30 @@ describe('Comptroller', () => {
     });
   });
 
-  describe('_setAllowlist', () => {
+  describe('_setCreditLimit', () => {
+    const creditLimit = etherMantissa(500);
+
     it("fails if not called by admin", async () => {
       const cToken = await makeCToken(root);
-      await expect(send(cToken.comptroller, '_setAllowlist', [accounts[0], true], {from: accounts[0]})).rejects.toRevert("revert only admin can set allowlist");
+      await expect(send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit], {from: accounts[0]})).rejects.toRevert("revert only admin can set protocol credit limit");
     });
 
-    it("succeeds and adds account to allowlist", async () => {
+    it("succeeds and sets credit limit", async () => {
       const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_setAllowlist', [accounts[0], true]);
-      expect(result).toHaveLog('AllowListChanged', {protocol: accounts[0], allow: true});
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], creditLimit]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: creditLimit.toString()});
     });
 
-    it("succeeds and removes account from allowlist", async () => {
+    it("succeeds and sets to max credit limit", async () => {
       const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_setAllowlist', [accounts[0], false]);
-      expect(result).toHaveLog('AllowListChanged', {protocol: accounts[0], allow: false});
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], UInt256Max()]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: UInt256Max().toString()});
+    });
+
+    it("succeeds and sets to 0 credit limit", async () => {
+      const cToken = await makeCToken();
+      const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], 0]);
+      expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: '0'});
     });
   });
 

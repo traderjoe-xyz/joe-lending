@@ -33,7 +33,7 @@ Test "Mint, Enter and then Redeem All"
     Assert Equal (Erc20 cZRX TokenBalance Geoff) Zero
     Assert Equal (Erc20 ZRX TokenBalance Geoff) 70e18
 
-Test "Mint, Enter, Borrow, SetAllowlist and then Redeem All"
+Test "Mint, Enter, Borrow, SetCreditLimit and then Redeem All"
     NewComptroller price:1.0
     ListedCToken ZRX cZRX initialExchangeRate:1e9
     ListedCToken BAT cBAT initialExchangeRate:1e9
@@ -50,8 +50,8 @@ Test "Mint, Enter, Borrow, SetAllowlist and then Redeem All"
     Assert Equal (Comptroller MembershipLength Geoff) (Exactly 2)
     Assert True (Comptroller CheckMembership Geoff cZRX)
     Assert True (Comptroller CheckMembership Geoff cBAT)
-    -- Set allowlist
-    Comptroller SetAllowlist Geoff True
+    -- Set credit limit
+    Comptroller SetCreditLimit Geoff 10000e18
     -- Redeem all
     Redeem Geoff 1000e8 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) Zero

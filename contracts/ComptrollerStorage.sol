@@ -124,7 +124,4 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 
     // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
     mapping(address => uint) public creditLimits;
-
-    // @notice allowlist allowed specific protocols to borrow without collateral.
-    mapping(address => bool) public allowlist;
 }
