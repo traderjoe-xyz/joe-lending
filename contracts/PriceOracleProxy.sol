@@ -43,7 +43,6 @@ contract PriceOracleProxy is PriceOracle, Exponential {
 
     address public cEthAddress;
     address public cUsdcAddress;
-    address public cUsdtAddress;
     address public cYcrvAddress;
     address public cYYcrvAddress;
     address public cYethAddress;
@@ -52,8 +51,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
      * @param admin_ The address of admin to set aggregators
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
-     * @param cUsdtAddress_ The address of cUSDC
-     * @param cUsdtAddress_ The address of cUSDT
+     * @param cUsdcAddress_ The address of cUSDC
      * @param cYcrvAddress_ The address of cYcrv
      * @param cYYcrvAddress_ The address of cYYcrv
      * @param cYethAddress_ The address of cYeth
@@ -62,7 +60,6 @@ contract PriceOracleProxy is PriceOracle, Exponential {
                 address v1PriceOracle_,
                 address cEthAddress_,
                 address cUsdcAddress_,
-                address cUsdtAddress_,
                 address cYcrvAddress_,
                 address cYYcrvAddress_,
                 address cYethAddress_) public {
@@ -70,7 +67,6 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
         cUsdcAddress = cUsdcAddress_;
-        cUsdtAddress = cUsdtAddress_;
         cYcrvAddress = cYcrvAddress_;
         cYYcrvAddress = cYYcrvAddress_;
         cYethAddress = cYethAddress_;
