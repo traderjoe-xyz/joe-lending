@@ -9,14 +9,13 @@ const {
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cDai, cUsdt, cYcrv, cYycrv, cYeth, cOther;
+  let oracle, backingOracle, cEth, cUsdc, cDai, cYcrv, cYycrv, cYeth, cOther;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
     cUsdc = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
-    cUsdt = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYcrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYycrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYeth = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
@@ -29,7 +28,6 @@ describe('PriceOracleProxy', () => {
         backingOracle._address,
         cEth._address,
         cUsdc._address,
-        cUsdt._address,
         cYcrv._address,
         cYycrv._address,
         cYeth._address,
@@ -56,11 +54,6 @@ describe('PriceOracleProxy', () => {
     it("sets address of cUSDC", async () => {
       let configuredCUSD = await call(oracle, "cUsdcAddress");
       expect(configuredCUSD).toEqual(cUsdc._address);
-    });
-
-    it("sets address of cUSDT", async () => {
-      let configuredCUSDT = await call(oracle, "cUsdtAddress");
-      expect(configuredCUSDT).toEqual(cUsdt._address);
     });
 
     it("sets address of cYcrv", async () => {
