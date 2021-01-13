@@ -38,12 +38,13 @@ Test "Cannot supply more even all underlying is borrowed"
     NewCToken BAT cBAT
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
-    Comptroller SetMarketSupplyCaps (cZRX) (1e18)
-    Give cZRX 1e18 ZRX -- Faucet some zrx to borrow
+    Comptroller SetMarketSupplyCaps (cZRX) (2)
+    Prep Jared Some ZRX cZRX
+    Mint Jared 1 cZRX
     Prep Robert Some BAT cBAT
     Mint Robert 100e18 cBAT
     EnterMarkets Robert cBAT
-    Borrow Robert 1e18 cZRX -- Robert borrows all ZRX
+    Borrow Robert 1 cZRX -- Robert borrows all ZRX
     Assert Equal (Erc20 ZRX TokenBalance cZRX) (Exactly 0)
     Prep Geoff Some ZRX cZRX
     AllowFailures
@@ -106,8 +107,8 @@ Test "SetBorrowCaps works correctly too"
     Comptroller SetMarketBorrowCaps (cBAT cUSDC) (0.5e18 1000001)
     Assert Equal (Comptroller BorrowCaps cBAT) (Exactly 0.5e18)
     Assert Equal (Comptroller BorrowCaps cUSDC) (Exactly 1000001)
-    Give cBAT 10e18 BAT -- Faucet some bat to borrow
-    Give cUSDC 20e6 USDC
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    GiveCToken cUSDC 20e6 USDC
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Support cUSDC collateralFactor:0.5
