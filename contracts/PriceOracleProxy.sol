@@ -99,8 +99,8 @@ contract PriceOracleProxy is PriceOracle, Exponential {
             Exp memory yCrvPrice;
 
             // ETH/USDC (treat USDC as USD)
-            (mathErr, ethUsdPrice) = getExp(1e18, getUnderlyingPrice(CToken(cUsdcAddress)));
-            if (mathErr != MathError.NO_ERROR || ethUsdPrice.mantissa == 0) {
+            ethUsdPrice.mantissa = getUnderlyingPrice(CToken(cUsdcAddress)) / 1e12;
+            if (ethUsdPrice.mantissa == 0) {
               return 0;
             }
 
