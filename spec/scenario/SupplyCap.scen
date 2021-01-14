@@ -126,3 +126,26 @@ Test "SetBorrowCaps works correctly too"
     Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 0)
     Assert Equal (Erc20 BAT TokenBalance cBAT) (Exactly 10e18)
     Assert Equal (Erc20 USDC TokenBalance Geoff) (Exactly 1e6)
+
+Test "Infimint attack"
+    NewComptroller price:1.0
+    NewCToken ZRX cZRX
+    NewCToken BAT cBAT
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Support cZRX collateralFactor:0.5
+    Support cBAT collateralFactor:0.5
+    Prep Geoff Some BAT cBAT
+    Mint Geoff 100e18 cBAT
+    EnterMarkets Geoff cBAT
+    Give Geoff 10000e18 BAT
+    --Attack
+    From Geoff (Erc20 BAT Transfer (Address cBAT) 10000e18)
+    AllowFailures
+    Borrow Geoff 1000e18 cZRX
+    Assert Failure COMPTROLLER_REJECTION BORROW_COMPTROLLER_REJECTION INSUFFICIENT_LIQUIDITY
+    Successfully
+    CToken cBAT Gulp
+    AllowFailures
+    Borrow Geoff 1000e18 cZRX
+    Assert Failure COMPTROLLER_REJECTION BORROW_COMPTROLLER_REJECTION INSUFFICIENT_LIQUIDITY
+    Assert Equal (CToken cBAT Reserves) 10010e18
