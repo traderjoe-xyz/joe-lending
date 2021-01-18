@@ -526,10 +526,6 @@ contract CSLPDelegateHarness is CSLPDelegate {
     function harnessCallBorrowAllowed(uint amount) public returns (uint) {
         return comptroller.borrowAllowed(address(this), msg.sender, amount);
     }
-
-    function harnessGetCashPrior() public payable returns (uint) {
-        return getCashPrior();
-    }
 }
 
 contract CSLPDelegateScenario is CSLPDelegate {

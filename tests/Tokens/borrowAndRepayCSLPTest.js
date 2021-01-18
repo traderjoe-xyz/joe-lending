@@ -19,7 +19,6 @@ const borrowAmount = etherUnsigned(10e3);
 const repayAmount = etherUnsigned(10e2);
 
 async function preBorrow(cToken, borrower, borrowAmount) {
-
   await send(cToken.comptroller, 'setBorrowAllowed', [true]);
   await send(cToken.comptroller, 'setBorrowVerify', [true]);
   await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
@@ -111,16 +110,19 @@ describe('CToken', function () {
 
     it("fails if borrowBalanceStored fails (due to non-zero stored principal with zero account index)", async () => {
       await pretendBorrow(cToken, borrower, 0, 3e18, 5e18);
+      await fillMasterChef(cToken, borrowAmount);
       expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED');
     });
 
     it("fails if calculating account new total borrow balance overflows", async () => {
       await pretendBorrow(cToken, borrower, 1e-18, 1e-18, UInt256Max());
+      await fillMasterChef(cToken, borrowAmount);
       expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED');
     });
 
     it("fails if calculation of new total borrow balance overflows", async () => {
       await send(cToken, 'harnessSetTotalBorrows', [UInt256Max()]);
+      await fillMasterChef(cToken, borrowAmount);
       expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED');
     });
 

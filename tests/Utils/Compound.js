@@ -147,6 +147,7 @@ async function makeCToken(opts = {}) {
       const sushiToken = await deploy('SushiToken');
       const masterChef = await deploy('MasterChef', [sushiToken._address]);
       await send(masterChef, 'add', [1, underlying._address]);
+      const sushiBar = await deploy('SushiBar', [sushiToken._address]);
 
       cDelegatee = await deploy('CSLPDelegateHarness');
       cDelegator = await deploy('CErc20Delegator',
@@ -160,7 +161,7 @@ async function makeCToken(opts = {}) {
           decimals,
           admin,
           cDelegatee._address,
-          encodeParameters(['address', 'uint'], [masterChef._address, 0]) // pid = 0
+          encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]) // pid = 0
         ]
       );
       cToken = await saddle.getContractAt('CSLPDelegateHarness', cDelegator._address); // XXXS at

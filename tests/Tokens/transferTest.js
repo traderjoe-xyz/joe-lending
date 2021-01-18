@@ -85,20 +85,19 @@ describe('CToken', function () {
       await fastForward(cToken, 1);
       await fastForward(masterChef, 1);
 
-      // cToken contract doesn't have enough sushi. User sushi rewards will be saved in sushiUserAccrued.
       await send(cToken, 'transfer', [accounts[0], mintTokens], { from: minter });
       expect(await call(cToken, 'balanceOf', [minter])).toEqualNumber(0);
       expect(await call(cToken, 'balanceOf', [accounts[0]])).toEqualNumber(mintTokens);
 
       expect(await balanceOf(sushi, minter)).toEqualNumber(etherMantissa(0));
-      expect(await call(cToken, 'sushiUserAccrued', [minter])).toEqualNumber(etherMantissa(1));
+      expect(await call(cToken, 'xSushiUserAccrued', [minter])).toEqualNumber(etherMantissa(1));
 
-      // Mint some sushi to cToken.
-      await send(sushi, 'mint', [cToken._address, etherMantissa(1)]);
+      await fastForward(cToken, 1);
+      await fastForward(masterChef, 1);
 
       await send(cToken, 'claimSushi', [], { from: minter });
       expect(await balanceOf(sushi, minter)).toEqualNumber(etherMantissa(1));
-      expect(await call(cToken, 'sushiUserAccrued', [minter])).toEqualNumber(etherMantissa(0));
+      expect(await call(cToken, 'xSushiUserAccrued', [minter])).toEqualNumber(etherMantissa(0));
     });
   });
 });

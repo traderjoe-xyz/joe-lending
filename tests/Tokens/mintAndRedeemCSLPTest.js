@@ -153,7 +153,7 @@ describe('CToken', function () {
       });
     });
 
-    it("gets sushi rewards after second minting", async () => {
+    it("claims sushi rewards after minting", async () => {
       const sushiAddress = await call(cToken, 'sushi', []);
       const masterChefAddress = await call(cToken, 'masterChef', []);
 
@@ -165,7 +165,7 @@ describe('CToken', function () {
 
       await fastForward(masterChef, 1);
 
-      expect(await quickMint(cToken, minter, mintAmount)).toSucceed();
+      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
       expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
     });
   });
@@ -287,7 +287,7 @@ describe('CToken', function () {
       });
     });
 
-    it("gets sushi rewards when redeeming", async () => {
+    it("claims sushi rewards after redeeming", async () => {
       const sushiAddress = await call(cToken, 'sushi', []);
       const masterChefAddress = await call(cToken, 'masterChef', []);
 
@@ -297,6 +297,10 @@ describe('CToken', function () {
       await fastForward(masterChef, 1);
 
       expect(await send(cToken, 'redeem', [mintTokens], { from: minter })).toSucceed();
+      expect(await balanceOf(sushi, minter)).toEqualNumber(etherUnsigned(0));
+
+      await fastForward(masterChef, 1);
+      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
       expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
     });
   });

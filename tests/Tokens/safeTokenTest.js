@@ -16,7 +16,7 @@ describe('CEther', function () {
 
   describe("getCashPrior", () => {
     it("returns the amount of ether held by the cEther contract before the current message", async () => {
-      expect(await call(cToken, 'getCash', [], {value: 100})).toEqualNumber(0);
+      expect(await call(cToken, 'harnessGetCashPrior', [], {value: 100})).toEqualNumber(0);
     });
   });
 
