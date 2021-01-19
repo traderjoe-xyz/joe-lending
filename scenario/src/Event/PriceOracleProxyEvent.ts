@@ -68,7 +68,7 @@ export function priceOracleProxyCommands() {
         #### Deploy
 
         * "Deploy ...params" - Generates a new price oracle proxy
-          * E.g. "PriceOracleProxy Deploy (Unitroller Address) (cEther Address)"
+          * E.g. "PriceOracleProxy Deploy (Unitroller Address) (PriceOracle Address) (cEther Address)"
       `,
       "Deploy",
       [

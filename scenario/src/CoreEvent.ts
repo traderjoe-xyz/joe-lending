@@ -738,7 +738,7 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
       #### PriceOracleProxy
 
       * "PriceOracleProxy ...event" - Runs given Price Oracle event
-      * E.g. "PriceOracleProxy Deploy (Unitroller Address) (CToken cETH Address)"
+      * E.g. "PriceOracleProxy Deploy (Unitroller Address) (PriceOracle Address) (CToken cETH Address)"
     `,
     'PriceOracleProxy',
     [new Arg('event', getEventV, { variadic: true })],

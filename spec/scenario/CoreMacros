@@ -8,7 +8,8 @@ Macro AllowFailures
 
 Macro PricedComptroller closeFactor=0.1
     Unitroller Deploy
-    PriceOracleProxy Deploy Admin (Address Zero)
+    PriceOracle Deploy Simple
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
@@ -17,8 +18,9 @@ Macro PricedComptroller closeFactor=0.1
 
 Macro NewComptroller price=1.0 closeFactor=0.1
     Unitroller Deploy
+    PriceOracle Deploy Fixed price
     MockAggregator Deploy Fixed price
-    PriceOracleProxy Deploy Admin (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
@@ -27,13 +29,14 @@ Macro NewComptroller price=1.0 closeFactor=0.1
 
 Macro EthComptroller price=1.0 closeFactor=0.1 borrowRate=0.000005 initialExchangeRate=1e9 decimals=8 collateralFactor=0.8
     Unitroller Deploy
+    PriceOracle Deploy Simple
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
     Comptroller SetCloseFactor closeFactor
     NewEtherToken cETH borrowRate initialExchangeRate decimals Admin
     MockAggregator Deploy Fixed price
-    PriceOracleProxy Deploy Admin (Address cETH)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cETH)
     Comptroller SetPriceOracle (PriceOracleProxy Address)
     PriceOracleProxy SetAggregators (cETH) (MockAggregator)
     Support cETH collateralFactor
@@ -71,7 +74,7 @@ Macro ListedCTokenImmutable erc20 cToken borrowRate=0.000005 initialExchangeRate
 Macro ListedEtherToken cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 admin=Admin
     NewEtherToken cToken borrowRate initialExchangeRate decimals admin
     Comptroller SupportMarket cToken
-    PriceOracleProxy Deploy Admin (Address cToken)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cToken)
     Comptroller SetPriceOracle (PriceOracleProxy Address)
     PriceOracleProxy SetAggregators (cToken) (MockAggregator)
 

@@ -1,8 +1,9 @@
 -- NewComptroller, but with markets listed so that we can make them comp markets in constructor
 Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e18
     Unitroller Deploy
+    PriceOracle Deploy Simple
     MockAggregator Deploy Fixed price
-    PriceOracleProxy Deploy Admin (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
     ComptrollerImpl Deploy Scenario ComptrollerScen
     Unitroller SetPendingImpl ComptrollerScen
     ComptrollerImpl ComptrollerScen Become

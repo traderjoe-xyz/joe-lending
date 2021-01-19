@@ -5,12 +5,13 @@ const {
 const {
   makeComptroller,
   makeCToken,
+  makePriceOracle,
   makeMockAggregator,
 } = require('./Utils/Compound');
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, cEth, cUsdc, cDai, cOthers;
+  let oracle, backingOracle, cEth, cUsdc, cDai, cOthers;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
@@ -20,7 +21,8 @@ describe('PriceOracleProxy', () => {
     cDai = await makeCToken({comptroller: comptroller, supportMarket: true});
     cOthers = await makeCToken({comptroller: comptroller, supportMarket: true});
 
-    oracle = await deploy('PriceOracleProxy', [root, cEth._address]);
+    backingOracle = await makePriceOracle();
+    oracle = await deploy('PriceOracleProxy', [root, backingOracle._address, cEth._address]);
   });
 
   describe("constructor", () => {
@@ -49,6 +51,25 @@ describe('PriceOracleProxy', () => {
         [[cToken._address], [mockAggregator._address]]);
     }
 
+    let setAndVerifyBackingPrice = async (cToken, price) => {
+      await send(
+        backingOracle,
+        "setUnderlyingPrice",
+        [cToken._address, etherMantissa(price)]);
+
+      let backingOraclePrice = await call(
+        backingOracle,
+        "assetPrices",
+        [cToken.underlying._address]);
+
+      expect(Number(backingOraclePrice)).toEqual(price * 1e18);
+    };
+
+    let readAndVerifyProxyPrice = async (token, price) =>{
+      let proxyPrice = await call(oracle, "getUnderlyingPrice", [token._address]);
+      expect(Number(proxyPrice)).toEqual(price * 1e18);
+    };
+
     it("returns correctly for cEth", async () => {
       await setPrice(cEth, 100);
       const proxyPrice = await call(oracle, "getUnderlyingPrice", [cEth._address]);
@@ -69,8 +90,18 @@ describe('PriceOracleProxy', () => {
       expect(proxyPrice).toEqual(etherMantissa(price * 10**(18 - underlyingDecimals)).toFixed());
     });
 
-    it("reverts for token without a price", async () => {
-      await expect(call(oracle, "getUnderlyingPrice", [cOthers._address])).rejects.toRevert("invalid opcode");
+    it("fallbacks to price oracle v1", async () => {
+      await setAndVerifyBackingPrice(cOthers, 11);
+      await readAndVerifyProxyPrice(cOthers, 11);
+
+      await setAndVerifyBackingPrice(cOthers, 37);
+      await readAndVerifyProxyPrice(cOthers, 37);
+    });
+
+    it("returns 0 for token without a price", async () => {
+      let unlistedToken = await makeCToken({comptroller: cEth.comptroller});
+
+      await readAndVerifyProxyPrice(unlistedToken, 0);
     });
   });
 });

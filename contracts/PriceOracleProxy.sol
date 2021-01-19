@@ -6,6 +6,10 @@ import "./PriceOracle.sol";
 import "./Exponential.sol";
 import "./EIP20Interface.sol";
 
+interface V1PriceOracleInterface {
+    function assetPrices(address asset) external view returns (uint);
+}
+
 interface CurveSwapInterface {
     function get_virtual_price() external view returns (uint256);
 }
@@ -43,7 +47,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Admin address
     address public admin;
 
-    /// @notice cEthAddress address
+    /// @notice cETH address
     address public cEthAddress;
 
     /// @notice Chainlink Aggregators
@@ -55,13 +59,17 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Mapping of crToken to curve swap
     mapping(address => address) public curveSwap;
 
+    /// @notice The v1 price oracle, maintain by CREAM
+    V1PriceOracleInterface public v1PriceOracle;
+
     address public constant cyY3CRVAddress = 0x7589C9E17BCFcE1Ccaa1f921196FDa177F0207Fc;
 
     /**
      * @param admin_ The address of admin to set aggregators
      */
-    constructor(address admin_, address cEthAddress_) public {
+    constructor(address admin_, address v1PriceOracle_, address cEthAddress_) public {
         admin = admin_;
+        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
 
         yVaults[cyY3CRVAddress] = 0x9cA85572E6A3EbF24dEDd195623F188735A5179f; // y-vault 3Crv
@@ -95,8 +103,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
             return mul_(price, 10**(18 - underlyingDecimals));
         }
 
-        // Raise error.
-        assert(false);
+        return getPriceFromV1(cTokenAddress);
     }
 
     function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint) {
@@ -105,6 +112,11 @@ contract PriceOracleProxy is PriceOracle, Exponential {
 
         // Extend the decimals to 1e18.
         return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
+    }
+
+    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
+        address underlying = CErc20(cTokenAddress).underlying();
+        return v1PriceOracle.assetPrices(underlying);
     }
 
     event AggregatorUpdated(address cTokenAddress, address source);
