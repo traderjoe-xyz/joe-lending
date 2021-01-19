@@ -19,20 +19,21 @@ export interface PriceOracleProxyData {
 
 export async function buildPriceOracleProxy(world: World, from: string, event: Event): Promise<{world: World, priceOracleProxy: PriceOracleProxy, invokation: Invokation<PriceOracleProxy>}> {
   const fetchers = [
-    new Fetcher<{guardian: AddressV, cETH: AddressV}, PriceOracleProxyData>(`
+    new Fetcher<{guardian: AddressV, priceOracle: AddressV, cETH: AddressV}, PriceOracleProxyData>(`
         #### Price Oracle Proxy
 
-        * "Deploy <Guardian:Address>" - The Price Oracle which proxies to a backing oracle
-        * E.g. "PriceOracleProxy Deploy Admin cETH"
+        * "Deploy <Guardian:Address> <PriceOracle:Address> <cETH:Address>" - The Price Oracle which proxies to a backing oracle
+        * E.g. "PriceOracleProxy Deploy Admin (PriceOracle Address) cETH"
       `,
       "PriceOracleProxy",
       [
         new Arg("guardian", getAddressV),
+        new Arg("priceOracle", getAddressV),
         new Arg("cETH", getAddressV)
       ],
-      async (world, {guardian, cETH}) => {
+      async (world, {guardian, priceOracle, cETH}) => {
         return {
-          invokation: await PriceOracleProxyContract.deploy<PriceOracleProxy>(world, from, [guardian.val, cETH.val]),
+          invokation: await PriceOracleProxyContract.deploy<PriceOracleProxy>(world, from, [guardian.val, priceOracle.val, cETH.val]),
           description: "Price Oracle Proxy"
         };
       },

@@ -186,7 +186,8 @@ Test "Reduce reserves for CEther from Timelock and send reserves to external add
 
 Test "Set Pending Comptroller implementation on Unitroller from Timelock"
     Unitroller Deploy
-    PriceOracleProxy Deploy Admin (Address Zero)
+    PriceOracle Deploy Simple
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
