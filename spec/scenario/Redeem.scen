@@ -37,7 +37,7 @@ Test "Mint, Enter, Borrow, SetCreditLimit and then Redeem All"
     NewComptroller price:1.0
     ListedCToken ZRX cZRX initialExchangeRate:1e9
     ListedCToken BAT cBAT initialExchangeRate:1e9
-    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
     Comptroller SetCollateralFactor cZRX 0.5
     Comptroller SetCollateralFactor cBAT 0.5
     Prep Geoff Some ZRX cZRX

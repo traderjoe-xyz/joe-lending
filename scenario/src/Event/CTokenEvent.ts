@@ -268,6 +268,18 @@ async function setComptroller(world: World, from: string, cToken: CToken, comptr
   return world;
 }
 
+async function gulp(world: World, from: string, cToken: CToken): Promise<World> {
+  let invokation = await invoke(world, cToken.methods.gulp(), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: Gulp`,
+    invokation
+  );
+
+  return world;
+}
+
 async function becomeImplementation(
   world: World,
   from: string,
@@ -712,6 +724,18 @@ export function cTokenCommands() {
         new Arg("comptroller", getAddressV)
       ],
       (world, from, { cToken, comptroller }) => setComptroller(world, from, cToken, comptroller.val),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken}>(`
+        #### Gulp
+        * "CToken <cToken> Gulp" - Gulps for the cToken
+          * E.g. "CToken cZRX Gulp"
+      `,
+      "Gulp",
+      [
+        new Arg("cToken", getCTokenV)
+      ],
+      (world, from, { cToken }) => gulp(world, from, cToken),
       { namePos: 1 }
     ),
     new Command<{

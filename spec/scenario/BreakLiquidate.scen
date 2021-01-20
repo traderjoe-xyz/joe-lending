@@ -6,7 +6,7 @@ Macro NewBorrow borrowAmount mintAmount user=Geoff collateralPrice=1.0 borrowPri
     NewCToken BAT cBAT
     Comptroller SupportMarket cZRX
     Comptroller SupportMarket cBAT
-    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
     SetPriceCF cZRX collateralPrice 0.7
     SetPriceCF cBAT borrowPrice 0
     SimpleBorrow user borrowAmount mintAmount
