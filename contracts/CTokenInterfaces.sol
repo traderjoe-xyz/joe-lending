@@ -245,11 +245,6 @@ contract CErc20Storage {
      * @notice Underlying asset for this CToken
      */
     address public underlying;
-
-    /**
-    * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
-    */
-    uint256 public internalCash;
 }
 
 contract CErc20Interface is CErc20Storage {
@@ -269,14 +264,19 @@ contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external returns (uint);
 }
 
-contract CDelegationStorage {
+contract CErc20StorageExtension {
     /**
      * @notice Implementation address for this contract
      */
     address public implementation;
+
+    /**
+     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
+     */
+    uint256 public internalCash;
 }
 
-contract CDelegatorInterface is CDelegationStorage {
+contract CDelegatorInterface is CErc20StorageExtension {
     /**
      * @notice Emitted when implementation is changed
      */
@@ -291,7 +291,7 @@ contract CDelegatorInterface is CDelegationStorage {
     function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
 }
 
-contract CDelegateInterface is CDelegationStorage {
+contract CDelegateInterface is CErc20StorageExtension {
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @dev Should revert if any issues arise which make it unfit for delegation

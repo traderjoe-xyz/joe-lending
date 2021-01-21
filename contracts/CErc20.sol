@@ -7,7 +7,7 @@ import "./CToken.sol";
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract CErc20 is CToken, CErc20Interface {
+contract CErc20 is CToken, CErc20Interface, CErc20StorageExtension {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
