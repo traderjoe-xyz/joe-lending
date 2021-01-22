@@ -135,9 +135,6 @@ Macro RepayBorrow user amount token
 Macro RepayBorrowEth user amount token
     From user (Trx GasPrice 0 (Trx Value amount (CToken token RepayBorrow)))
 
-Macro RepayBorrowEthMax user amount token
-    From user (Trx GasPrice 0 (Trx Value amount (Maximillion RepayBehalf user)))
-
 Macro RepayBorrowBehalf user behalf amount token
     From user (CToken token RepayBorrowBehalf behalf amount)
 

@@ -65,9 +65,6 @@ describe('InterestRateModel', () => {
   });
 
   const expectedRates = {
-    'baseP025-slopeP20': { base: 0.025, slope: 0.20, model: 'white-paper' },
-    'baseP05-slopeP45': { base: 0.05, slope: 0.45, model: 'white-paper' },
-    'white-paper': { base: 0.1, slope: 0.45, model: 'white-paper' },
     'jump-rate': { base: 0.1, slope: 0.45, model: 'jump-rate' }
   };
 

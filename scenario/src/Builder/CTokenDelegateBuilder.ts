@@ -9,8 +9,6 @@ import { Arg, Fetcher, getFetcherValue } from '../Command';
 import { storeAndSaveContract } from '../Networks';
 import { getContract, getTestContract } from '../Contract';
 
-const CDaiDelegateContract = getContract('CDaiDelegate');
-const CDaiDelegateScenarioContract = getTestContract('CDaiDelegateScenario');
 const CErc20DelegateContract = getContract('CErc20Delegate');
 const CErc20DelegateScenarioContract = getTestContract('CErc20DelegateScenario');
 
@@ -28,54 +26,6 @@ export async function buildCTokenDelegate(
   params: Event
 ): Promise<{ world: World; cTokenDelegate: CErc20Delegate; delegateData: CTokenDelegateData }> {
   const fetchers = [
-    new Fetcher<{ name: StringV; }, CTokenDelegateData>(
-      `
-        #### CDaiDelegate
-
-        * "CDaiDelegate name:<String>"
-          * E.g. "CTokenDelegate Deploy CDaiDelegate cDAIDelegate"
-      `,
-      'CDaiDelegate',
-      [
-        new Arg('name', getStringV)
-      ],
-      async (
-        world,
-        { name }
-      ) => {
-        return {
-          invokation: await CDaiDelegateContract.deploy<CErc20Delegate>(world, from, []),
-          name: name.val,
-          contract: 'CDaiDelegate',
-          description: 'Standard CDai Delegate'
-        };
-      }
-    ),
-
-    new Fetcher<{ name: StringV; }, CTokenDelegateData>(
-      `
-        #### CDaiDelegateScenario
-
-        * "CDaiDelegateScenario name:<String>" - A CDaiDelegate Scenario for local testing
-          * E.g. "CTokenDelegate Deploy CDaiDelegateScenario cDAIDelegate"
-      `,
-      'CDaiDelegateScenario',
-      [
-        new Arg('name', getStringV)
-      ],
-      async (
-        world,
-        { name }
-      ) => {
-        return {
-          invokation: await CDaiDelegateScenarioContract.deploy<CErc20DelegateScenario>(world, from, []),
-          name: name.val,
-          contract: 'CDaiDelegateScenario',
-          description: 'Scenario CDai Delegate'
-        };
-      }
-    ),
-
     new Fetcher<{ name: StringV; }, CTokenDelegateData>(
       `
         #### CErc20Delegate
