@@ -122,27 +122,6 @@ async function makeCToken(opts = {}) {
         ])
       break;
 
-    case 'cdai':
-      cDaiMaker  = await deploy('CDaiDelegateMakerHarness');
-      underlying = cDaiMaker;
-      cDelegatee = await deploy('CDaiDelegateHarness');
-      cDelegator = await deploy('CErc20Delegator',
-        [
-          underlying._address,
-          comptroller._address,
-          interestRateModel._address,
-          exchangeRate,
-          name,
-          symbol,
-          decimals,
-          admin,
-          cDelegatee._address,
-          encodeParameters(['address', 'address'], [cDaiMaker._address, cDaiMaker._address])
-        ]
-      );
-      cToken = await saddle.getContractAt('CDaiDelegateHarness', cDelegator._address); // XXXS at
-      break;
-
     case 'cerc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
@@ -200,12 +179,6 @@ async function makeInterestRateModel(opts = {}) {
   if (kind == 'false-marker') {
     const borrowRate = etherMantissa(dfn(opts.borrowRate, 0));
     return await deploy('FalseMarkerMethodInterestRateModel', [borrowRate]);
-  }
-
-  if (kind == 'white-paper') {
-    const baseRate = etherMantissa(dfn(opts.baseRate, 0));
-    const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
-    return await deploy('WhitePaperInterestRateModel', [baseRate, multiplier]);
   }
 
   if (kind == 'jump-rate') {

@@ -11,11 +11,9 @@ import { Comp } from './Contract/Comp';
 import { Comptroller } from './Contract/Comptroller';
 import { ComptrollerImpl } from './Contract/ComptrollerImpl';
 import { CToken } from './Contract/CToken';
-import { Governor } from './Contract/Governor';
 import { Erc20 } from './Contract/Erc20';
 import { InterestRateModel } from './Contract/InterestRateModel';
 import { PriceOracle } from './Contract/PriceOracle';
-import { Timelock } from './Contract/Timelock';
 
 type ContractDataEl = string | Map<string, object> | undefined;
 
@@ -73,16 +71,8 @@ export function getWorldContractByAddress<T>(world: World, address: string): T {
   return <T>(<unknown>contract);
 }
 
-export async function getTimelock(world: World): Promise<Timelock> {
-  return getWorldContract(world, [['Contracts', 'Timelock']]);
-}
-
 export async function getUnitroller(world: World): Promise<Comptroller> {
   return getWorldContract(world, [['Contracts', 'Unitroller']]);
-}
-
-export async function getMaximillion(world: World): Promise<Comptroller> {
-  return getWorldContract(world, [['Contracts', 'Maximillion']]);
 }
 
 export async function getComptroller(world: World): Promise<Comptroller> {
@@ -103,10 +93,6 @@ export function getCTokenDelegateAddress(world: World, cTokenDelegateArg: string
 
 export function getErc20Address(world: World, erc20Arg: string): string {
   return getContractDataString(world, [['Tokens', erc20Arg, 'address']]);
-}
-
-export function getGovernorAddress(world: World, governorArg: string): string {
-  return getContractDataString(world, [['Contracts', governorArg]]);
 }
 
 export async function getPriceOracleProxy(world: World): Promise<PriceOracle> {
@@ -132,16 +118,6 @@ export async function getCompData(
   let data = getContractData(world, [['Comp', compArg]]);
 
   return [contract, compArg, <Map<string, string>>(<any>data)];
-}
-
-export async function getGovernorData(
-  world: World,
-  governorArg: string
-): Promise<[Governor, string, Map<string, string>]> {
-  let contract = getWorldContract<Governor>(world, [['Governor', governorArg, 'address']]);
-  let data = getContractData(world, [['Governor', governorArg]]);
-
-  return [contract, governorArg, <Map<string, string>>(<any>data)];
 }
 
 export async function getInterestRateModel(
