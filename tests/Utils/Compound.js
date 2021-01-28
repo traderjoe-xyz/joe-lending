@@ -122,6 +122,27 @@ async function makeCToken(opts = {}) {
         ])
       break;
 
+    case 'ccapable':
+      underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      console.log('underlying', underlying)
+      cDelegatee = await deploy('CCapableErc20Delegate');
+      cDelegator = await deploy('CErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          "0x0"
+        ]
+      );
+      cToken = await saddle.getContractAt('CCapableErc20Delegate', cDelegator._address);
+      break;
+
     case 'cerc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
