@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "./CCapableErc20.sol";
 
 /**
- * @title Compound's CErc20Delegate Contract
+ * @title Compound's CCapableErc20Delegate Contract
  * @notice CTokens which wrap an EIP-20 underlying and are delegated to
  * @author Compound
  */

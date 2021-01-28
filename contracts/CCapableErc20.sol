@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "./CToken.sol";
 
 /**
- * @title Compound's CErc20 Contract
+ * @title Compound's CCapableErc20 Contract
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
