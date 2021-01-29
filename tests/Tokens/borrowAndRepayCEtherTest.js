@@ -100,17 +100,17 @@ describe('CEther', function () {
 
     it("fails if borrowBalanceStored fails (due to non-zero stored principal with zero account index)", async () => {
       await pretendBorrow(cToken, borrower, 0, 3e18, 5e18);
-      expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED');
+      await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert divide by zero");
     });
 
     it("fails if calculating account new total borrow balance overflows", async () => {
       await pretendBorrow(cToken, borrower, 1e-18, 1e-18, UInt256Max());
-      expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED');
+      await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert addition overflow");
     });
 
     it("fails if calculation of new total borrow balance overflows", async () => {
       await send(cToken, 'harnessSetTotalBorrows', [UInt256Max()]);
-      expect(await borrowFresh(cToken, borrower, borrowAmount)).toHaveTokenFailure('MATH_ERROR', 'BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED');
+      await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert addition overflow");
     });
 
     it("reverts if transfer out fails", async () => {
@@ -207,12 +207,12 @@ describe('CEther', function () {
 
         it("returns an error if calculating account new account borrow balance fails", async () => {
           await pretendBorrow(cToken, borrower, 1, 1, 1);
-          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert('revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED');
+          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert('revert subtraction underflow');
         });
 
         it("returns an error if calculation of new total borrow balance fails", async () => {
           await send(cToken, 'harnessSetTotalBorrows', [1]);
-          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert('revert REPAY_BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED');
+          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert('revert subtraction underflow');
         });
 
         it("reverts if checkTransferIn fails", async () => {
@@ -298,8 +298,7 @@ describe('CEther', function () {
     it("reverts if overpaying", async () => {
       const beforeAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
       let tooMuch = new BigNumber(beforeAccountBorrowSnap.principal).plus(1);
-      await expect(repayBorrow(cToken, borrower, tooMuch)).rejects.toRevert("revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
-      // await assert.toRevertWithError(repayBorrow(cToken, borrower, tooMuch), 'MATH_ERROR', "revert repayBorrow failed");
+      await expect(repayBorrow(cToken, borrower, tooMuch)).rejects.toRevert("revert subtraction underflow");
     });
   });
 

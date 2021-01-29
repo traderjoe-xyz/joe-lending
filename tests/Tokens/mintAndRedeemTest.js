@@ -107,7 +107,7 @@ describe('CToken', function () {
 
     it("fails if exchange calculation fails", async () => {
       expect(await send(cToken, 'harnessSetExchangeRate', [0])).toSucceed();
-      await expect(mintFresh(cToken, minter, mintAmount)).rejects.toRevert('revert MINT_EXCHANGE_CALCULATION_FAILED');
+      await expect(mintFresh(cToken, minter, mintAmount)).rejects.toRevert('revert divide by zero');
     });
 
     it("fails if transferring in fails", async () => {
@@ -199,10 +199,10 @@ describe('CToken', function () {
       it("fails if exchange calculation fails", async () => {
         if (redeemFresh == redeemFreshTokens) {
           expect(await send(cToken, 'harnessSetExchangeRate', [UInt256Max()])).toSucceed();
-          expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('MATH_ERROR', 'REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED');
+          await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert multiplication overflow");
         } else {
           expect(await send(cToken, 'harnessSetExchangeRate', [0])).toSucceed();
-          expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('MATH_ERROR', 'REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED');
+          await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert divide by zero");
         }
       });
 
@@ -213,12 +213,12 @@ describe('CToken', function () {
 
       it("fails if total supply < redemption amount", async () => {
         await send(cToken, 'harnessExchangeRateDetails', [0, 0, 0]);
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('MATH_ERROR', 'REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED');
+        await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert subtraction underflow");
       });
 
       it("reverts if new account balance underflows", async () => {
         await send(cToken, 'harnessSetBalance', [redeemer, 0]);
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('MATH_ERROR', 'REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED');
+        await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert subtraction underflow");
       });
 
       it("transfers the underlying cash, tokens, and emits Redeem, Transfer events", async () => {
