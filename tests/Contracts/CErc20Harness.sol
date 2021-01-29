@@ -37,9 +37,9 @@ contract CErc20Harness is CErc20Immutable {
         return super.doTransferOut(to, amount);
     }
 
-    function exchangeRateStoredInternal() internal view returns (MathError, uint) {
+    function exchangeRateStoredInternal() internal view returns (uint) {
         if (harnessExchangeRateStored) {
-            return (MathError.NO_ERROR, harnessExchangeRate);
+            return harnessExchangeRate;
         }
         return super.exchangeRateStoredInternal();
     }
@@ -251,9 +251,9 @@ contract CErc20DelegateHarness is CErc20Delegate {
 
     mapping (address => bool) public failTransferToAddresses;
 
-    function exchangeRateStoredInternal() internal view returns (MathError, uint) {
+    function exchangeRateStoredInternal() internal view returns (uint) {
         if (harnessExchangeRateStored) {
-            return (MathError.NO_ERROR, harnessExchangeRate);
+            return harnessExchangeRate;
         }
         return super.exchangeRateStoredInternal();
     }
@@ -413,9 +413,9 @@ contract CSLPDelegateHarness is CSLPDelegate {
 
     mapping (address => bool) public failTransferToAddresses;
 
-    function exchangeRateStoredInternal() internal view returns (MathError, uint) {
+    function exchangeRateStoredInternal() internal view returns (uint) {
         if (harnessExchangeRateStored) {
-            return (MathError.NO_ERROR, harnessExchangeRate);
+            return harnessExchangeRate;
         }
         return super.exchangeRateStoredInternal();
     }
