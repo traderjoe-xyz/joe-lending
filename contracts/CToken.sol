@@ -86,25 +86,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         }
 
         /* Do the calculations, checking for {under,over}flow */
-        MathError mathErr;
-        uint allowanceNew;
-        uint srcTokensNew;
-        uint dstTokensNew;
-
-        (mathErr, allowanceNew) = subUInt(startingAllowance, tokens);
-        if (mathErr != MathError.NO_ERROR) {
-            return fail(Error.MATH_ERROR, FailureInfo.TRANSFER_NOT_ALLOWED);
-        }
-
-        (mathErr, srcTokensNew) = subUInt(accountTokens[src], tokens);
-        if (mathErr != MathError.NO_ERROR) {
-            return fail(Error.MATH_ERROR, FailureInfo.TRANSFER_NOT_ENOUGH);
-        }
-
-        (mathErr, dstTokensNew) = addUInt(accountTokens[dst], tokens);
-        if (mathErr != MathError.NO_ERROR) {
-            return fail(Error.MATH_ERROR, FailureInfo.TRANSFER_TOO_MUCH);
-        }
+        uint allowanceNew = sub_(startingAllowance, tokens);
+        uint srcTokensNew = sub_(accountTokens[src], tokens);
+        uint dstTokensNew = add_(accountTokens[dst], tokens);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -189,9 +173,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      */
     function balanceOfUnderlying(address owner) external returns (uint) {
         Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
-        (MathError mErr, uint balance) = mulScalarTruncate(exchangeRate, accountTokens[owner]);
-        require(mErr == MathError.NO_ERROR, "balance could not be calculated");
-        return balance;
+        return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
     }
 
     /**
@@ -280,11 +262,6 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      * @return (error code, the calculated balance or 0 if error code is non-zero)
      */
     function borrowBalanceStoredInternal(address account) internal view returns (MathError, uint) {
-        /* Note: we do not assert that the market is up to date */
-        MathError mathErr;
-        uint principalTimesIndex;
-        uint result;
-
         /* Get borrowBalance and borrowIndex */
         BorrowSnapshot storage borrowSnapshot = accountBorrows[account];
 
@@ -298,15 +275,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         /* Calculate new borrow balance using the interest index:
          *  recentBorrowBalance = borrower.borrowBalance * market.borrowIndex / borrower.borrowIndex
          */
-        (mathErr, principalTimesIndex) = mulUInt(borrowSnapshot.principal, borrowIndex);
-        if (mathErr != MathError.NO_ERROR) {
-            return (mathErr, 0);
-        }
-
-        (mathErr, result) = divUInt(principalTimesIndex, borrowSnapshot.interestIndex);
-        if (mathErr != MathError.NO_ERROR) {
-            return (mathErr, 0);
-        }
+        uint principalTimesIndex = mul_(borrowSnapshot.principal, borrowIndex);
+        uint result = div_(principalTimesIndex, borrowSnapshot.interestIndex);
 
         return (MathError.NO_ERROR, result);
     }
@@ -350,21 +320,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
              *  exchangeRate = (totalCash + totalBorrows - totalReserves) / totalSupply
              */
             uint totalCash = getCashPrior();
-            uint cashPlusBorrowsMinusReserves;
-            Exp memory exchangeRate;
-            MathError mathErr;
-
-            (mathErr, cashPlusBorrowsMinusReserves) = addThenSubUInt(totalCash, totalBorrows, totalReserves);
-            if (mathErr != MathError.NO_ERROR) {
-                return (mathErr, 0);
-            }
-
-            (mathErr, exchangeRate) = getExp(cashPlusBorrowsMinusReserves, _totalSupply);
-            if (mathErr != MathError.NO_ERROR) {
-                return (mathErr, 0);
-            }
-
-            return (MathError.NO_ERROR, exchangeRate.mantissa);
+            uint cashPlusBorrowsMinusReserves = sub_(add_(totalCash, totalBorrows), totalReserves);
+            uint exchangeRate = div_(cashPlusBorrowsMinusReserves, Exp({mantissa: _totalSupply}));
+            return (MathError.NO_ERROR, exchangeRate);
         }
     }
 
@@ -402,8 +360,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
 
         /* Calculate the number of blocks elapsed since the last accrual */
-        (MathError mathErr, uint blockDelta) = subUInt(currentBlockNumber, accrualBlockNumberPrior);
-        require(mathErr == MathError.NO_ERROR, "could not calculate block delta");
+        uint blockDelta = sub_(currentBlockNumber, accrualBlockNumberPrior);
 
         /*
          * Calculate the interest accumulated into borrows and reserves and the new index:
@@ -414,36 +371,11 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
          *  borrowIndexNew = simpleInterestFactor * borrowIndex + borrowIndex
          */
 
-        Exp memory simpleInterestFactor;
-        uint interestAccumulated;
-        uint totalBorrowsNew;
-        uint totalReservesNew;
-        uint borrowIndexNew;
-
-        (mathErr, simpleInterestFactor) = mulScalar(Exp({mantissa: borrowRateMantissa}), blockDelta);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.ACCRUE_INTEREST_SIMPLE_INTEREST_FACTOR_CALCULATION_FAILED, uint(mathErr));
-        }
-
-        (mathErr, interestAccumulated) = mulScalarTruncate(simpleInterestFactor, borrowsPrior);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.ACCRUE_INTEREST_ACCUMULATED_INTEREST_CALCULATION_FAILED, uint(mathErr));
-        }
-
-        (mathErr, totalBorrowsNew) = addUInt(interestAccumulated, borrowsPrior);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.ACCRUE_INTEREST_NEW_TOTAL_BORROWS_CALCULATION_FAILED, uint(mathErr));
-        }
-
-        (mathErr, totalReservesNew) = mulScalarTruncateAddUInt(Exp({mantissa: reserveFactorMantissa}), interestAccumulated, reservesPrior);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.ACCRUE_INTEREST_NEW_TOTAL_RESERVES_CALCULATION_FAILED, uint(mathErr));
-        }
-
-        (mathErr, borrowIndexNew) = mulScalarTruncateAddUInt(simpleInterestFactor, borrowIndexPrior, borrowIndexPrior);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.ACCRUE_INTEREST_NEW_BORROW_INDEX_CALCULATION_FAILED, uint(mathErr));
-        }
+        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockDelta);
+        uint interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
+        uint totalBorrowsNew = add_(interestAccumulated, borrowsPrior);
+        uint totalReservesNew = mul_ScalarTruncateAddUInt(Exp({mantissa: reserveFactorMantissa}), interestAccumulated, reservesPrior);
+        uint borrowIndexNew = mul_ScalarTruncateAddUInt(simpleInterestFactor, borrowIndexPrior, borrowIndexPrior);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -532,19 +464,15 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
          *  mintTokens = actualMintAmount / exchangeRate
          */
 
-        (vars.mathErr, vars.mintTokens) = divScalarByExpTruncate(vars.actualMintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
-        require(vars.mathErr == MathError.NO_ERROR, "MINT_EXCHANGE_CALCULATION_FAILED");
+        vars.mintTokens = div_ScalarByExpTruncate(vars.actualMintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
 
         /*
          * We calculate the new total supply of cTokens and minter token balance, checking for overflow:
          *  totalSupplyNew = totalSupply + mintTokens
          *  accountTokensNew = accountTokens[minter] + mintTokens
          */
-        (vars.mathErr, vars.totalSupplyNew) = addUInt(totalSupply, vars.mintTokens);
-        require(vars.mathErr == MathError.NO_ERROR, "MINT_NEW_TOTAL_SUPPLY_CALCULATION_FAILED");
-
-        (vars.mathErr, vars.accountTokensNew) = addUInt(accountTokens[minter], vars.mintTokens);
-        require(vars.mathErr == MathError.NO_ERROR, "MINT_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED");
+        vars.totalSupplyNew = add_(totalSupply, vars.mintTokens);
+        vars.accountTokensNew = add_(accountTokens[minter], vars.mintTokens);
 
         /* We write previously calculated values into storage */
         totalSupply = vars.totalSupplyNew;
@@ -629,23 +557,14 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
              *  redeemAmount = redeemTokensIn x exchangeRateCurrent
              */
             vars.redeemTokens = redeemTokensIn;
-
-            (vars.mathErr, vars.redeemAmount) = mulScalarTruncate(Exp({mantissa: vars.exchangeRateMantissa}), redeemTokensIn);
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_TOKENS_CALCULATION_FAILED, uint(vars.mathErr));
-            }
+            vars.redeemAmount = mul_ScalarTruncate(Exp({mantissa: vars.exchangeRateMantissa}), redeemTokensIn);
         } else {
             /*
              * We get the current exchange rate and calculate the amount to be redeemed:
              *  redeemTokens = redeemAmountIn / exchangeRate
              *  redeemAmount = redeemAmountIn
              */
-
-            (vars.mathErr, vars.redeemTokens) = divScalarByExpTruncate(redeemAmountIn, Exp({mantissa: vars.exchangeRateMantissa}));
-            if (vars.mathErr != MathError.NO_ERROR) {
-                return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_EXCHANGE_AMOUNT_CALCULATION_FAILED, uint(vars.mathErr));
-            }
-
+            vars.redeemTokens = div_ScalarByExpTruncate(redeemAmountIn, Exp({mantissa: vars.exchangeRateMantissa}));
             vars.redeemAmount = redeemAmountIn;
         }
 
@@ -665,15 +584,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
          *  totalSupplyNew = totalSupply - redeemTokens
          *  accountTokensNew = accountTokens[redeemer] - redeemTokens
          */
-        (vars.mathErr, vars.totalSupplyNew) = subUInt(totalSupply, vars.redeemTokens);
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED, uint(vars.mathErr));
-        }
-
-        (vars.mathErr, vars.accountTokensNew) = subUInt(accountTokens[redeemer], vars.redeemTokens);
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.REDEEM_NEW_ACCOUNT_BALANCE_CALCULATION_FAILED, uint(vars.mathErr));
-        }
+        vars.totalSupplyNew = sub_(totalSupply, vars.redeemTokens);
+        vars.accountTokensNew = sub_(accountTokens[redeemer], vars.redeemTokens);
 
         /* Fail gracefully if protocol has insufficient cash */
         if (getCashPrior() < vars.redeemAmount) {
@@ -762,15 +674,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return failOpaque(Error.MATH_ERROR, FailureInfo.BORROW_ACCUMULATED_BALANCE_CALCULATION_FAILED, uint(vars.mathErr));
         }
 
-        (vars.mathErr, vars.accountBorrowsNew) = addUInt(vars.accountBorrows, borrowAmount);
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED, uint(vars.mathErr));
-        }
-
-        (vars.mathErr, vars.totalBorrowsNew) = addUInt(totalBorrows, borrowAmount);
-        if (vars.mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED, uint(vars.mathErr));
-        }
+        vars.accountBorrowsNew = add_(vars.accountBorrows, borrowAmount);
+        vars.totalBorrowsNew = add_(totalBorrows, borrowAmount);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -895,11 +800,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
          *  accountBorrowsNew = accountBorrows - actualRepayAmount
          *  totalBorrowsNew = totalBorrows - actualRepayAmount
          */
-        (vars.mathErr, vars.accountBorrowsNew) = subUInt(vars.accountBorrows, vars.actualRepayAmount);
-        require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED");
-
-        (vars.mathErr, vars.totalBorrowsNew) = subUInt(totalBorrows, vars.actualRepayAmount);
-        require(vars.mathErr == MathError.NO_ERROR, "REPAY_BORROW_NEW_TOTAL_BALANCE_CALCULATION_FAILED");
+        vars.accountBorrowsNew = sub_(vars.accountBorrows, vars.actualRepayAmount);
+        vars.totalBorrowsNew = sub_(totalBorrows, vars.actualRepayAmount);
 
         /* We write the previously calculated values into storage */
         accountBorrows[borrower].principal = vars.accountBorrowsNew;
@@ -1054,24 +956,13 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
-        MathError mathErr;
-        uint borrowerTokensNew;
-        uint liquidatorTokensNew;
-
         /*
          * We calculate the new borrower and liquidator token balances, failing on underflow/overflow:
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
-        (mathErr, borrowerTokensNew) = subUInt(accountTokens[borrower], seizeTokens);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.LIQUIDATE_SEIZE_BALANCE_DECREMENT_FAILED, uint(mathErr));
-        }
-
-        (mathErr, liquidatorTokensNew) = addUInt(accountTokens[liquidator], seizeTokens);
-        if (mathErr != MathError.NO_ERROR) {
-            return failOpaque(Error.MATH_ERROR, FailureInfo.LIQUIDATE_SEIZE_BALANCE_INCREMENT_FAILED, uint(mathErr));
-        }
+        uint borrowerTokensNew = sub_(accountTokens[borrower], seizeTokens);
+        uint liquidatorTokensNew = add_(accountTokens[liquidator], seizeTokens);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -1259,10 +1150,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         actualAddAmount = doTransferIn(msg.sender, addAmount);
 
-        totalReservesNew = totalReserves + actualAddAmount;
-
-        /* Revert on overflow */
-        require(totalReservesNew >= totalReserves, "add reserves unexpected overflow");
+        totalReservesNew = add_(totalReserves, actualAddAmount);
 
         // Store reserves[n+1] = reserves[n] + actualAddAmount
         totalReserves = totalReservesNew;
@@ -1324,9 +1212,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         // EFFECTS & INTERACTIONS
         // (No safe failures beyond this point)
 
-        totalReservesNew = totalReserves - reduceAmount;
-        // We checked reduceAmount <= totalReserves above, so this should never revert.
-        require(totalReservesNew <= totalReserves, "reduce reserves unexpected underflow");
+        totalReservesNew = sub_(totalReserves, reduceAmount);
 
         // Store reserves[n+1] = reserves[n] - reduceAmount
         totalReserves = totalReservesNew;
