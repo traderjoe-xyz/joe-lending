@@ -79,9 +79,6 @@ contract CSLPDelegate is CCapableErc20Delegate {
      */
     mapping(address => uint) public xSushiUserAccrued;
 
-    /// @notice The initial index for the supply state
-    uint public constant sushiInitialIndex = 1e36;
-
     /**
      * @notice Delegate interface to become the implementation
      * @param data The encoded arguments for becoming
@@ -103,8 +100,6 @@ contract CSLPDelegate is CCapableErc20Delegate {
 
         // Approve moving sushi rewards into the sushi bar contract.
         EIP20Interface(sushi).approve(sushiBarAddress_, uint(-1));
-
-        initState();
     }
 
     /**
@@ -214,12 +209,6 @@ contract CSLPDelegate is CCapableErc20Delegate {
 
     /*** Internal functions ***/
 
-    function initState() internal {
-        if (slpSupplyState.index == 0) {
-            slpSupplyState.index = sushiInitialIndex;
-        }
-    }
-
     function claimAndStakeSushi() internal {
         // Deposit 0 SLP into MasterChef to claim sushi rewards.
         IMasterChef(masterChef).deposit(pid, 0);
@@ -231,29 +220,27 @@ contract CSLPDelegate is CCapableErc20Delegate {
     }
 
     function updateSLPSupplyIndex() internal {
-        uint xSushiAccrued = sub_(xSushiBalance(), slpSupplyState.balance);
+        uint xSushiBalance = xSushiBalance();
+        uint xSushiAccrued = sub_(xSushiBalance, slpSupplyState.balance);
         uint supplyTokens = CToken(address(this)).totalSupply();
         Double memory ratio = supplyTokens > 0 ? fraction(xSushiAccrued, supplyTokens) : Double({mantissa: 0});
         Double memory index = add_(Double({mantissa: slpSupplyState.index}), ratio);
 
         // Update slpSupplyState.
         slpSupplyState.index = index.mantissa;
-        slpSupplyState.balance = xSushiBalance();
+        slpSupplyState.balance = xSushiBalance;
     }
 
     function updateSupplierIndex(address supplier) internal {
         Double memory supplyIndex = Double({mantissa: slpSupplyState.index});
         Double memory supplierIndex = Double({mantissa: slpSupplierIndex[supplier]});
-        slpSupplierIndex[supplier] = supplyIndex.mantissa;
-
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = sushiInitialIndex;
-        }
-
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
-        uint supplierTokens = CToken(address(this)).balanceOf(supplier);
-        uint supplierDelta = mul_(supplierTokens, deltaIndex);
-        xSushiUserAccrued[supplier] = add_(xSushiUserAccrued[supplier], supplierDelta);
+        if (deltaIndex.mantissa > 0) {
+            uint supplierTokens = CToken(address(this)).balanceOf(supplier);
+            uint supplierDelta = mul_(supplierTokens, deltaIndex);
+            xSushiUserAccrued[supplier] = add_(xSushiUserAccrued[supplier], supplierDelta);
+            slpSupplierIndex[supplier] = supplyIndex.mantissa;
+        }
     }
 
     function sushiBalance() internal view returns (uint) {
