@@ -12,17 +12,12 @@ const {
   getBalances,
   adjustBalances,
   preApprove,
-  quickMint,
-  preSupply,
-  quickRedeem,
-  quickRedeemUnderlying
+  quickMint
 } = require('../Utils/Compound');
 
 const exchangeRate = 50e3;
 const mintAmount = etherUnsigned(10e4);
 const mintTokens = mintAmount.div(exchangeRate);
-const redeemTokens = etherUnsigned(10e3);
-const redeemAmount = redeemTokens.multipliedBy(exchangeRate);
 
 async function preMint(cToken, minter, mintAmount, mintTokens, exchangeRate) {
   await preApprove(cToken, minter, mintAmount);
@@ -38,17 +33,6 @@ async function mintFresh(cToken, minter, mintAmount) {
   return send(cToken, 'harnessMintFresh', [minter, mintAmount]);
 }
 
-async function preRedeem(cToken, redeemer, redeemTokens, redeemAmount, exchangeRate) {
-  await preSupply(cToken, redeemer, redeemTokens);
-  await send(cToken.comptroller, 'setRedeemAllowed', [true]);
-  await send(cToken.comptroller, 'setRedeemVerify', [true]);
-  await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
-  await send(cToken.underlying, 'harnessSetBalance', [cToken._address, redeemAmount]);
-  await send(cToken.underlying, 'harnessSetBalance', [redeemer, 0]);
-  await send(cToken.underlying, 'harnessSetFailTransferToAddress', [redeemer, false]);
-  await send(cToken, 'harnessSetExchangeRate', [etherMantissa(exchangeRate)]);
-}
-
 async function redeemFreshTokens(cToken, redeemer, redeemTokens, redeemAmount) {
   return send(cToken, 'harnessRedeemFresh', [redeemer, redeemTokens, 0]);
 }
@@ -58,11 +42,11 @@ async function redeemFreshAmount(cToken, redeemer, redeemTokens, redeemAmount) {
 }
 
 describe('CToken', function () {
-  let root, minter, redeemer, accounts;
+  let root, minter, accounts;
   let cToken;
   beforeEach(async () => {
-    [root, minter, redeemer, ...accounts] = saddle.accounts;
-    cToken = await makeCToken({comptrollerOpts: {kind: 'bool'}, exchangeRate});
+    [root, minter, ...accounts] = saddle.accounts;
+    cToken = await makeCToken({kind: 'cslp', comptrollerOpts: {kind: 'bool'}, exchangeRate});
   });
 
   describe('mintFresh', () => {
@@ -85,7 +69,7 @@ describe('CToken', function () {
     });
 
     it("continues if fresh", async () => {
-      await expect(await send(cToken, 'accrueInterest')).toSucceed();
+      expect(await send(cToken, 'accrueInterest')).toSucceed();
       expect(await mintFresh(cToken, minter, mintAmount)).toSucceed();
     });
 
@@ -112,7 +96,7 @@ describe('CToken', function () {
 
     it("fails if transferring in fails", async () => {
       await send(cToken.underlying, 'harnessSetFailTransferFromAddress', [minter, true]);
-      await expect(mintFresh(cToken, minter, mintAmount)).rejects.toRevert('revert TOKEN_TRANSFER_IN_FAILED');
+      await expect(mintFresh(cToken, minter, mintAmount)).rejects.toRevert('revert unexpected EIP-20 transfer in return');
     });
 
     it("transfers the underlying cash, tokens, and emits Mint, Transfer events", async () => {
@@ -125,7 +109,7 @@ describe('CToken', function () {
         mintAmount: mintAmount.toString(),
         mintTokens: mintTokens.toString()
       });
-      expect(result).toHaveLog(['Transfer', 1], {
+      expect(result).toHaveLog(['Transfer', 2], {
         from: cToken._address,
         to: minter,
         amount: mintTokens.toString()
@@ -168,79 +152,98 @@ describe('CToken', function () {
         totalBorrows: "0",
       });
     });
+
+    it("claims sushi rewards after minting", async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      expect(await quickMint(cToken, minter, mintAmount)).toSucceed();
+      expect(await balanceOf(sushi, minter)).toEqualNumber(etherUnsigned(0));
+
+      await fastForward(masterChef, 1);
+
+      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
+      expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
+    });
   });
 
   [redeemFreshTokens, redeemFreshAmount].forEach((redeemFresh) => {
     describe(redeemFresh.name, () => {
       beforeEach(async () => {
-        await preRedeem(cToken, redeemer, redeemTokens, redeemAmount, exchangeRate);
+        await preMint(cToken, minter, mintAmount, mintTokens, exchangeRate);
+        expect(await mintFresh(cToken, minter, mintAmount)).toSucceed();
       });
 
       it("fails if comptroller tells it to", async () =>{
         await send(cToken.comptroller, 'setRedeemAllowed', [false]);
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTrollReject('REDEEM_COMPTROLLER_REJECTION');
+        expect(await redeemFresh(cToken, minter, mintTokens, mintAmount)).toHaveTrollReject('REDEEM_COMPTROLLER_REJECTION');
       });
 
       it("fails if not fresh", async () => {
         await fastForward(cToken);
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('MARKET_NOT_FRESH', 'REDEEM_FRESHNESS_CHECK');
+        expect(await redeemFresh(cToken, minter, mintTokens, mintAmount)).toHaveTokenFailure('MARKET_NOT_FRESH', 'REDEEM_FRESHNESS_CHECK');
       });
 
       it("continues if fresh", async () => {
-        await expect(await send(cToken, 'accrueInterest')).toSucceed();
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toSucceed();
+        expect(await send(cToken, 'accrueInterest')).toSucceed();
+        expect(await redeemFresh(cToken, minter, mintTokens, mintAmount)).toSucceed();
       });
 
       it("fails if insufficient protocol cash to transfer out", async() => {
-        await send(cToken.underlying, 'harnessSetBalance', [cToken._address, 1]);
-        expect(await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'REDEEM_TRANSFER_OUT_NOT_POSSIBLE');
+        const masterChefAddress = await call(cToken, 'masterChef', []);
+        const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+        await send(masterChef, 'harnessSetUserAmount', [0, cToken._address, 1]);
+        expect(await redeemFresh(cToken, minter, mintTokens, mintAmount)).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'REDEEM_TRANSFER_OUT_NOT_POSSIBLE');
       });
 
       it("fails if exchange calculation fails", async () => {
         if (redeemFresh == redeemFreshTokens) {
           expect(await send(cToken, 'harnessSetExchangeRate', [UInt256Max()])).toSucceed();
-          await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert multiplication overflow");
+          await expect(redeemFresh(cToken, minter, mintTokens, mintAmount)).rejects.toRevert("revert multiplication overflow");
         } else {
           expect(await send(cToken, 'harnessSetExchangeRate', [0])).toSucceed();
-          await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert divide by zero");
+          await expect(redeemFresh(cToken, minter, mintTokens, mintAmount)).rejects.toRevert("revert divide by zero");
         }
       });
 
       it("fails if transferring out fails", async () => {
-        await send(cToken.underlying, 'harnessSetFailTransferToAddress', [redeemer, true]);
-        await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert TOKEN_TRANSFER_OUT_FAILED");
+        await send(cToken.underlying, 'harnessSetFailTransferToAddress', [minter, true]);
+        await expect(redeemFresh(cToken, minter, mintTokens, mintAmount)).rejects.toRevert("revert unexpected EIP-20 transfer out return");
       });
 
       it("fails if total supply < redemption amount", async () => {
         await send(cToken, 'harnessExchangeRateDetails', [0, 0, 0]);
-        await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert subtraction underflow");
+        await expect(redeemFresh(cToken, minter, mintTokens, mintAmount)).rejects.toRevert("revert subtraction underflow");
       });
 
       it("reverts if new account balance underflows", async () => {
-        await send(cToken, 'harnessSetBalance', [redeemer, 0]);
-        await expect(redeemFresh(cToken, redeemer, redeemTokens, redeemAmount)).rejects.toRevert("revert subtraction underflow");
+        await send(cToken, 'harnessSetBalance', [minter, 0]);
+        await expect(redeemFresh(cToken, minter, mintTokens, mintAmount)).rejects.toRevert("revert subtraction underflow");
       });
 
       it("transfers the underlying cash, tokens, and emits Redeem, Transfer events", async () => {
-        const beforeBalances = await getBalances([cToken], [redeemer]);
-        const result = await redeemFresh(cToken, redeemer, redeemTokens, redeemAmount);
-        const afterBalances = await getBalances([cToken], [redeemer]);
+        const beforeBalances = await getBalances([cToken], [minter]);
+        const result = await redeemFresh(cToken, minter, mintTokens, mintAmount);
+        const afterBalances = await getBalances([cToken], [minter]);
         expect(result).toSucceed();
         expect(result).toHaveLog('Redeem', {
-          redeemer,
-          redeemAmount: redeemAmount.toString(),
-          redeemTokens: redeemTokens.toString()
+          redeemer: minter,
+          redeemAmount: mintAmount.toString(),
+          redeemTokens: mintTokens.toString()
         });
-        expect(result).toHaveLog(['Transfer', 1], {
-          from: redeemer,
+        expect(result).toHaveLog(['Transfer', 3], {
+          from: minter,
           to: cToken._address,
-          amount: redeemTokens.toString()
+          amount: mintTokens.toString()
         });
         expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-          [cToken, redeemer, 'cash', redeemAmount],
-          [cToken, redeemer, 'tokens', -redeemTokens],
-          [cToken, 'cash', -redeemAmount],
-          [cToken, 'tokens', -redeemTokens]
+          [cToken, minter, 'cash', mintAmount],
+          [cToken, minter, 'tokens', -mintTokens],
+          [cToken, 'cash', -mintAmount],
+          [cToken, 'tokens', -mintTokens]
         ]));
       });
     });
@@ -248,46 +251,57 @@ describe('CToken', function () {
 
   describe('redeem', () => {
     beforeEach(async () => {
-      await preRedeem(cToken, redeemer, redeemTokens, redeemAmount, exchangeRate);
+      await preMint(cToken, minter, mintAmount, mintTokens, exchangeRate);
+      expect(await mintFresh(cToken, minter, mintAmount)).toSucceed();
     });
 
     it("emits a redeem failure if interest accrual fails", async () => {
       await send(cToken.interestRateModel, 'setFailBorrowRate', [true]);
-      await expect(quickRedeem(cToken, redeemer, redeemTokens)).rejects.toRevert("revert INTEREST_RATE_MODEL_ERROR");
+      await fastForward(cToken, 1);
+      await expect(send(cToken, 'redeem', [mintTokens], { from: minter })).rejects.toRevert("revert INTEREST_RATE_MODEL_ERROR");
     });
 
     it("returns error from redeemFresh without emitting any extra logs", async () => {
-      await setBalance(cToken.underlying, cToken._address, 0);
-      expect(await quickRedeem(cToken, redeemer, redeemTokens, {exchangeRate})).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'REDEEM_TRANSFER_OUT_NOT_POSSIBLE');
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+      await send(masterChef, 'harnessSetUserAmount', [0, cToken._address, 1]);
+      expect(await send(cToken, 'redeem', [mintTokens], { from: minter })).toHaveTokenFailure('TOKEN_INSUFFICIENT_CASH', 'REDEEM_TRANSFER_OUT_NOT_POSSIBLE');
     });
 
     it("returns success from redeemFresh and redeems the right amount", async () => {
-      expect(
-        await send(cToken.underlying, 'harnessSetBalance', [cToken._address, redeemAmount])
-      ).toSucceed();
-      expect(await quickRedeem(cToken, redeemer, redeemTokens, {exchangeRate})).toSucceed();
-      expect(redeemAmount).not.toEqualNumber(0);
-      expect(await balanceOf(cToken.underlying, redeemer)).toEqualNumber(redeemAmount);
+      expect(await send(cToken, 'redeem', [mintTokens], { from: minter })).toSucceed();
+      expect(await balanceOf(cToken.underlying, minter)).toEqualNumber(mintAmount);
     });
 
     it("returns success from redeemFresh and redeems the right amount of underlying", async () => {
-      expect(
-        await send(cToken.underlying, 'harnessSetBalance', [cToken._address, redeemAmount])
-      ).toSucceed();
-      expect(
-        await quickRedeemUnderlying(cToken, redeemer, redeemAmount, {exchangeRate})
-      ).toSucceed();
-      expect(redeemAmount).not.toEqualNumber(0);
-      expect(await balanceOf(cToken.underlying, redeemer)).toEqualNumber(redeemAmount);
+      expect(await send(cToken, 'redeemUnderlying', [mintAmount], { from: minter })).toSucceed();
+      expect(await balanceOf(cToken.underlying, minter)).toEqualNumber(mintAmount);
     });
 
     it("emits an AccrueInterest event", async () => {
       expect(await quickMint(cToken, minter, mintAmount)).toHaveLog('AccrueInterest', {
         borrowIndex: "1000000000000000000",
-        cashPrior: "500000000",
+        cashPrior: "100000",
         interestAccumulated: "0",
         totalBorrows: "0",
       });
+    });
+
+    it("claims sushi rewards after redeeming", async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      await fastForward(masterChef, 1);
+
+      expect(await send(cToken, 'redeem', [mintTokens], { from: minter })).toSucceed();
+      expect(await balanceOf(sushi, minter)).toEqualNumber(etherUnsigned(0));
+
+      await fastForward(masterChef, 1);
+      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
+      expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
     });
   });
 });

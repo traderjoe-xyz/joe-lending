@@ -157,6 +157,31 @@ contract Exponential is CarefulMath {
     }
 
     /**
+     * @dev Divide a scalar by an Exp, returning a new Exp.
+     */
+    function div_ScalarByExp(uint scalar, Exp memory divisor) pure internal returns (Exp memory) {
+        /*
+          We are doing this as:
+          getExp(mulUInt(expScale, scalar), divisor.mantissa)
+
+          How it works:
+          Exp = a / b;
+          Scalar = s;
+          `s / (a / b)` = `b * s / a` and since for an Exp `a = mantissa, b = expScale`
+        */
+        uint numerator = mul_(expScale, scalar);
+        return Exp({mantissa: div_(numerator, divisor)});
+    }
+
+    /**
+     * @dev Divide a scalar by an Exp, then truncate to return an unsigned integer.
+     */
+    function div_ScalarByExpTruncate(uint scalar, Exp memory divisor) pure internal returns (uint) {
+        Exp memory fraction = div_ScalarByExp(scalar, divisor);
+        return truncate(fraction);
+    }
+
+    /**
      * @dev Multiplies two exponentials, returning a new exponential.
      */
     function mulExp(Exp memory a, Exp memory b) pure internal returns (MathError, Exp memory) {

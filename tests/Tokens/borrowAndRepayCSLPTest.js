@@ -66,11 +66,18 @@ async function repayBorrowBehalf(cToken, payer, borrower, repayAmount) {
   return send(cToken, 'repayBorrowBehalf', [borrower, repayAmount], {from: payer});
 }
 
+async function fillMasterChef(cToken, amount) {
+  const masterChefAddress = await call(cToken, 'masterChef', []);
+  const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+  await send(cToken.underlying, 'transfer', [masterChefAddress, amount]);
+  await send(masterChef, 'harnessSetUserAmount', [0, cToken._address, amount]);
+}
+
 describe('CToken', function () {
-  let cToken, root, borrower, benefactor, accounts;
+  let cToken, root, minter, borrower, benefactor, accounts;
   beforeEach(async () => {
-    [root, borrower, benefactor, ...accounts] = saddle.accounts;
-    cToken = await makeCToken({comptrollerOpts: {kind: 'bool'}});
+    [root, minter, borrower, benefactor, ...accounts] = saddle.accounts;
+    cToken = await makeCToken({kind: 'cslp', comptrollerOpts: {kind: 'bool'}});
   });
 
   describe('borrowFresh', () => {
@@ -82,7 +89,8 @@ describe('CToken', function () {
     });
 
     it("proceeds if comptroller tells it to", async () => {
-      await expect(await borrowFresh(cToken, borrower, borrowAmount)).toSucceed();
+      await fillMasterChef(cToken, borrowAmount);
+      expect(await borrowFresh(cToken, borrower, borrowAmount)).toSucceed();
     });
 
     it("fails if market not fresh", async () => {
@@ -91,8 +99,9 @@ describe('CToken', function () {
     });
 
     it("continues if fresh", async () => {
-      await expect(await send(cToken, 'accrueInterest')).toSucceed();
-      await expect(await borrowFresh(cToken, borrower, borrowAmount)).toSucceed();
+      expect(await send(cToken, 'accrueInterest')).toSucceed();
+      await fillMasterChef(cToken, borrowAmount);
+      expect(await borrowFresh(cToken, borrower, borrowAmount)).toSucceed();
     });
 
     it("fails if error if protocol has less than borrowAmount of underlying", async () => {
@@ -101,37 +110,45 @@ describe('CToken', function () {
 
     it("fails if borrowBalanceStored fails (due to non-zero stored principal with zero account index)", async () => {
       await pretendBorrow(cToken, borrower, 0, 3e18, 5e18);
+      await fillMasterChef(cToken, borrowAmount);
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert divide by zero");
     });
 
     it("fails if calculating account new total borrow balance overflows", async () => {
       await pretendBorrow(cToken, borrower, 1e-18, 1e-18, UInt256Max());
+      await fillMasterChef(cToken, borrowAmount);
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert addition overflow");
     });
 
     it("fails if calculation of new total borrow balance overflows", async () => {
       await send(cToken, 'harnessSetTotalBorrows', [UInt256Max()]);
+      await fillMasterChef(cToken, borrowAmount);
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert addition overflow");
     });
 
     it("reverts if transfer out fails", async () => {
-      await send(cToken, 'harnessSetFailTransferToAddress', [borrower, true]);
-      await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert TOKEN_TRANSFER_OUT_FAILED");
+      await send(cToken.underlying, 'harnessSetFailTransferToAddress', [borrower, true]);
+      await fillMasterChef(cToken, borrowAmount);
+      await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert unexpected EIP-20 transfer out return");
     });
 
     it("reverts if borrowVerify fails", async() => {
       await send(cToken.comptroller, 'setBorrowVerify', [false]);
+      await fillMasterChef(cToken, borrowAmount);
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert borrowVerify rejected borrow");
     });
 
     it("transfers the underlying cash, tokens, and emits Transfer, Borrow events", async () => {
+      await fillMasterChef(cToken, borrowAmount);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
       const beforeProtocolCash = await balanceOf(cToken.underlying, cToken._address);
       const beforeProtocolBorrows = await totalBorrows(cToken);
       const beforeAccountCash = await balanceOf(cToken.underlying, borrower);
       const result = await borrowFresh(cToken, borrower, borrowAmount);
       expect(result).toSucceed();
       expect(await balanceOf(cToken.underlying, borrower)).toEqualNumber(beforeAccountCash.plus(borrowAmount));
-      expect(await balanceOf(cToken.underlying, cToken._address)).toEqualNumber(beforeProtocolCash.minus(borrowAmount));
+      expect(await balanceOf(cToken.underlying, masterChefAddress)).toEqualNumber(beforeProtocolCash.minus(borrowAmount));
       expect(await totalBorrows(cToken)).toEqualNumber(beforeProtocolBorrows.plus(borrowAmount));
       expect(result).toHaveLog('Transfer', {
         from: cToken._address,
@@ -147,6 +164,8 @@ describe('CToken', function () {
     });
 
     it("stores new borrow principal and interest index", async () => {
+      await fillMasterChef(cToken, borrowAmount);
+
       const beforeProtocolBorrows = await totalBorrows(cToken);
       await pretendBorrow(cToken, borrower, 0, 3, 0);
       await borrowFresh(cToken, borrower, borrowAmount);
@@ -172,8 +191,23 @@ describe('CToken', function () {
     it("returns success from borrowFresh and transfers the correct amount", async () => {
       const beforeAccountCash = await balanceOf(cToken.underlying, borrower);
       await fastForward(cToken);
+      await fillMasterChef(cToken, borrowAmount);
       expect(await borrow(cToken, borrower, borrowAmount)).toSucceed();
       expect(await balanceOf(cToken.underlying, borrower)).toEqualNumber(beforeAccountCash.plus(borrowAmount));
+    });
+
+    it("gets no sushi reward when borrowing", async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      await fastForward(masterChef, 1);
+      await fillMasterChef(cToken, borrowAmount);
+
+      expect(await borrow(cToken, borrower, borrowAmount)).toSucceed();
+      expect(await balanceOf(sushi, borrower)).toEqualNumber(etherUnsigned(0));
     });
   });
 
@@ -221,7 +255,7 @@ describe('CToken', function () {
 
         it("reverts if doTransferIn fails", async () => {
           await send(cToken.underlying, 'harnessSetFailTransferFromAddress', [payer, true]);
-          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert TOKEN_TRANSFER_IN_FAILED");
+          await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert unexpected EIP-20 transfer in return");
         });
 
         it("reverts if repayBorrowVerify fails", async() => {
@@ -230,10 +264,11 @@ describe('CToken', function () {
         });
 
         it("transfers the underlying cash, and emits Transfer, RepayBorrow events", async () => {
+          const masterChefAddress = await call(cToken, 'masterChef', []);
           const beforeProtocolCash = await balanceOf(cToken.underlying, cToken._address);
           const result = await repayBorrowFresh(cToken, payer, borrower, repayAmount);
-          expect(await balanceOf(cToken.underlying, cToken._address)).toEqualNumber(beforeProtocolCash.plus(repayAmount));
-          expect(result).toHaveLog('Transfer', {
+          expect(await balanceOf(cToken.underlying, masterChefAddress)).toEqualNumber(beforeProtocolCash.plus(repayAmount));
+          expect(result).toHaveLog(['Transfer', 0], {
             from: payer,
             to: cToken._address,
             amount: repayAmount.toString()
@@ -295,6 +330,20 @@ describe('CToken', function () {
       await fastForward(cToken);
       await expect(repayBorrow(cToken, borrower, UInt256Max())).rejects.toRevert('revert Insufficient balance');
     });
+
+    it("gets no sushi reward when repaying", async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      await fastForward(masterChef, 1);
+      await fillMasterChef(cToken, borrowAmount);
+
+      expect(await repayBorrow(cToken, borrower, repayAmount)).toSucceed();
+      expect(await balanceOf(sushi, borrower)).toEqualNumber(etherUnsigned(0));
+    });
   });
 
   describe('repayBorrowBehalf', () => {
@@ -321,6 +370,20 @@ describe('CToken', function () {
       expect(await repayBorrowBehalf(cToken, payer, borrower, repayAmount)).toSucceed();
       const afterAccountBorrowSnap = await borrowSnapshot(cToken, borrower);
       expect(afterAccountBorrowSnap.principal).toEqualNumber(beforeAccountBorrowSnap.principal.minus(repayAmount));
+    });
+
+    it("gets no sushi reward when repaying on behalf", async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const sushi = await saddle.getContractAt('SushiToken', sushiAddress);
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      await fastForward(masterChef, 1);
+      await fillMasterChef(cToken, borrowAmount);
+
+      expect(await repayBorrowBehalf(cToken, payer, borrower, repayAmount)).toSucceed();
+      expect(await balanceOf(sushi, borrower)).toEqualNumber(etherUnsigned(0));
     });
   });
 });
