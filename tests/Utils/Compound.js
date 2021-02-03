@@ -289,6 +289,14 @@ async function makeToken(opts = {}) {
   }
 }
 
+async function preCSLP(underlying) {
+  const sushiToken = await deploy('SushiToken');
+  const masterChef = await deploy('MasterChef', [sushiToken._address]);
+  await send(masterChef, 'add', [1, underlying]);
+  const sushiBar = await deploy('SushiBar', [sushiToken._address]);
+  return encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]); // pid = 0
+}
+
 async function balanceOf(token, account) {
   return etherUnsigned(await call(token, 'balanceOf', [account]));
 }
@@ -463,6 +471,7 @@ module.exports = {
   setEtherBalance,
   getBalances,
   adjustBalances,
+  preCSLP,
 
   preApprove,
   quickMint,
