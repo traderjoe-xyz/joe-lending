@@ -1,6 +1,5 @@
 import { Event } from './Event';
 import { addAction, World } from './World';
-import { Governor } from './Contract/Governor';
 import { Invokation } from './Invokation';
 import { Arg, Command, Fetcher, getFetcherValue, processCommandEvent, View } from './Command';
 import { storeAndSaveContract } from './Networks';

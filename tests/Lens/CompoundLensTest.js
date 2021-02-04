@@ -160,7 +160,7 @@ describe('CompoundLens', () => {
       let cErc20 = await makeCToken();
       let cEth = await makeCToken({kind: 'cether'});
       let ethBalance = await web3.eth.getBalance(acct);
-      
+
       expect(
         (await call(compoundLens, 'cTokenBalancesAll', [[cErc20._address, cEth._address], acct], {gasPrice: '0'})).map(cullTuple)
       ).toEqual([
@@ -240,63 +240,6 @@ describe('CompoundLens', () => {
         markets: [],
         shortfall: "0"
       });
-    });
-  });
-
-  describe('governance', () => {
-    let comp, gov;
-    let targets, values, signatures, callDatas;
-    let proposalBlock, proposalId;
-
-    beforeEach(async () => {
-      comp = await deploy('Comp', [acct]);
-      gov = await deploy('GovernorAlpha', [address(0), comp._address, address(0)]);
-      targets = [acct];
-      values = ["0"];
-      signatures = ["getBalanceOf(address)"];
-      callDatas = [encodeParameters(['address'], [acct])];
-      await send(comp, 'delegate', [acct]);
-      await send(gov, 'propose', [targets, values, signatures, callDatas, "do nothing"]);
-      proposalBlock = +(await web3.eth.getBlockNumber());
-      proposalId = await call(gov, 'latestProposalIds', [acct]);
-    });
-
-    describe('getGovReceipts', () => {
-      it('gets correct values', async () => {
-        expect(
-          (await call(compoundLens, 'getGovReceipts', [gov._address, acct, [proposalId]])).map(cullTuple)
-        ).toEqual([
-          {
-            hasVoted: false,
-            proposalId: proposalId,
-            support: false,
-            votes: "0",
-          }
-        ]);
-      })
-    });
-
-    describe('getGovProposals', () => {
-      it('gets correct values', async () => {
-        expect(
-          (await call(compoundLens, 'getGovProposals', [gov._address, [proposalId]])).map(cullTuple)
-        ).toEqual([
-          {
-            againstVotes: "0",
-            calldatas: callDatas,
-            canceled: false,
-            endBlock: (Number(proposalBlock) + 17281).toString(),
-            eta: "0",
-            executed: false,
-            forVotes: "0",
-            proposalId: proposalId,
-            proposer: acct,
-            signatures: signatures,
-            startBlock: (Number(proposalBlock) + 1).toString(),
-            targets: targets
-          }
-        ]);
-      })
     });
   });
 

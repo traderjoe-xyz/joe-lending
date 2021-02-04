@@ -215,12 +215,12 @@ describe('CToken', function () {
 
     it("fails if cTokenBalances[borrower] < amount", async () => {
       await setBalance(cTokenCollateral, borrower, 1);
-      expect(await seize(cTokenCollateral, liquidator, borrower, seizeTokens)).toHaveTokenMathFailure('LIQUIDATE_SEIZE_BALANCE_DECREMENT_FAILED', 'INTEGER_UNDERFLOW');
+      await expect(seize(cTokenCollateral, liquidator, borrower, seizeTokens)).rejects.toRevert("revert subtraction underflow");
     });
 
     it("fails if cTokenBalances[liquidator] overflows", async () => {
       await setBalance(cTokenCollateral, liquidator, UInt256Max());
-      expect(await seize(cTokenCollateral, liquidator, borrower, seizeTokens)).toHaveTokenMathFailure('LIQUIDATE_SEIZE_BALANCE_INCREMENT_FAILED', 'INTEGER_OVERFLOW');
+      await expect(seize(cTokenCollateral, liquidator, borrower, seizeTokens)).rejects.toRevert("revert addition overflow");
     });
 
     it("succeeds, updates balances, and emits Transfer event", async () => {

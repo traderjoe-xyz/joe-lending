@@ -24,9 +24,7 @@ import { priceOracleProxyCommands, processPriceOracleProxyEvent } from './Event/
 import { mockAggregatorCommands, processMockAggregatorEvent } from './Event/AggregatorEvent';
 import { invariantCommands, processInvariantEvent } from './Event/InvariantEvent';
 import { expectationCommands, processExpectationEvent } from './Event/ExpectationEvent';
-import { timelockCommands, processTimelockEvent } from './Event/TimelockEvent';
 import { compCommands, processCompEvent } from './Event/CompEvent';
-import { governorCommands, processGovernorEvent } from './Event/GovernorEvent';
 import { processTrxEvent, trxCommands } from './Event/TrxEvent';
 import { getFetchers, getCoreValue } from './CoreValue';
 import { formatEvent } from './Formatter';
@@ -40,7 +38,6 @@ import { fork } from './Hypothetical';
 import { buildContractEvent } from './EventBuilder';
 import { Counter } from './Contract/Counter';
 import { CompoundLens } from './Contract/CompoundLens';
-import { Reservoir } from './Contract/Reservoir';
 
 export class EventProcessingError extends Error {
   error: Error;
@@ -751,7 +748,6 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
   new Command<{ event: EventV }>(
     `
       #### MockAggregator
-
       * "MockAggregator ...event" - Runs given Mock Aggregator event
       * E.g. "MockAggregator Deploy"
     `,
@@ -761,21 +757,6 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
       return processMockAggregatorEvent(world, event.val, from);
     },
     { subExpressions: mockAggregatorCommands() }
-  ),
-
-  new Command<{ event: EventV }>(
-    `
-      #### Timelock
-
-      * "Timelock ...event" - Runs given Timelock event
-      * E.g. "Timelock Deploy Geoff 604800"
-    `,
-    'Timelock',
-    [new Arg('event', getEventV, { variadic: true })],
-    (world, from, { event }) => {
-      return processTimelockEvent(world, event.val, from);
-    },
-    { subExpressions: timelockCommands() }
   ),
 
   new Command<{ event: EventV }>(
@@ -793,24 +774,8 @@ export const commands: (View<any> | ((world: World) => Promise<View<any>>))[] = 
     { subExpressions: compCommands() }
   ),
 
-  new Command<{ event: EventV }>(
-    `
-      #### Governor
-
-      * "Governor ...event" - Runs given governor event
-      * E.g. "Governor Deploy Alpha"
-    `,
-    'Governor',
-    [new Arg('event', getEventV, { variadic: true })],
-    (world, from, { event }) => {
-      return processGovernorEvent(world, event.val, from);
-    },
-    { subExpressions: governorCommands() }
-  ),
-
   buildContractEvent<Counter>("Counter", false),
   buildContractEvent<CompoundLens>("CompoundLens", false),
-  buildContractEvent<Reservoir>("Reservoir", true),
 
   new View<{ event: EventV }>(
     `

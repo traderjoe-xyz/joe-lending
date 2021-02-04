@@ -37,7 +37,7 @@ Test "Mint, Enter, Borrow, SetCreditLimit and then Redeem All"
     NewComptroller price:1.0
     ListedCToken ZRX cZRX initialExchangeRate:1e9
     ListedCToken BAT cBAT initialExchangeRate:1e9
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Comptroller SetCollateralFactor cZRX 0.5
     Comptroller SetCollateralFactor cBAT 0.5
     Prep Geoff Some ZRX cZRX
@@ -86,7 +86,7 @@ Test "Mint then Redeem Too Much"
     FastForward 2 Blocks
     AllowFailures
     Redeem Geoff 501e8 cZRX
-    Assert Failure MATH_ERROR REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED "3"
+    Assert Revert "revert subtraction underflow"
 
 Test "Mint then Redeem Zero"
     NewComptroller
@@ -231,7 +231,7 @@ Test "Mint, Enter, then Redeem Too Much (collateral factor: 0)"
     EnterMarkets Geoff cZRX
     AllowFailures
     Redeem Geoff 501e8 cZRX
-    Assert Failure MATH_ERROR REDEEM_NEW_TOTAL_SUPPLY_CALCULATION_FAILED "3"
+    Assert Revert "revert subtraction underflow"
 
 Test "Mint, Enter, then Redeem Too Much (collateral factor: 0.1)"
     NewComptroller

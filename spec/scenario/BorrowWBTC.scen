@@ -5,7 +5,7 @@ Test "Borrow some WBTC enters WBTC and succeeds when not entered"
     NewCToken ZRX cZRX
     NewCToken WBTC cWBTC tokenType:WBTC
     PriceOracleProxy SetAggregators (cZRX cWBTC) (MockAggregator MockAggregator)
-    GiveCToken cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
     Support cZRX collateralFactor:0.5
     Support cWBTC collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
@@ -36,7 +36,7 @@ Test "Borrow some WBTC fails when WBTC paused"
     NewCToken ZRX cZRX
     NewCToken WBTC cWBTC tokenType:WBTC
     PriceOracleProxy SetAggregators (cZRX cWBTC) (MockAggregator MockAggregator)
-    GiveCToken cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
     Support cZRX collateralFactor:0.5
     Support cWBTC collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
@@ -54,7 +54,7 @@ Test "Borrow some WBTC from Excess Cash"
     NewCToken ZRX cZRX
     NewCToken WBTC cWBTC tokenType:WBTC
     PriceOracleProxy SetAggregators (cZRX cWBTC) (MockAggregator MockAggregator)
-    GiveCToken cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
     Support cZRX collateralFactor:0.5
     Support cWBTC collateralFactor:0.5
     Prep Geoff Some ZRX cZRX

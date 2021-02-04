@@ -74,10 +74,9 @@ async function makeCToken(opts = {}) {
         ])
       break;
 
-    case 'cdai':
-      cDaiMaker  = await deploy('CDaiDelegateMakerHarness');
-      underlying = cDaiMaker;
-      cDelegatee = await deploy('CDaiDelegateHarness');
+    case 'ccapable':
+      underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      cDelegatee = await deploy('CCapableErc20Delegate');
       cDelegator = await deploy('CErc20Delegator',
         [
           underlying._address,
@@ -89,10 +88,55 @@ async function makeCToken(opts = {}) {
           decimals,
           admin,
           cDelegatee._address,
-          encodeParameters(['address', 'address'], [cDaiMaker._address, cDaiMaker._address])
+          "0x0"
         ]
       );
-      cToken = await saddle.getContractAt('CDaiDelegateHarness', cDelegator._address); // XXXS at
+      cToken = await saddle.getContractAt('CCapableErc20Delegate', cDelegator._address);
+      break;
+
+    case 'cslp':
+      underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      const sushiToken = await deploy('SushiToken');
+      const masterChef = await deploy('MasterChef', [sushiToken._address]);
+      await send(masterChef, 'add', [1, underlying._address]);
+      const sushiBar = await deploy('SushiBar', [sushiToken._address]);
+
+      cDelegatee = await deploy('CSLPDelegateHarness');
+      cDelegator = await deploy('CErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]) // pid = 0
+        ]
+      );
+      cToken = await saddle.getContractAt('CSLPDelegateHarness', cDelegator._address); // XXXS at
+      break;
+
+    case 'cctoken':
+      underlying = opts.underlying || await makeToken({kind: "ctoken"});
+      cDelegatee = await deploy('CCTokenDelegateHarness');
+      cDelegator = await deploy('CErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          "0x0"
+        ]
+      );
+      cToken = await saddle.getContractAt('CCTokenDelegateHarness', cDelegator._address); // XXXS at
       break;
 
     case 'cerc20':
@@ -150,12 +194,6 @@ async function makeInterestRateModel(opts = {}) {
     return await deploy('FalseMarkerMethodInterestRateModel', [borrowRate]);
   }
 
-  if (kind == 'white-paper') {
-    const baseRate = etherMantissa(dfn(opts.baseRate, 0));
-    const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
-    return await deploy('WhitePaperInterestRateModel', [baseRate, multiplier]);
-  }
-
   if (kind == 'jump-rate') {
     const baseRate = etherMantissa(dfn(opts.baseRate, 0));
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
@@ -193,11 +231,31 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'OMG';
     const name = opts.name || `Erc20 ${symbol}`;
     return await deploy('ERC20Harness', [quantity, name, decimals, symbol]);
+  } else if (kind == 'ctoken') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'cOMG';
+    const name = opts.name || `Compound ${symbol}`;
+
+    const comptroller = opts.comptroller || await makeComptroller();
+    return await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
   }
+}
+
+async function preCSLP(underlying) {
+  const sushiToken = await deploy('SushiToken');
+  const masterChef = await deploy('MasterChef', [sushiToken._address]);
+  await send(masterChef, 'add', [1, underlying]);
+  const sushiBar = await deploy('SushiBar', [sushiToken._address]);
+  return encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]); // pid = 0
 }
 
 async function balanceOf(token, account) {
   return etherUnsigned(await call(token, 'balanceOf', [account]));
+}
+
+async function cash(token) {
+  return etherUnsigned(await call(token, 'getCash', []));
 }
 
 async function totalSupply(token) {
@@ -250,7 +308,7 @@ async function getBalances(cTokens, accounts) {
     }
     cBalances[cToken._address] = {
       eth: await etherBalance(cToken._address),
-      cash: cToken.underlying && await balanceOf(cToken.underlying, cToken._address),
+      cash: await cash(cToken),
       tokens: await totalSupply(cToken),
       borrows: await totalBorrows(cToken),
       reserves: await totalReserves(cToken)
@@ -367,6 +425,7 @@ module.exports = {
   setEtherBalance,
   getBalances,
   adjustBalances,
+  preCSLP,
 
   preApprove,
   quickMint,

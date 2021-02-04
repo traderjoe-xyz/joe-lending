@@ -4,7 +4,7 @@ Test "Borrow some BAT and enters BAT if BAT not entered"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
@@ -22,7 +22,7 @@ Test "Borrow some BAT with credit limit and enters BAT if BAT not entered"
     NewComptroller price:1.0
     NewCToken BAT cBAT
     PriceOracleProxy SetAggregators (cBAT) (MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cBAT collateralFactor:0.5
     Comptroller SetCreditLimit Geoff 100e18
     Borrow Geoff 1e18 cBAT
@@ -71,7 +71,7 @@ Test "Borrow fails if market not listed"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
     Mint Geoff 100e18 cZRX
@@ -86,7 +86,7 @@ Test "Borrow some BAT from Excess Cash"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
@@ -103,7 +103,7 @@ Test "Borrow some BAT reverts if borrow is paused"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Prep Geoff Some ZRX cZRX

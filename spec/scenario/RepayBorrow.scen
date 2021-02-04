@@ -5,7 +5,7 @@ Macro NewBorrow borrowAmount borrowRate
     NewCToken ZRX cZRX
     NewCToken BAT cBAT borrowRate -- note: cannot use macros with named args right now
     PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
-    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
@@ -69,7 +69,7 @@ Test "Borrow, hold a few blocks, and repay too much"
     Expect Changes (Erc20 BAT TokenBalance Geoff) Zero
     Expect Changes (Erc20 BAT TokenBalance cBAT) Zero
     RepayBorrow Geoff 10e18 cBAT
-    Assert Revert "revert REPAY_BORROW_NEW_ACCOUNT_BORROW_BALANCE_CALCULATION_FAILED"
+    Assert Revert "revert subtraction underflow"
     -- Let's check the overall numbers
     Assert Equal (CToken cBAT BorrowBalance Geoff) 2.5e18
     Assert Equal (CToken cBAT TotalBorrowsCurrent) 2.5e18

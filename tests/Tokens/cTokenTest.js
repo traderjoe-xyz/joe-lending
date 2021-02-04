@@ -162,12 +162,12 @@ describe('CToken', function () {
 
     it("reverts on overflow of principal", async () => {
       await pretendBorrow(cToken, borrower, 1, 3, UInt256Max());
-      await expect(call(cToken, 'borrowBalanceStored', [borrower])).rejects.toRevert("revert borrowBalanceStored: borrowBalanceStoredInternal failed");
+      await expect(call(cToken, 'borrowBalanceStored', [borrower])).rejects.toRevert("revert multiplication overflow");
     });
 
     it("reverts on non-zero stored principal with zero account index", async () => {
       await pretendBorrow(cToken, borrower, 0, 3, 5);
-      await expect(call(cToken, 'borrowBalanceStored', [borrower])).rejects.toRevert("revert borrowBalanceStored: borrowBalanceStoredInternal failed");
+      await expect(call(cToken, 'borrowBalanceStored', [borrower])).rejects.toRevert("revert divide by zero");
     });
   });
 
@@ -199,16 +199,20 @@ describe('CToken', function () {
 
     it("calculates with cash and cTokenSupply", async () => {
       const cTokenSupply = 5e18, totalBorrows = 0, totalReserves = 0;
+      expect(
+        await send(cToken.underlying, 'transfer', [cToken._address, etherMantissa(500)])
+      ).toSucceed();
       await send(cToken, 'harnessExchangeRateDetails', [cTokenSupply, totalBorrows, totalReserves].map(etherUnsigned));
-      expect(await send(cToken, 'harnessSetInternalCash', [etherMantissa(500)])).toSucceed();
       const result = await call(cToken, 'exchangeRateStored');
       expect(result).toEqualNumber(etherMantissa(100));
     });
 
     it("calculates with cash, borrows, reserves and cTokenSupply", async () => {
       const cTokenSupply = 500e18, totalBorrows = 500e18, totalReserves = 5e18;
+      expect(
+        await send(cToken.underlying, 'transfer', [cToken._address, etherMantissa(500)])
+      ).toSucceed();
       await send(cToken, 'harnessExchangeRateDetails', [cTokenSupply, totalBorrows, totalReserves].map(etherUnsigned));
-      expect(await send(cToken, 'harnessSetInternalCash', [etherMantissa(500)])).toSucceed();
       const result = await call(cToken, 'exchangeRateStored');
       expect(result).toEqualNumber(etherMantissa(1.99));
     });

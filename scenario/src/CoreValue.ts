@@ -24,13 +24,10 @@ import { getUnitrollerValue, unitrollerFetchers } from './Value/UnitrollerValue'
 import { cTokenFetchers, getCTokenValue } from './Value/CTokenValue';
 import { cTokenDelegateFetchers, getCTokenDelegateValue } from './Value/CTokenDelegateValue';
 import { erc20Fetchers, getErc20Value } from './Value/Erc20Value';
-import { mcdFetchers, getMCDValue } from './Value/MCDValue';
 import { getInterestRateModelValue, interestRateModelFetchers } from './Value/InterestRateModelValue';
 import { getPriceOracleValue, priceOracleFetchers } from './Value/PriceOracleValue';
 import { getPriceOracleProxyValue, priceOracleProxyFetchers } from './Value/PriceOracleProxyValue';
-import { getTimelockValue, timelockFetchers, getTimelockAddress } from './Value/TimelockValue';
 import { getCompValue, compFetchers } from './Value/CompValue';
-import { getGovernorValue, governorFetchers } from './Value/GovernorValue';
 import { getAddress } from './ContractLookup';
 import { getCurrentBlockNumber, getCurrentTimestamp, mustArray, sendRPC } from './Utils';
 import { toEncodableNum } from './Encoding';
@@ -911,28 +908,6 @@ const fetchers = [
   ),
   new Fetcher<{ res: Value }, Value>(
     `
-      #### Timelock
-
-      * "Timelock ...timeLockArgs" - Returns Timelock value
-    `,
-    'Timelock',
-    [new Arg('res', getTimelockValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: timelockFetchers() }
-  ),
-  new Fetcher<{ res: Value }, Value>(
-    `
-      #### MCD
-
-      * "MCD ...mcdArgs" - Returns MCD value
-    `,
-    'MCD',
-    [new Arg('res', getMCDValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: mcdFetchers() }
-  ),
-  new Fetcher<{ res: Value }, Value>(
-    `
       #### Comp
 
       * "Comp ...compArgs" - Returns Comp value
@@ -942,23 +917,11 @@ const fetchers = [
     async (world, { res }) => res,
     { subExpressions: compFetchers() }
   ),
-  new Fetcher<{ res: Value }, Value>(
-    `
-      #### Governor
-
-      * "Governor ...governorArgs" - Returns Governor value
-    `,
-    'Governor',
-    [new Arg('res', getGovernorValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: governorFetchers() }
-  ),
 ];
 
 let contractFetchers = [
   { contract: "Counter", implicit: false },
-  { contract: "CompoundLens", implicit: false },
-  { contract: "Reservoir", implicit: true }
+  { contract: "CompoundLens", implicit: false }
 ];
 
 export async function getFetchers(world: World) {
