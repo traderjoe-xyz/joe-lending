@@ -154,3 +154,12 @@ contract ERC20Harness is StandardToken {
         return true;
     }
 }
+
+contract CTokenHarness is ERC20Harness {
+    address public comptroller;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _comptroller) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        comptroller = _comptroller;
+    }
+}

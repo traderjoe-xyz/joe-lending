@@ -167,6 +167,26 @@ async function makeCToken(opts = {}) {
       cToken = await saddle.getContractAt('CSLPDelegateHarness', cDelegator._address); // XXXS at
       break;
 
+    case 'cctoken':
+      underlying = opts.underlying || await makeToken({kind: "ctoken"});
+      cDelegatee = await deploy('CCTokenDelegateHarness');
+      cDelegator = await deploy('CErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          "0x0"
+        ]
+      );
+      cToken = await saddle.getContractAt('CCTokenDelegateHarness', cDelegator._address); // XXXS at
+      break;
+
     case 'cerc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
@@ -258,7 +278,23 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'OMG';
     const name = opts.name || `Erc20 ${symbol}`;
     return await deploy('ERC20Harness', [quantity, name, decimals, symbol]);
+  } else if (kind == 'ctoken') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'cOMG';
+    const name = opts.name || `Compound ${symbol}`;
+
+    const comptroller = opts.comptroller || await makeComptroller();
+    return await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
   }
+}
+
+async function preCSLP(underlying) {
+  const sushiToken = await deploy('SushiToken');
+  const masterChef = await deploy('MasterChef', [sushiToken._address]);
+  await send(masterChef, 'add', [1, underlying]);
+  const sushiBar = await deploy('SushiBar', [sushiToken._address]);
+  return encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]); // pid = 0
 }
 
 async function balanceOf(token, account) {
@@ -435,6 +471,7 @@ module.exports = {
   setEtherBalance,
   getBalances,
   adjustBalances,
+  preCSLP,
 
   preApprove,
   quickMint,
