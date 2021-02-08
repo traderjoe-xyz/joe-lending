@@ -10,17 +10,17 @@ const {
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cDai, cYcrv, cYusd, cYeth, cOther;
+  let oracle, backingOracle, cEth, cDai, cYcrv, cYusd, cYeth, cXSushi, cOther;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
-    cUsdc = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYcrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYusd = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYeth = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cXSushi = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
 
     backingOracle = await makePriceOracle();
     oracle = await deploy('PriceOracleProxy',
@@ -28,10 +28,10 @@ describe('PriceOracleProxy', () => {
         root,
         backingOracle._address,
         cEth._address,
-        cUsdc._address,
         cYcrv._address,
         cYusd._address,
         cYeth._address,
+        cXSushi._address
       ]
      );
   });
@@ -52,11 +52,6 @@ describe('PriceOracleProxy', () => {
       expect(configuredCEther).toEqual(cEth._address);
     });
 
-    it("sets address of cUSDC", async () => {
-      let configuredCUSD = await call(oracle, "cUsdcAddress");
-      expect(configuredCUSD).toEqual(cUsdc._address);
-    });
-
     it("sets address of cYcrv", async () => {
       let configuredCYCRV = await call(oracle, "cYcrvAddress");
       expect(configuredCYCRV).toEqual(cYcrv._address);
@@ -70,6 +65,11 @@ describe('PriceOracleProxy', () => {
     it("sets address of cYeth", async () => {
       let configuredCYETH = await call(oracle, "cYethAddress");
       expect(configuredCYETH).toEqual(cYeth._address);
+    });
+
+    it("sets address of cXSushi", async () => {
+      let configuredCXSUSHI = await call(oracle, "cXSushiAddress");
+      expect(configuredCXSUSHI).toEqual(cXSushi._address);
     });
   });
 
