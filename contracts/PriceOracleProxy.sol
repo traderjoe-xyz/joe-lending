@@ -139,7 +139,12 @@ interface IUniswapV2Pair {
     function initialize(address, address) external;
 }
 
+interface IXSushiExchangeRate {
+    function getExchangeRate() external view returns (uint);
+}
+
 contract PriceOracleProxy is PriceOracle, Exponential {
+    /// @notice Admin address
     address public admin;
 
     /// @notice Indicator that this is a PriceOracle contract (for inspection)
@@ -151,40 +156,43 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorV3Interface) public aggregators;
 
-    /// @notice Check if the address is Uniswap or SushiSwap LP
-    mapping(address => bool) public areLPs;
+    /// @notice Check if the underlying address is Uniswap or SushiSwap LP
+    mapping(address => bool) public areUnderlyingLPs;
 
     address public cEthAddress;
-    address public cUsdcAddress;
     address public cYcrvAddress;
     address public cYusdAddress;
     address public cYethAddress;
+    address public cXSushiAddress;
 
+    address public constant usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address public constant sushiAddress = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
+    address public constant xSushiExRateAddress = 0x851a040fC0Dcbb13a272EBC272F2bC2Ce1e11C4d;
 
     /**
      * @param admin_ The address of admin to set aggregators
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
-     * @param cUsdcAddress_ The address of cUSDC
      * @param cYcrvAddress_ The address of cYcrv
      * @param cYusdAddress_ The address of cYusd
      * @param cYethAddress_ The address of cYeth
+     * @param cXSushiAddress_ The address of cXSushi
      */
     constructor(address admin_,
                 address v1PriceOracle_,
                 address cEthAddress_,
-                address cUsdcAddress_,
                 address cYcrvAddress_,
                 address cYusdAddress_,
-                address cYethAddress_) public {
+                address cYethAddress_,
+                address cXSushiAddress_) public {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
-        cUsdcAddress = cUsdcAddress_;
         cYcrvAddress = cYcrvAddress_;
         cYusdAddress = cYusdAddress_;
         cYethAddress = cYethAddress_;
+        cXSushiAddress = cXSushiAddress_;
     }
 
     /**
@@ -199,40 +207,37 @@ contract PriceOracleProxy is PriceOracle, Exponential {
             return 1e18;
         }
 
-        address underlying = CErc20(cTokenAddress).underlying();
         if (cTokenAddress == cYethAddress) {
-            uint yVaultPrice = YVaultInterface(0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7).getPricePerFullShare();
-            if (yVaultPrice == 0) {
-                return getPriceFromV1(underlying);
-            }
-            return yVaultPrice;
+            return YVaultInterface(0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7).getPricePerFullShare();
         }
 
         if (cTokenAddress == cYcrvAddress || cTokenAddress == cYusdAddress) {
-            // ETH/USDC (treat USDC as USD)
-            uint ethUsdPrice = getUnderlyingPrice(CToken(cUsdcAddress)) / 1e12;
-            if (ethUsdPrice == 0) {
-                return 0;
-            }
+            // USD/ETH (treat USDC as USD)
+            uint usdEthPrice = getTokenPrice(usdcAddress) / 1e12;
 
             // YCRV/USD
             uint virtualPrice = CurveSwapInterface(0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51).get_virtual_price();
 
             // YCRV/ETH = USD/ETH * YCRV/USD
-            uint yCrvPrice = mul_(ethUsdPrice, Exp({mantissa: virtualPrice}));
+            uint yCrvEthPrice = mul_(usdEthPrice, Exp({mantissa: virtualPrice}));
 
             if (cTokenAddress == cYusdAddress) {
                 // YUSD/YCRV
                 uint yVaultPrice = YVaultInterface(0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c).getPricePerFullShare();
 
                 // YUSD/ETH = YCRV/ETH * YUSD/YCRV
-                uint yUSDPrice = mul_(yCrvPrice, Exp({mantissa: yVaultPrice}));
-                return yUSDPrice;
+                return mul_(yCrvEthPrice, Exp({mantissa: yVaultPrice}));
             }
-            return yCrvPrice;
+            return yCrvEthPrice;
         }
 
-        if (areLPs[underlying]) {
+        if (cTokenAddress == cXSushiAddress) {
+            uint exchangeRate = IXSushiExchangeRate(xSushiExRateAddress).getExchangeRate();
+            return mul_(getTokenPrice(sushiAddress), Exp({mantissa: exchangeRate}));
+        }
+
+        address underlying = CErc20(cTokenAddress).underlying();
+        if (areUnderlyingLPs[cTokenAddress]) {
             return getLPFairPrice(underlying);
         }
 
@@ -313,12 +318,12 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
     }
 
-    function _setLPs(address[] calldata tokenAddresses, bool[] calldata isLP) external {
+    function _setLPs(address[] calldata cTokenAddresses, bool[] calldata isLP) external {
         require(msg.sender == admin, "only the admin may set LPs");
-        require(tokenAddresses.length == isLP.length, "mismatched data");
-        for (uint i = 0; i < tokenAddresses.length; i++) {
-            areLPs[tokenAddresses[i]] = isLP[i];
-            emit IsLPUpdated(tokenAddresses[i], isLP[i]);
+        require(cTokenAddresses.length == isLP.length, "mismatched data");
+        for (uint i = 0; i < cTokenAddresses.length; i++) {
+            areUnderlyingLPs[cTokenAddresses[i]] = isLP[i];
+            emit IsLPUpdated(cTokenAddresses[i], isLP[i]);
         }
     }
 
