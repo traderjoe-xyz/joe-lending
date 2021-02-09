@@ -289,6 +289,11 @@ async function makeToken(opts = {}) {
   }
 }
 
+async function makeMockAggregator(opts = {}) {
+  const answer = dfn(opts.answer, etherMantissa(1));
+  return await deploy('MockAggregator', [answer]);
+}
+
 async function preCSLP(underlying) {
   const sushiToken = await deploy('SushiToken');
   const masterChef = await deploy('MasterChef', [sushiToken._address]);
@@ -459,6 +464,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeToken,
+  makeMockAggregator,
 
   balanceOf,
   totalSupply,
