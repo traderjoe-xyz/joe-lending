@@ -106,24 +106,24 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @notice Manually claim sushi rewards by user
      * @return The amount of sushi rewards user claims
      */
-    function claimSushi() public returns (uint) {
+    function claimSushi(address account) public returns (uint) {
         claimAndStakeSushi();
 
         updateSLPSupplyIndex();
-        updateSupplierIndex(msg.sender);
+        updateSupplierIndex(account);
 
         // Get user's xSushi accrued.
-        uint xSushiBalance = xSushiUserAccrued[msg.sender];
+        uint xSushiBalance = xSushiUserAccrued[account];
         if (xSushiBalance > 0) {
             // Withdraw user xSushi balance and subtract the amount in slpSupplyState
             ISushiBar(sushiBar).leave(xSushiBalance);
             slpSupplyState.balance = sub_(slpSupplyState.balance, xSushiBalance);
 
             uint balance = sushiBalance();
-            EIP20Interface(sushi).transfer(msg.sender, balance);
+            EIP20Interface(sushi).transfer(account, balance);
 
             // Clear user's xSushi accrued.
-            xSushiUserAccrued[msg.sender] = 0;
+            xSushiUserAccrued[account] = 0;
 
             return balance;
         }
