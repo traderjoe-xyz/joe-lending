@@ -1,11 +1,18 @@
 const {
-  address,
-  encodeParameters,
+  etherUnsigned,
+  etherMantissa
 } = require('../Utils/Ethereum');
 const {
   makeComptroller,
   makeCToken,
+  fastForward,
+  quickMint,
+  preApprove
 } = require('../Utils/Compound');
+
+const exchangeRate = 50e3;
+const mintAmount = etherUnsigned(10e4);
+const mintTokens = mintAmount.div(exchangeRate);
 
 function cullTuple(tuple) {
   return Object.keys(tuple).reduce((acc, key) => {
@@ -18,6 +25,16 @@ function cullTuple(tuple) {
       return acc;
     }
   }, {});
+}
+
+async function preMint(cToken, minter, mintAmount, mintTokens, exchangeRate) {
+  await preApprove(cToken, minter, mintAmount);
+  await send(cToken.comptroller, 'setMintAllowed', [true]);
+  await send(cToken.comptroller, 'setMintVerify', [true]);
+  await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
+  await send(cToken.underlying, 'harnessSetFailTransferFromAddress', [minter, false]);
+  await send(cToken, 'harnessSetBalance', [minter, 0]);
+  await send(cToken, 'harnessSetExchangeRate', [etherMantissa(exchangeRate)]);
 }
 
 describe('CompoundLens', () => {
@@ -301,5 +318,29 @@ describe('CompoundLens', () => {
         ).rejects.toRevert('revert Comp::getPriorVotes: not yet determined')
       });
     });
+  });
+
+  describe('getClaimableSushiRewards', () => {
+    let root, minter, accounts;
+    let cToken;
+    beforeEach(async () => {
+      [root, minter, ...accounts] = saddle.accounts;
+      cToken = await makeCToken({kind: 'cslp', comptrollerOpts: {kind: 'bool'}, exchangeRate});
+      await preMint(cToken, minter, mintAmount, mintTokens, exchangeRate);
+    });
+
+    it('gets claimable rewards', async () => {
+      const sushiAddress = await call(cToken, 'sushi', []);
+      const masterChefAddress = await call(cToken, 'masterChef', []);
+
+      const masterChef = await saddle.getContractAt('MasterChef', masterChefAddress);
+
+      expect(await quickMint(cToken, minter, mintAmount)).toSucceed();
+
+      await fastForward(masterChef, 1);
+
+      const pendingRewards = await call(compoundLens, 'getClaimableSushiRewards', [[cToken._address], sushiAddress, minter]);
+      expect(pendingRewards).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
+    })
   });
 });

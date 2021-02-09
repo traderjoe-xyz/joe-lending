@@ -95,7 +95,7 @@ describe('CToken', function () {
       await fastForward(cToken, 1);
       await fastForward(masterChef, 1);
 
-      await send(cToken, 'claimSushi', [], { from: minter });
+      await send(cToken, 'claimSushi', [minter], { from: minter });
       expect(await balanceOf(sushi, minter)).toEqualNumber(etherMantissa(1));
       expect(await call(cToken, 'xSushiUserAccrued', [minter])).toEqualNumber(etherMantissa(0));
     });
