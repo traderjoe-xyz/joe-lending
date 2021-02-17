@@ -16,6 +16,10 @@ interface ComptrollerLensInterface {
     function compAccrued(address) external view returns (uint);
 }
 
+interface CSLPInterface {
+    function claimSushi(address) external returns (uint);
+}
+
 contract CompoundLens {
     struct CTokenMetadata {
         address cToken;
@@ -214,6 +218,18 @@ contract CompoundLens {
             });
         }
         return res;
+    }
+
+    function getClaimableSushiRewards(CSLPInterface[] calldata cTokens, address sushi, address account) external returns (uint[] memory) {
+        uint cTokenCount = cTokens.length;
+        uint[] memory rewards = new uint[](cTokenCount);
+        for (uint i = 0; i < cTokenCount; i++) {
+            uint balanceBefore = EIP20Interface(sushi).balanceOf(account);
+            cTokens[i].claimSushi(account);
+            uint balanceAfter = EIP20Interface(sushi).balanceOf(account);
+            rewards[i] = sub(balanceAfter, balanceBefore, "subtraction underflow");
+        }
+        return rewards;
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
