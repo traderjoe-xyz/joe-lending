@@ -156,6 +156,8 @@ contract ERC20Harness is StandardToken {
 }
 
 contract CTokenHarness is ERC20Harness {
+    bool public constant isCToken = true;
+
     address public comptroller;
 
     constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _comptroller) public
