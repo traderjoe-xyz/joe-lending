@@ -238,7 +238,9 @@ async function makeToken(opts = {}) {
     const name = opts.name || `Compound ${symbol}`;
 
     const comptroller = opts.comptroller || await makeComptroller();
-    return await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
+    const cToken = await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
+    await send(comptroller, '_supportMarket', [cToken._address]);
+    return cToken;
   }
 }
 
