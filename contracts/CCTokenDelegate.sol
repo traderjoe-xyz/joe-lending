@@ -118,6 +118,7 @@ contract CCTokenDelegate is CCapableErc20Delegate {
     function doTransferIn(address from, uint amount) internal returns (uint) {
         uint transferredIn = super.doTransferIn(from, amount);
 
+        harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(from);
 
@@ -130,6 +131,7 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @param amount Amount of underlying to transfer
      */
     function doTransferOut(address payable to, uint amount) internal {
+        harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(to);
 
