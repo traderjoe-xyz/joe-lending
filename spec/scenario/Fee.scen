@@ -11,7 +11,6 @@ Test "Mint should work and not change exchange rate"
     NewComptroller price:1.0
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewCTokenBringERC20 USDT cUSDT
-    PriceOracleProxy SetAggregators (cUSDT) (MockAggregator)
     Support cUSDT collateralFactor:0.5
     Invariant Static (CToken cUSDT ExchangeRate)
     Prep Torrey 1e18 USDT cUSDT
@@ -23,8 +22,8 @@ Test "Repay borrow should work and not change exchange rate"
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewCTokenBringERC20 USDT cUSDT
     NewCToken ZRX cZRX 0.000005 2e9 8 Standard
-    MockAggregator Deploy Fixed 1
-    PriceOracleProxy SetAggregators (cZRX cUSDT) (MockAggregator MockAggregator)
+    PriceOracle SetPrice cZRX 1.0
+    PriceOracle SetPrice cUSDT 1.0
     Support cZRX 0.5
     Support cUSDT 0.5
     Give cUSDT 10e18 USDT -- Faucet some Tether to borrow
@@ -49,8 +48,8 @@ Test "Should be able to liquidate fee token borrow"
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewCTokenBringERC20 USDT cUSDT
     NewCToken ZRX cZRX 0.000005 2e9 8 Standard
-    MockAggregator Deploy Fixed 1
-    PriceOracleProxy SetAggregators (cZRX cUSDT) (MockAggregator MockAggregator)
+    PriceOracle SetPrice cZRX 1.0
+    PriceOracle SetPrice cUSDT 1.0
     Support cZRX 0.5
     Support cUSDT 0.5
     Give cUSDT 10e18 USDT -- Faucet some Tether to borrow
@@ -76,7 +75,6 @@ Test "Should be able to redeem a fee CToken, exchange Rate should not change"
     NewComptroller price:1.0
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewCTokenBringERC20 USDT cUSDT
-    PriceOracleProxy SetAggregators (cUSDT) (MockAggregator)
     Support cUSDT collateralFactor:0.5
     Invariant Static (CToken cUSDT ExchangeRate)
     Prep Torrey 1e18 USDT cUSDT
@@ -87,7 +85,6 @@ Test "Order of redeems should not matter if no interest accrued"
     NewComptroller price:1.0
     Erc20 Deploy Fee USDT USDT 18 100 Admin
     NewCTokenBringERC20 USDT cUSDT
-    PriceOracleProxy SetAggregators (cUSDT) (MockAggregator)
     Support cUSDT collateralFactor:0.5
     Invariant Static (CToken cUSDT ExchangeRate)
     Prep Torrey 1e18 USDT cUSDT

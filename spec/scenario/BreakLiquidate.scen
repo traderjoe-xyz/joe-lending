@@ -1,14 +1,14 @@
 
-Macro NewBorrow borrowAmount mintAmount user=Geoff collateralPrice=1.0 borrowPrice=1.0 liquidationIncentive=1.1
+Macro NewBorrow borrowAmount mintAmount borrowRate=0.000005 user=Geoff collateralPrice=1.0 borrowPrice=1.0 liquidationIncentive=1.1
     PricedComptroller closeFactor:0.9 -- Set the close factor high to reduce number of steps to demonstrate
     Comptroller LiquidationIncentive liquidationIncentive
     NewCToken ZRX cZRX
-    NewCToken BAT cBAT
-    Comptroller SupportMarket cZRX
-    Comptroller SupportMarket cBAT
+    NewCToken BAT cBAT borrowRate
     Give cBAT 10e18 BAT -- Faucet some bat to borrow
-    SetPriceCF cZRX collateralPrice 0.7
-    SetPriceCF cBAT borrowPrice 0
+    PriceOracle SetPrice cZRX collateralPrice
+    Support cZRX collateralFactor:0.7
+    PriceOracle SetPrice cBAT borrowPrice
+    Support cBAT collateralFactor:0
     SimpleBorrow user borrowAmount mintAmount
 
 Macro SimpleBorrow user borrowAmount mintAmount
@@ -29,8 +29,7 @@ Test "When account goes further underwater than the liquidation incentive and ca
     --
     -- Put the account underwater s.t. 0.91 < Borrow/Supply
     --      i.e. (1 / liquidationIncentive) < Borrow/Supply
-    MockAggregator Deploy Fixed 0.76
-    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
+    PriceOracle SetPrice cZRX 0.76
     --
     -- Pay back a bunch of debt by liquidating
     Prep Jared 10e18 BAT cBAT
@@ -55,8 +54,7 @@ Test "When liquidation incentive is too high to be effective"
     --
     -- Put the account underwater s.t. 0.7 < Borrow/Supply
     --              i.e. collateral factor < Borrow/Supply
-    MockAggregator Deploy Fixed 0.87
-    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
+    PriceOracle SetPrice cZRX 0.87
     --
     -- Now any amount of debt that we pay back by liquidating will make liquidity worse
     --

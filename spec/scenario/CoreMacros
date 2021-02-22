@@ -9,7 +9,7 @@ Macro AllowFailures
 Macro PricedComptroller closeFactor=0.1
     Unitroller Deploy
     PriceOracle Deploy Simple
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
@@ -19,27 +19,12 @@ Macro PricedComptroller closeFactor=0.1
 Macro NewComptroller price=1.0 closeFactor=0.1
     Unitroller Deploy
     PriceOracle Deploy Fixed price
-    MockAggregator Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
     Comptroller SetCloseFactor closeFactor
     Comptroller SetPriceOracle (PriceOracleProxy Address)
-
-Macro EthComptroller price=1.0 closeFactor=0.1 borrowRate=0.000005 initialExchangeRate=1e9 decimals=8 collateralFactor=0.8
-    Unitroller Deploy
-    PriceOracle Deploy Simple
-    ComptrollerImpl Deploy Scenario ScenComptroller
-    Unitroller SetPendingImpl ScenComptroller
-    ComptrollerImpl ScenComptroller Become
-    Comptroller SetCloseFactor closeFactor
-    NewEtherToken cETH borrowRate initialExchangeRate decimals Admin
-    MockAggregator Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cETH)
-    Comptroller SetPriceOracle (PriceOracleProxy Address)
-    PriceOracleProxy SetAggregators (cETH) (MockAggregator)
-    Support cETH collateralFactor
 
 Macro NewCToken erc20 cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 tokenType=Standard delegatorType=CErc20DelegatorScenario cTokenType=CErc20DelegateScenario admin=Admin becomeImplementationData="0x0"
     Erc20 Deploy tokenType erc20 erc20
@@ -65,7 +50,6 @@ Macro NewEtherToken cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=
 Macro ListedCToken erc20 cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 tokenType=Standard delegatorType=CErc20DelegatorScenario cTokenType=CErc20DelegateScenario admin=Admin
     NewCToken erc20 cToken borrowRate initialExchangeRate decimals tokenType delegatorType cTokenType admin
     Comptroller SupportMarket cToken
-    PriceOracleProxy SetAggregators (cToken) (MockAggregator)
 
 Macro ListedCTokenImmutable erc20 cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 tokenType=Standard cTokenType=Scenario admin=Admin
     NewCTokenImmutable erc20 cToken borrowRate initialExchangeRate decimals tokenType cTokenType admin
@@ -74,9 +58,8 @@ Macro ListedCTokenImmutable erc20 cToken borrowRate=0.000005 initialExchangeRate
 Macro ListedEtherToken cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 admin=Admin
     NewEtherToken cToken borrowRate initialExchangeRate decimals admin
     Comptroller SupportMarket cToken
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cToken)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cETH) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
     Comptroller SetPriceOracle (PriceOracleProxy Address)
-    PriceOracleProxy SetAggregators (cToken) (MockAggregator)
 
 Macro ListedEtherTokenMinted cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 admin=Admin
     NewEtherToken cToken borrowRate initialExchangeRate decimals admin
@@ -84,8 +67,7 @@ Macro ListedEtherTokenMinted cToken borrowRate=0.000005 initialExchangeRate=2e9 
     CallMintEth Root 1e18 cToken
 
 Macro SetPriceCF cToken price collateralFactor
-    MockAggregator Deploy Fixed price
-    PriceOracleProxy SetAggregators (cToken) (MockAggregator)
+    PriceOracle SetPrice cToken price
     Comptroller SetCollateralFactor cToken collateralFactor
 
 Macro Give user amount erc20

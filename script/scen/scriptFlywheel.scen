@@ -2,9 +2,8 @@
 -- Deploys basic ComptrollerG3
 
 Unitroller Deploy
-PriceOracle Deploy Simple
-MockAggregator Deploy Fixed 1.0
-PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero)
+PriceOracle Deploy Fixed 1.0
+PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
 ----g2
 ComptrollerImpl Deploy Scenario ComptrollerScen
 Unitroller SetPendingImpl ComptrollerScen
@@ -16,7 +15,6 @@ Comptroller SetCloseFactor 0.5
 Comptroller LiquidationIncentive 1.1
 NewCToken ZRX cZRX
 NewCToken BAT cBAT
-PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
 Support cZRX collateralFactor:0.5
 Support cBAT collateralFactor:0.5
 -- final

@@ -3,26 +3,37 @@ const {
 } = require('./Utils/Ethereum');
 
 const {
-  makeComptroller,
   makeCToken,
   makePriceOracle,
-  makeMockAggregator,
+  makeMockAggregator
 } = require('./Utils/Compound');
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cDai, cOthers;
+  let oracle, backingOracle, cEth, cDai, cYcrv, cYusd, cYeth, cXSushi, cOther;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
-    const comptroller = await makeComptroller();
-    cEth = await makeCToken({kind: "cether", comptroller: comptroller, supportMarket: true});
-    cUsdc = await makeCToken({comptroller: comptroller, supportMarket: true, underlyingOpts: {decimals: 6}});
-    cDai = await makeCToken({comptroller: comptroller, supportMarket: true});
-    cOthers = await makeCToken({comptroller: comptroller, supportMarket: true});
+    cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
+    cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYcrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYusd = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYeth = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cXSushi = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
 
     backingOracle = await makePriceOracle();
-    oracle = await deploy('PriceOracleProxy', [root, backingOracle._address, cEth._address]);
+    oracle = await deploy('PriceOracleProxy',
+      [
+        root,
+        backingOracle._address,
+        cEth._address,
+        cYcrv._address,
+        cYusd._address,
+        cYeth._address,
+        cXSushi._address
+      ]
+     );
   });
 
   describe("constructor", () => {
@@ -31,26 +42,38 @@ describe('PriceOracleProxy', () => {
       expect(configuredGuardian).toEqual(root);
     });
 
+    it("sets address of v1 oracle", async () => {
+      let configuredOracle = await call(oracle, "v1PriceOracle");
+      expect(configuredOracle).toEqual(backingOracle._address);
+    });
+
     it("sets address of cEth", async () => {
       let configuredCEther = await call(oracle, "cEthAddress");
       expect(configuredCEther).toEqual(cEth._address);
     });
+
+    it("sets address of cYcrv", async () => {
+      let configuredCYCRV = await call(oracle, "cYcrvAddress");
+      expect(configuredCYCRV).toEqual(cYcrv._address);
+    });
+
+    it("sets address of cYusd", async () => {
+      let configuredCYUSD = await call(oracle, "cYusdAddress");
+      expect(configuredCYUSD).toEqual(cYusd._address);
+    });
+
+    it("sets address of cYeth", async () => {
+      let configuredCYETH = await call(oracle, "cYethAddress");
+      expect(configuredCYETH).toEqual(cYeth._address);
+    });
+
+    it("sets address of cXSushi", async () => {
+      let configuredCXSUSHI = await call(oracle, "cXSushiAddress");
+      expect(configuredCXSUSHI).toEqual(cXSushi._address);
+    });
   });
 
   describe("getUnderlyingPrice", () => {
-    let setPrice = async (cToken, price) => {
-      const answerDecimals = 8;
-      const mockAggregator = await makeMockAggregator({answer: price * 1e8});
-      await send(
-        mockAggregator,
-        "setDecimals",
-        [answerDecimals]);
-      await send(
-        oracle,
-        "_setAggregators",
-        [[cToken._address], [mockAggregator._address]]);
-    }
-
     let setAndVerifyBackingPrice = async (cToken, price) => {
       await send(
         backingOracle,
@@ -70,38 +93,38 @@ describe('PriceOracleProxy', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    it("returns correctly for cEth", async () => {
-      await setPrice(cEth, 100);
-      const proxyPrice = await call(oracle, "getUnderlyingPrice", [cEth._address]);
-      expect(proxyPrice).toEqual(etherMantissa(100).toFixed());
+    let setPrice = async (token, price) => {
+      const mockAggregator = await makeMockAggregator({answer: etherMantissa(price)});
+      await send(
+        oracle,
+        "_setAggregators",
+        [[token._address], [mockAggregator._address]]);
+    }
+
+    it("always returns 1e18 for cEth", async () => {
+      await readAndVerifyProxyPrice(cEth, 1);
     });
 
-    it("returns correctly for other tokens", async () => {
-      const price = 1;
+    it("proxies for whitelisted tokens", async () => {
+      await setAndVerifyBackingPrice(cOther, 11);
+      await readAndVerifyProxyPrice(cOther, 11);
 
-      await setPrice(cUsdc, price);
-      let proxyPrice = await call(oracle, "getUnderlyingPrice", [cUsdc._address]);
-      let underlyingDecimals = await call(cUsdc.underlying, "decimals", []);
-      expect(proxyPrice).toEqual(etherMantissa(price * 10**(18 - underlyingDecimals)).toFixed());
-
-      await setPrice(cDai, price);
-      proxyPrice = await call(oracle, "getUnderlyingPrice", [cUsdc._address]);
-      underlyingDecimals = await call(cUsdc.underlying, "decimals", []);
-      expect(proxyPrice).toEqual(etherMantissa(price * 10**(18 - underlyingDecimals)).toFixed());
-    });
-
-    it("fallbacks to price oracle v1", async () => {
-      await setAndVerifyBackingPrice(cOthers, 11);
-      await readAndVerifyProxyPrice(cOthers, 11);
-
-      await setAndVerifyBackingPrice(cOthers, 37);
-      await readAndVerifyProxyPrice(cOthers, 37);
+      await setAndVerifyBackingPrice(cOther, 37);
+      await readAndVerifyProxyPrice(cOther, 37);
     });
 
     it("returns 0 for token without a price", async () => {
       let unlistedToken = await makeCToken({comptroller: cEth.comptroller});
 
       await readAndVerifyProxyPrice(unlistedToken, 0);
+    });
+
+    it("gets price from chainlink", async () => {
+      const price = 1;
+
+      await setPrice(cOther.underlying, price);
+      let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
+      expect(proxyPrice).toEqual(etherMantissa(price).toFixed());
     });
   });
 });

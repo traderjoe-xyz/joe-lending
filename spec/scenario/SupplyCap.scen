@@ -3,7 +3,6 @@ Test "Attempt to supply over set cap ERC20"
     NewCToken ZRX cZRX
     Comptroller SetMarketSupplyCaps (cZRX) (0.5e18)
     Assert Equal (Comptroller SupplyCaps cZRX) (Exactly 0.5e18)
-    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     Support cZRX collateralFactor:0.5
     Prep Geoff 0.5e18 ZRX cZRX
     AllowFailures
@@ -17,7 +16,6 @@ Test "Attempt to supply at set cap ERC20"
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
     Comptroller SetMarketSupplyCaps (cZRX) (100000000000000000001)
-    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     Support cZRX collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
     Mint Geoff 100e18 cZRX
@@ -28,7 +26,6 @@ Test "Attempt to supply below set cap ERC20"
     NewComptroller price:1.0
     NewCToken ZRX cZRX
     Comptroller SetMarketSupplyCaps (cZRX) (1e18)
-    PriceOracleProxy SetAggregators (cZRX) (MockAggregator)
     Support cZRX collateralFactor:0.5
     Prep Geoff Some ZRX cZRX
     Mint Geoff 0.5e18 cZRX
@@ -39,7 +36,6 @@ Test "Cannot supply more even all underlying is borrowed"
     NewComptroller price:1.0
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
-    PriceOracleProxy SetAggregators (cZRX cBAT) (MockAggregator MockAggregator)
     Support cZRX collateralFactor:0.5
     Support cBAT collateralFactor:0.5
     Comptroller SetMarketSupplyCaps (cZRX) (2)
@@ -87,7 +83,6 @@ Test "Only admin can set Supply Cap Guardian"
 Test "Reserves should not affect supply cap"
     NewComptroller price:1.0
     NewCToken USDC cUSDC
-    PriceOracleProxy SetAggregators (cUSDC) (MockAggregator)
     Support cUSDC collateralFactor:0.5
     Prep Geoff Some USDC cUSDC
     Mint Geoff 14e18 cUSDC

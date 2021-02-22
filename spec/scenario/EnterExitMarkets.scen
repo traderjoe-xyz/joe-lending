@@ -23,7 +23,6 @@ Test "Entered Market Must Be Supported"
 	EnterMarkets Geoff cZRX
 	Assert Equal (Comptroller MembershipLength Geoff) (Exactly 1)
 	NewCToken OMG cOMG
-	PriceOracleProxy SetAggregators (cOMG) (MockAggregator)
 	EnterMarkets Geoff cZRX cOMG
 	Assert Equal (Comptroller MembershipLength Geoff) (Exactly 1)
 	Assert True (Comptroller CheckMembership Geoff cZRX)
@@ -87,10 +86,12 @@ Test "Exit multiple markets"
 	Assert Equal (Comptroller AssetsIn Geoff) []
 
 Test "Realistic Market Scenario"
-	EthComptroller
-	NewCToken ZRX cZRX
-	Comptroller SupportMarket cZRX
+	PricedComptroller
+	ListedCToken ZRX cZRX
 	SetPriceCF cZRX 0.002 0.4
+	ListedEtherToken cETH
+	Comptroller SetCollateralFactor cEth 0.8
+	ListedCToken BAT cBAT
 	NewCToken BAT cBAT
 	Comptroller SupportMarket cBAT
 	SetPriceCF cBAT 0.0015 0.3
