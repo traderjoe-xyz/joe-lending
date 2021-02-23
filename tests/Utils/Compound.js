@@ -230,6 +230,10 @@ async function makeMockAggregator(opts = {}) {
   return await deploy('MockAggregator', [answer]);
 }
 
+async function makeMockReference(opts = {}) {
+  return await deploy('MockReference');
+}
+
 async function makeToken(opts = {}) {
   const {
     root = saddle.account,
@@ -425,6 +429,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeMockAggregator,
+  makeMockReference,
   makeToken,
 
   balanceOf,
