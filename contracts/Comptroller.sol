@@ -65,6 +65,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when supply cap guardian is changed
     event NewSupplyCapGuardian(address oldSupplyCapGuardian, address newSupplyCapGuardian);
 
+    /// @notice Emitted when cToken version is changed
+    event NewCTokenVersion(CToken cToken, Version oldVersion, Version newVersion);
+
     /// @notice The threshold above which the flywheel transfers COMP, in wei
     uint public constant compClaimThreshold = 0.001e18;
 
@@ -111,9 +114,11 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         uint[] memory results = new uint[](len);
         for (uint i = 0; i < len; i++) {
-            CToken cToken = CToken(cTokens[i]);
-
-            results[i] = uint(addToMarketInternal(cToken, msg.sender));
+            Error result = addToMarketInternal(CToken(cTokens[i]), msg.sender);
+            if (result == Error.NO_ERROR && markets[cTokens[i]].version == Version.COLLATERALCAP) {
+                CCollateralCapErc20Interface(cTokens[i]).registerCollateral(msg.sender);
+            }
+            results[i] = uint(result);
         }
 
         return results;
@@ -179,6 +184,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         /* Return true if the sender is not already ‘in’ the market */
         if (!marketToExit.accountMembership[msg.sender]) {
+            if (marketToExit.version == Version.COLLATERALCAP) {
+                CCollateralCapErc20Interface(cTokenAddress).unregisterCollateral(msg.sender);
+            }
             return uint(Error.NO_ERROR);
         }
 
@@ -204,6 +212,10 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         CToken[] storage storedList = accountAssets[msg.sender];
         storedList[assetIndex] = storedList[storedList.length - 1];
         storedList.length--;
+
+        if (marketToExit.version == Version.COLLATERALCAP) {
+            CCollateralCapErc20Interface(cTokenAddress).unregisterCollateral(msg.sender);
+        }
 
         emit MarketExited(cToken, msg.sender);
 
@@ -642,6 +654,25 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         }
     }
 
+    /**
+     * @notice Update CToken's version.
+     * @param cToken Version of the asset being updated
+     * @param newVersion The new version
+     */
+    function updateCTokenVersion(address cToken, Version newVersion) external {
+        require(msg.sender == cToken, "only cToken could update its version");
+
+        // This function will be called when a new CToken implementation becomes active.
+        // If a new CToken is newly created, this market is not listed yet. The version of
+        // this market will be taken care of when calling `_supportMarket`.
+        if (markets[cToken].isListed) {
+            Version oldVersion = markets[cToken].version;
+            markets[cToken].version = newVersion;
+
+            emit NewCTokenVersion(CToken(cToken), oldVersion, newVersion);
+        }
+    }
+
     /*** Liquidity/Liquidation Calculations ***/
 
     /**
@@ -918,9 +949,10 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
       * @notice Add the market to the markets mapping and set it as listed
       * @dev Admin function to set isListed and add support for the market
       * @param cToken The address of the market (token) to list
+      * @param version The version of the market (token)
       * @return uint 0=success, otherwise a failure. (See enum Error for details)
       */
-    function _supportMarket(CToken cToken) external returns (uint) {
+    function _supportMarket(CToken cToken, Version version) external returns (uint) {
         if (msg.sender != admin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.SUPPORT_MARKET_OWNER_CHECK);
         }
@@ -931,8 +963,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        // TODO: isComped is unused. Remove it in v2.
-        markets[address(cToken)] = Market({isListed: true, isComped: true, collateralFactorMantissa: 0});
+        markets[address(cToken)] = Market({isListed: true, isComped: true, collateralFactorMantissa: 0, version: version});
 
         _addMarketInternal(address(cToken));
 

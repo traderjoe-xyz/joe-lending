@@ -1021,7 +1021,7 @@ contract ComptrollerG5 is ComptrollerV4Storage, ComptrollerInterface, Comptrolle
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        markets[address(cToken)] = Market({isListed: true, isComped: false, collateralFactorMantissa: 0});
+        markets[address(cToken)] = Market({isListed: true, isComped: false, collateralFactorMantissa: 0, version: Version.VANILLA});
 
         _addMarketInternal(address(cToken));
 
