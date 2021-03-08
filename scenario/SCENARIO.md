@@ -46,8 +46,8 @@
   * E.g. "Comptroller Deploy Scenario (PriceOracle Address) 0.1 10"
 * `Comptroller SetPaused action:<String> paused:<Bool>` - Pauses or unpaused given cToken function (e.g. Mint)
   * E.g. `Comptroller SetPaused Mint True`
-* `Comptroller SupportMarket <CToken>` - Adds support in the Comptroller for the given cToken
-  * E.g. `Comptroller SupportMarket cZRX`
+* `Comptroller SupportMarket <CToken> <Number>` - Adds support in the Comptroller for the given cToken and version
+  * E.g. `Comptroller SupportMarket cZRX 0`
 * `Comptroller EnterMarkets <User> <CToken> ...` - User enters the given markets
   * E.g. `Comptroller EnterMarkets Geoff cZRX cETH`
 * `Comptroller SetMaxAssets <Number>` - Sets (or resets) the max allowed asset count

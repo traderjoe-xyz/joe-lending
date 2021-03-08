@@ -9,8 +9,10 @@ Test "Standard Upgrade"
     Assert Equal (Comptroller CloseFactor) 0.2
     Assert Equal (Comptroller MaxAssets) 20
     Assert Equal (Comptroller Implementation) (Address ScenComptrollerG1)
-    ListedCToken ZRX cZRX
-    ListedCToken DAI cDAI
+    NewCToken ZRX cZRX
+    NewCToken DAI cDAI
+    OldSupport cZRX collateralFactor:0.5
+    OldSupport cDAI collateralFactor:0.5
     -- Upgrade to G2
     ComptrollerImpl Deploy StandardG2 StandardComptrollerG2
     Unitroller SetPendingImpl StandardComptrollerG2
@@ -36,8 +38,10 @@ Test "Standard Upgrade, then downgrade then upgrade again"
     Assert Equal (Comptroller CloseFactor) 0.2
     Assert Equal (Comptroller MaxAssets) 20
     Assert Equal (Comptroller Implementation) (Address ScenComptrollerG1)
-    ListedCToken ZRX cZRX
-    ListedCToken DAI cDAI
+    NewCToken ZRX cZRX
+    NewCToken DAI cDAI
+    OldSupport cZRX collateralFactor:0.5
+    OldSupport cDAI collateralFactor:0.5
     -- Upgrade to G2
     ComptrollerImpl Deploy StandardG2 ComptrollerG2
     Unitroller SetPendingImpl ComptrollerG2

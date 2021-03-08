@@ -16,16 +16,18 @@ interface ComptrollerMethods {
   getBlockNumber(): Callable<number>
   setBlockNumber(encodedNumber): Sendable<number>
   collateralFactor(string): Callable<string>
-  markets(string): Callable<{0: boolean, 1: number, 2?: boolean}>
+  markets(string): Callable<{0: boolean, 1: number, 2?: boolean, 3?: number}>
   _setMintPaused(bool): Sendable<number>
   _setMaxAssets(encodedNumber): Sendable<number>
   _setLiquidationIncentive(encodedNumber): Sendable<number>
   _supportMarket(string): Sendable<number>
+  _supportMarket(string, encodedNumber): Sendable<number>
   _setPriceOracle(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
   _setCloseFactor(encodedNumber): Sendable<number>
   enterMarkets(markets: string[]): Sendable<number>
   exitMarket(market: string): Sendable<number>
+  updateCTokenVersion(cToken: string, version: encodedNumber): Sendable<void>
   fastForward(encodedNumber): Sendable<number>
   _setPendingImplementation(string): Sendable<number>
   comptrollerImplementation(): Callable<string>

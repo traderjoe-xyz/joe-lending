@@ -48,6 +48,8 @@ export interface CTokenMethods {
   _setPendingAdmin(address: string): Sendable<number>;
   _acceptAdmin(): Sendable<number>;
   gulp(): Sendable<void>;
+  _setCollateralCap(amount: encodedNumber): Sendable<void>;
+  accountCollateralTokens(account: string): Callable<number>;
 }
 
 export interface CTokenScenarioMethods extends CTokenMethods {

@@ -30,7 +30,9 @@ describe('Flywheel upgrade', () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
       let compMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        return cToken;
       }));
       compMarkets = compMarkets.map(c => c._address);
       unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, compMarkets});
@@ -40,7 +42,9 @@ describe('Flywheel upgrade', () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
       let allMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        return cToken;
       }));
       allMarkets = allMarkets.map(c => c._address);
       unitroller = await makeComptroller({
@@ -57,7 +61,9 @@ describe('Flywheel upgrade', () => {
       let unitroller = await makeComptroller({kind: 'unitroller-g3'});
       let allMarkets = [];
       for (let _ of Array(10)) {
-        allMarkets.push(await makeCToken({comptroller: unitroller, supportMarket: true}));
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        allMarkets.push(cToken);
       }
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets.map(c => c._address));
       expect(

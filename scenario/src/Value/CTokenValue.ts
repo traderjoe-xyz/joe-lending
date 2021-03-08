@@ -110,6 +110,10 @@ async function getImplementation(world: World, cToken: CToken): Promise<AddressV
   return new AddressV(await (cToken as CErc20Delegator).methods.implementation().call());
 }
 
+async function getAccountCollateralToken(world: World, cToken: CToken, user: string): Promise<NumberV> {
+  return new NumberV(await cToken.methods.accountCollateralTokens(user).call());
+}
+
 export function cTokenFetchers() {
   return [
     new Fetcher<{ cToken: CToken }, AddressV>(`
@@ -385,6 +389,20 @@ export function cTokenFetchers() {
         new Arg("cToken", getCTokenV)
       ],
       (world, { cToken }) => getImplementation(world, cToken),
+      { namePos: 1 }
+    ),
+    new Fetcher<{ cToken: CToken, address: AddressV }, NumberV>(`
+        #### CollateralBalance
+
+        * "CToken <CToken> CollateralBalance <User>" - Returns the user's collateral tokens
+          * E.g. "CToken cDAI CollateralBalance Geoff"
+      `,
+      "CollateralBalance",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("address", getAddressV)
+      ],
+      (world, { cToken, address }) => getAccountCollateralToken(world, cToken, address.val),
       { namePos: 1 }
     )
   ];

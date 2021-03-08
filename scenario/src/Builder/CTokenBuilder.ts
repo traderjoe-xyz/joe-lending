@@ -1,6 +1,6 @@
 import { Event } from '../Event';
 import { World } from '../World';
-import { CErc20Delegator, CErc20DelegatorScenario } from '../Contract/CErc20Delegator';
+import { CErc20Delegator, CErc20DelegatorScenario, CCollateralCapErc20DelegatorScenario } from '../Contract/CErc20Delegator';
 import { CToken } from '../Contract/CToken';
 import { Invokation, invoke } from '../Invokation';
 import { getAddressV, getExpNumberV, getNumberV, getStringV } from '../CoreValue';
@@ -12,6 +12,7 @@ import { getContract, getTestContract } from '../Contract';
 const CErc20Contract = getContract('CErc20Immutable');
 const CErc20Delegator = getContract('CErc20Delegator');
 const CErc20DelegatorScenario = getTestContract('CErc20DelegatorScenario');
+const CCollateralCapErc20DelegatorScenario = getContract('CCollateralCapErc20DelegatorScenario');
 const CEtherContract = getContract('CEther');
 const CErc20ScenarioContract = getTestContract('CErc20Scenario');
 const CEtherScenarioContract = getTestContract('CEtherScenario');
@@ -175,6 +176,79 @@ export async function buildCToken(
           decimals: decimals.toNumber(),
           underlying: underlying.val,
           contract: 'CErc20DelegatorScenario',
+          initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
+          admin: admin.val
+        };
+      }
+    ),
+
+    new Fetcher<
+      {
+        symbol: StringV;
+        name: StringV;
+        decimals: NumberV;
+        underlying: AddressV;
+        comptroller: AddressV;
+        interestRateModel: AddressV;
+        initialExchangeRate: NumberV;
+        admin: AddressV;
+        implementation: AddressV;
+        becomeImplementationData: StringV;
+      },
+      TokenData
+    >(
+    `
+      #### CCollateralCapErc20DelegatorScenario
+
+      * "CCollateralCapErc20DelegatorScenario symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address> implementation:<Address> becomeImplementationData:<String>" - A CToken Scenario for local testing
+        * E.g. "CToken Deploy CCollateralCapErc20DelegatorScenario cDAI \"Compound DAI\" (Erc20 DAI Address) (Comptroller Address) (InterestRateModel Address) 1.0 8 Geoff (CToken CDaiDelegate Address) "0x0123434anyByTes314535q" "
+    `,
+      'CCollateralCapErc20DelegatorScenario',
+      [
+        new Arg('symbol', getStringV),
+        new Arg('name', getStringV),
+        new Arg('underlying', getAddressV),
+        new Arg('comptroller', getAddressV),
+        new Arg('interestRateModel', getAddressV),
+        new Arg('initialExchangeRate', getExpNumberV),
+        new Arg('decimals', getNumberV),
+        new Arg('admin', getAddressV),
+        new Arg('implementation', getAddressV),
+        new Arg('becomeImplementationData', getStringV)
+      ],
+      async (
+        world,
+        {
+          symbol,
+          name,
+          underlying,
+          comptroller,
+          interestRateModel,
+          initialExchangeRate,
+          decimals,
+          admin,
+          implementation,
+          becomeImplementationData
+        }
+      ) => {
+        return {
+          invokation: await CCollateralCapErc20DelegatorScenario.deploy<CCollateralCapErc20DelegatorScenario>(world, from, [
+            underlying.val,
+            comptroller.val,
+            interestRateModel.val,
+            initialExchangeRate.val,
+            name.val,
+            symbol.val,
+            decimals.val,
+            admin.val,
+            implementation.val,
+            becomeImplementationData.val
+          ]),
+          name: name.val,
+          symbol: symbol.val,
+          decimals: decimals.toNumber(),
+          underlying: underlying.val,
+          contract: 'CCollateralCapErc20DelegatorScenario',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };

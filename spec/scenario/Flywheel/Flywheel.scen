@@ -14,8 +14,8 @@ Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e1
     Comptroller LiquidationIncentive 1.1
     NewCToken ZRX cZRX
     NewCToken BAT cBAT
-    Support cZRX collateralFactor:0.5
-    Support cBAT collateralFactor:0.5
+    OldSupport cZRX collateralFactor:0.5
+    OldSupport cBAT collateralFactor:0.5
     -- g3
     ComptrollerImpl Deploy ScenarioG3 ComptrollerScenG3
     Unitroller SetPendingImpl ComptrollerScenG3
@@ -171,7 +171,7 @@ Test "Accrues correctly when market is added, deactivated, and activated again"
     InitSpeeds
     NewCToken DAI cDAI
     --
-    Support cDAI collateralFactor:0.5
+    OldSupport cDAI collateralFactor:0.5
     Comptroller AddCompMarkets cDAI
     Assert Equal (Comptroller GetCompMarkets) [(Address cZRX) (Address cBAT) (Address cDAI)]
     Prep Jared Some DAI cDAI

@@ -301,6 +301,18 @@ async function gulp(world: World, from: string, cToken: CToken): Promise<World> 
   return world;
 }
 
+async function setCollateralCap(world: World, from: string, cToken: CToken, cap: NumberV): Promise<World> {
+  let invokation = await invoke(world, cToken.methods._setCollateralCap(cap.encode()), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `Set collateral cap for ${cToken.name} to ${cap.show()}`,
+    invokation
+  );
+
+  return world;
+}
+
 async function becomeImplementation(
   world: World,
   from: string,
@@ -772,6 +784,19 @@ export function cTokenCommands() {
         new Arg("cToken", getCTokenV)
       ],
       (world, from, { cToken }) => gulp(world, from, cToken),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, amount: NumberV }>(`
+        #### SetCollateralCap
+        * "CToken <cToken> SetCollateralCap amount:<Number>" - Sets the collateral cap for the given cToken
+          * E.g. "CToken cZRX SetCollateralCap 1e10"
+      `,
+      "SetCollateralCap",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("amount", getNumberV)
+      ],
+      (world, from, { cToken, amount }) => setCollateralCap(world, from, cToken, amount),
       { namePos: 1 }
     ),
     new Command<{

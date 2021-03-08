@@ -1,10 +1,9 @@
 import { Event } from '../Event';
 import { World } from '../World';
 import { CErc20Delegate, CErc20DelegateScenario } from '../Contract/CErc20Delegate';
-import { CToken } from '../Contract/CToken';
 import { Invokation } from '../Invokation';
 import { getStringV } from '../CoreValue';
-import { AddressV, NumberV, StringV } from '../Value';
+import { StringV } from '../Value';
 import { Arg, Fetcher, getFetcherValue } from '../Command';
 import { storeAndSaveContract } from '../Networks';
 import { getContract, getTestContract } from '../Contract';
@@ -12,6 +11,7 @@ import { getContract, getTestContract } from '../Contract';
 const CErc20DelegateContract = getContract('CErc20Delegate');
 const CErc20DelegateScenarioContract = getTestContract('CErc20DelegateScenario');
 const CCapableErc20DelegateContract = getContract('CCapableErc20Delegate');
+const CCollateralCapErc20DelegateScenarioContract = getContract('CCollateralCapErc20DelegateScenario');
 
 
 export interface CTokenDelegateData {
@@ -94,6 +94,29 @@ export async function buildCTokenDelegate(
           name: name.val,
           contract: 'CCapableErc20Delegate',
           description: 'Capable CErc20 Delegate'
+        };
+      }
+    ),
+
+    new Fetcher<{ name: StringV; }, CTokenDelegateData>(
+      `
+        #### CCollateralCapErc20DelegateScenario
+        * "CCollateralCapErc20DelegateScenario name:<String>"
+          * E.g. "CTokenDelegate Deploy CCollateralCapErc20DelegateScenario cLinkDelegate"
+      `,
+      'CCollateralCapErc20DelegateScenario',
+      [
+        new Arg('name', getStringV),
+      ],
+      async (
+        world,
+        { name }
+      ) => {
+        return {
+          invokation: await CCollateralCapErc20DelegateScenarioContract.deploy<CErc20Delegate>(world, from, []),
+          name: name.val,
+          contract: 'CCollateralCapErc20DelegateScenario',
+          description: 'Collateral Cap CErc20 Delegate'
         };
       }
     )
