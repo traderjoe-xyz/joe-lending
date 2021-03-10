@@ -37,11 +37,11 @@ Branch
 
 Audits
 -------
-[Trail of Bits](https://github.com/CreamFi/compound-protocol/blob/master/audits/trailofbits-CREAMSummary.pdf)
+C.R.E.A.M. Finance smart contracts have been audited by Trail of Bits. The audit report are available on Trail of Bits [publications repo](https://github.com/trailofbits/publications/blob/master/reviews/CREAMSummary.pdf).
 
 Change Logs
 -----------
-Cream Finance forked from this commit [7561dcf5964527dbf2f3c7cd670775b3c6f7e378](https://github.com/compound-finance/compound-protocol/commits/7561dcf5964527dbf2f3c7cd670775b3c6f7e378) of Compound Finance,
+C.R.E.A.M. Finance forked from this commit [7561dcf5964527dbf2f3c7cd670775b3c6f7e378](https://github.com/compound-finance/compound-protocol/commits/7561dcf5964527dbf2f3c7cd670775b3c6f7e378) of Compound Finance,
 Cream continues to add new features and submits pull requests back to Compound as appropriate. Below is a high level summary of the changes:
 
 - Add borrow cap feature, this feature is cherry picked from Compound Finance https://github.com/compound-finance/compound-protocol/pull/65
