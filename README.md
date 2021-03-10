@@ -37,7 +37,7 @@ Branch
 
 Audits
 -------
-C.R.E.A.M. Finance smart contracts have been audited by Trail of Bits. The audit report are available on Trail of Bits [publications repo](https://github.com/trailofbits/publications/blob/master/reviews/CREAMSummary.pdf).
+C.R.E.A.M. Finance smart contracts have been audited by Trail of Bits. The audit report is available on Trail of Bits [publications repo](https://github.com/trailofbits/publications/blob/master/reviews/CREAMSummary.pdf).
 
 Change Logs
 -----------
