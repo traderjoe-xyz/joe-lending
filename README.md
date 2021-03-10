@@ -35,6 +35,9 @@ Branch
 
 [fantom](https://github.com/CreamFi/compound-protocol/tree/fantom) - deployed on fantom opera
 
+Audits
+-------
+[Trail of Bits](https://github.com/CreamFi/compound-protocol/blob/master/audits/trailofbits-CREAMSummary.pdf)
 
 Change Logs
 -----------
