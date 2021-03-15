@@ -233,7 +233,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface, CCapableDelegateInterf
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
-        // 1. calculate fee
+        // 1. calculate fee, 1 bips = 1/10000
         uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
         // 2. transfer fund to receiver
