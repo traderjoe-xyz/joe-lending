@@ -114,6 +114,10 @@ async function getAccountCollateralToken(world: World, cToken: CToken, user: str
   return new NumberV(await cToken.methods.accountCollateralTokens(user).call());
 }
 
+async function getTotalCollateralTokens(world: World, cToken: CToken): Promise<NumberV> {
+  return new NumberV(await cToken.methods.totalCollateralTokens().call());
+}
+
 export function cTokenFetchers() {
   return [
     new Fetcher<{ cToken: CToken }, AddressV>(`
@@ -403,6 +407,19 @@ export function cTokenFetchers() {
         new Arg("address", getAddressV)
       ],
       (world, { cToken, address }) => getAccountCollateralToken(world, cToken, address.val),
+      { namePos: 1 }
+    ),
+    new Fetcher<{ cToken: CToken }, NumberV>(`
+        #### TotalCollateralTokens
+
+        * "CToken <CToken> TotalCollateralTokens" - Returns the total collateral tokens
+          * E.g. "CToken cDAI TotalCollateralTokens"
+      `,
+      "TotalCollateralTokens",
+      [
+        new Arg("cToken", getCTokenV)
+      ],
+      (world, { cToken }) => getTotalCollateralTokens(world, cToken),
       { namePos: 1 }
     )
   ];

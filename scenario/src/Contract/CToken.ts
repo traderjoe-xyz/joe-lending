@@ -50,6 +50,7 @@ export interface CTokenMethods {
   gulp(): Sendable<void>;
   _setCollateralCap(amount: encodedNumber): Sendable<void>;
   accountCollateralTokens(account: string): Callable<number>;
+  totalCollateralTokens(): Callable<number>;
 }
 
 export interface CTokenScenarioMethods extends CTokenMethods {

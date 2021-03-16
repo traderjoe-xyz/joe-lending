@@ -3,12 +3,19 @@ Macro CollateralCap
     ListedCToken ZRX cZRX initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
     SetCollateralFactor cZRX collateralFactor:0.5
 
+Macro CollateralCapWithUpgrade
+    NewComptroller
+    -- FIXME: We use `CCollateralCapErc20DelegatorScenario` here as a workaround, since collateral token related is not defined in `CErc20Delegator`.
+    ListedCToken ZRX cZRX initialExchangeRate:1e9 delegatorType:CCollateralCapErc20DelegatorScenario
+    SetCollateralFactor cZRX collateralFactor:0.5
+
 Test "Mint cZRX without entering market"
     CollateralCap
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
 
 Test "Mint cZRX with collateral cap"
     CollateralCap
@@ -17,16 +24,19 @@ Test "Mint cZRX with collateral cap"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     CToken cZRX SetCollateralCap 70e9
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 100e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 70e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 70e9)
     -- Collateral cap is fully utilized by Geoff
     EnterMarkets Coburn cZRX
     Prep Coburn Some ZRX cZRX
     Mint Coburn 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Coburn) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Coburn) (Exactly 0)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 70e9)
 
 Test "Mint cZRX but the collateral cap is lower than total collateral toknes"
     CollateralCap
@@ -35,11 +45,13 @@ Test "Mint cZRX but the collateral cap is lower than total collateral toknes"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     CToken cZRX SetCollateralCap 20e9
-    -- Total collateral tokens are larger than cap
+    -- Total collateral tokens are already larger than cap
     Mint Geoff 10e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 60e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
 
 Test "Enter market and register collateral"
     CollateralCap
@@ -47,10 +59,12 @@ Test "Enter market and register collateral"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
     Assert Equal (Comptroller AssetsIn Geoff) []
     EnterMarkets Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     Assert Equal (Comptroller AssetsIn Geoff) [(Address cZRX)]
 
 Test "Register collateral multiple times"
@@ -59,20 +73,24 @@ Test "Register collateral multiple times"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
     Assert Equal (Comptroller AssetsIn Geoff) []
     EnterMarkets Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     Assert Equal (Comptroller AssetsIn Geoff) [(Address cZRX)]
     CToken cZRX SetCollateralCap 50e9
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 100e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     -- Remove collateral cap
     CToken cZRX SetCollateralCap 0
     EnterMarkets Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 100e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 100e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)
     Assert Equal (Comptroller AssetsIn Geoff) [(Address cZRX)]
 
 Test "Register collateral with collateral cap"
@@ -82,9 +100,11 @@ Test "Register collateral with collateral cap"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
     EnterMarkets Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 20e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
 
 Test "Nothing happened when no more collateral could be registered"
     CollateralCap
@@ -93,9 +113,11 @@ Test "Nothing happened when no more collateral could be registered"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     EnterMarkets Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
 
 Test "Redeem with consuming all collateral tokens"
     CollateralCap
@@ -105,10 +127,12 @@ Test "Redeem with consuming all collateral tokens"
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
     Assert Equal (Erc20 ZRX TokenBalance Geoff) 20e18
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     Redeem Geoff 50e9 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) Zero
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
     Assert Equal (Erc20 ZRX TokenBalance Geoff) 70e18
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
 
 Test "Redeem with consuming some collateral tokens"
     CollateralCap
@@ -119,16 +143,19 @@ Test "Redeem with consuming some collateral tokens"
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 20e9)
     Assert Equal (Erc20 ZRX TokenBalance Geoff) 20e18
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
     -- Redeem 30e9 cZRX to consume all non-collateral tokens
     Redeem Geoff 30e9 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 20e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 20e9)
     Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 50e18)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
     -- Redeem 10e9 more cZRX to consume some collateral tokens
     Redeem Geoff 10e9 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 10e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 10e9)
     Assert Equal (Erc20 ZRX TokenBalance Geoff) (Exactly 60e18)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 10e9)
 
 Test "Failed to redeem for comptroller rejected"
     CollateralCap
@@ -152,9 +179,11 @@ Test "Unregister collateral successfully"
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
     ExitMarket Geoff cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
 
 Test "Failed to unregister collateral for exit market failed"
     CollateralCap
@@ -181,16 +210,19 @@ Test "Transfer cToken successfully"
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 20e9)
     Assert Equal (Erc20 cZRX TokenBalance Torrey) Zero
     Assert Equal (CToken cZRX CollateralBalance Torrey) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
     Transfer Geoff Torrey 30e9 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 20e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 20e9)
     Assert Equal (Erc20 cZRX TokenBalance Torrey) (Exactly 30e9)
     Assert Equal (CToken cZRX CollateralBalance Torrey) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
     Transfer Geoff Torrey 10e9 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 10e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 10e9)
     Assert Equal (Erc20 cZRX TokenBalance Torrey) (Exactly 40e9)
     Assert Equal (CToken cZRX CollateralBalance Torrey) (Exactly 10e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 20e9)
 
 Test "Failed to transfer cToken for comptroller rejected"
     CollateralCap
@@ -207,12 +239,28 @@ Test "Failed to transfer cToken for comptroller rejected"
     Transfer Geoff Torrey 49e9 cZRX
     Assert Failure COMPTROLLER_REJECTION TRANSFER_COMPTROLLER_REJECTION INSUFFICIENT_LIQUIDITY
 
+Test "Seize collateral tokens"
+    CollateralCap
+    ListedCTokenImmutable EVL cEVL initialExchangeRate:1e9 cTokenType:CEvil
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
+    EvilSeize cEVL 1e9 cZRX seizer:Torrey seizee:Geoff
+    Assert Equal (Erc20 cZRX TokenBalance Torrey) (Exactly 1e9)
+    Assert Equal (CToken cZRX CollateralBalance Torrey) (Exactly 1e9)
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 49e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 49e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
+
 Test "Checks account liquidity with multiple tokens"
     CollateralCap
     CToken cZRX SetCollateralCap 20e9
-    ListedCToken BAT cBAT initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario
+    ListedCToken BAT cBAT initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
     SetCollateralFactor cBAT collateralFactor:0.5
-    ListedCToken OMG cOMG initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario
+    ListedCToken OMG cOMG initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
     SetCollateralFactor cOMG collateralFactor:0.5
     ListedCToken REP cREP initialExchangeRate:1e9
     SetCollateralFactor cREP collateralFactor:0.5
@@ -240,16 +288,212 @@ Test "Checks account liquidity with multiple tokens"
     Assert Equal (Erc20 cREP TokenBalance Geoff) (Exactly 50e9)
     Assert Equal (Comptroller Liquidity Geoff) (Exactly 60e18) -- 20 * 0.5 + 50 * 0.5 + 0 + 50 * 0.5
 
-Test "Seize collateral tokens"
-    CollateralCap
-    ListedCTokenImmutable EVL cEVL initialExchangeRate:1e9 cTokenType:CEvil
+--- The following tests related to cToken upgrade
+
+Test "Init collateral tokens could exceed collateral cap"
+    CollateralCapWithUpgrade
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    -- Set collateral cap to 50e9
+    CToken cZRX SetCollateralCap 50e9
+    -- Jared fills the collateral cap
+    EnterMarkets Jared cZRX
+    Prep Jared Some ZRX cZRX
+    Mint Jared 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
+    -- Geoff triggers to init collateral tokens, the total collateral tokens will exceed the collaterla cap.
+    EnterMarkets Geoff cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)
+
+Test "Checks account liquidity with cToken upgrade"
+    CollateralCapWithUpgrade
+    ListedCToken BAT cBAT initialExchangeRate:1e9
+    SetCollateralFactor cBAT collateralFactor:0.5
+    -- ZRX: not enter market
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    -- BAT: enter market
+    EnterMarkets Geoff cBAT
+    Prep Geoff Some BAT cBAT
+    Mint Geoff 50e18 cBAT
+    Assert Equal (Erc20 cBAT TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (Comptroller Liquidity Geoff) (Exactly 25e18) -- 0 + 50 * 0.5
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    CToken cBAT SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Comptroller Liquidity Geoff) (Exactly 25e18) -- 0 + 50 * 0.5
+
+Test "Mint with cToken upgrade"
+    CollateralCapWithUpgrade
     EnterMarkets Geoff cZRX
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Geoff's new minting will trigger the collateral tokens initialization
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 100e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 100e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)
+
+Test "Mint with cToken upgrade and collaterla cap"
+    CollateralCapWithUpgrade
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    CToken cZRX SetCollateralCap 70e9
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Jared's minting will consume collateral tokens
+    EnterMarkets Jared cZRX
+    Prep Jared Some ZRX cZRX
+    Mint Jared 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 50e9)
+    -- Geoff's new minting will trigger the collateral tokens initialization.
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 100e9)
     Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 50e9)
-    EvilSeize cEVL 1e9 cZRX seizer:Torrey seizee:Geoff
-    Assert Equal (Erc20 cZRX TokenBalance Torrey) (Exactly 1e9)
-    Assert Equal (CToken cZRX CollateralBalance Torrey) (Exactly 1e9)
-    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 49e9)
-    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 49e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)
+
+Test "Borrow with cToken upgrade"
+    CollateralCapWithUpgrade
+    ListedCToken BAT cBAT initialExchangeRate:1e9
+    SetCollateralFactor cBAT collateralFactor:0.5
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    -- Geoff's could borrow successfully but his collateral tokens of cZRX is still not initialized
+    Borrow Geoff 1e18 cBAT
+    Assert Equal (CToken cBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 BAT TokenBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+
+Test "Redeem with cToken upgrade"
+    CollateralCapWithUpgrade
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Geoff's new redeem will trigger the collateral tokens initialization
+    Redeem Geoff 20e9 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 30e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 30e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 30e9)
+
+Test "Repay with cToken upgrade"
+    CollateralCapWithUpgrade
+    ListedCToken BAT cBAT initialExchangeRate:1e9
+    SetCollateralFactor cBAT collateralFactor:0.5
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Borrow Geoff 1e18 cBAT
+    Assert Equal (CToken cBAT BorrowBalance Geoff) (Exactly 1e18)
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Geoff's could repay successfully but his collateral tokens of cZRX is still not initialized
+    From Geoff (Erc20 BAT Approve cBAT 1.0e18)
+    RepayBorrow Geoff 1e18 cBAT
+    Assert Equal (CToken cBAT BorrowBalance Geoff) Zero
+    Assert Equal (Erc20 BAT TokenBalance Geoff) Zero
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+
+Test "Transfer with cToken upgrade"
+    CollateralCapWithUpgrade
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    EnterMarkets Jared cZRX
+    Prep Jared Some ZRX cZRX
+    Mint Jared 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX CollateralBalance Jared) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Geoff's transfer will trigger the collateral tokens initialization of both Geoff and Jared
+    Transfer Geoff Jared 10e9 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 40e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 60e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 40e9)
+    Assert Equal (CToken cZRX CollateralBalance Jared) (Exactly 60e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)
+
+Test "Transfer with cToken upgrade and collateral cap"
+    CollateralCapWithUpgrade
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    EnterMarkets Jared cZRX
+    Prep Jared Some ZRX cZRX
+    Mint Jared 50e18 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    CToken cZRX SetCollateralCap 70e9 -- Here is the only difference with the above testcase
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 50e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 50e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) Zero
+    Assert Equal (CToken cZRX CollateralBalance Jared) Zero
+    Assert Equal (CToken cZRX TotalCollateralTokens) Zero
+    -- Geoff's transfer will trigger the collateral tokens initialization of both Geoff and Jared
+    -- Since Geoff and Jared have entered ZRX market before, they will both get 50e9 collateral tokens, which will exceed the collateral cap.
+    Transfer Geoff Jared 10e9 cZRX
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 40e9)
+    Assert Equal (Erc20 cZRX TokenBalance Jared) (Exactly 60e9)
+    Assert Equal (CToken cZRX CollateralBalance Geoff) (Exactly 40e9)
+    Assert Equal (CToken cZRX CollateralBalance Jared) (Exactly 60e9)
+    Assert Equal (CToken cZRX TotalCollateralTokens) (Exactly 100e9)

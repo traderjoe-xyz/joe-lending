@@ -25,11 +25,9 @@ import { getContract } from '../Contract';
 import { Arg, Command, View, processCommandEvent } from '../Command';
 import { CTokenErrorReporter } from '../ErrorReporter';
 import { getComptroller, getCTokenData } from '../ContractLookup';
-import { getExpMantissa } from '../Encoding';
 import { buildCToken } from '../Builder/CTokenBuilder';
 import { verify } from '../Verify';
 import { getLiquidity } from '../Value/ComptrollerValue';
-import { encodedNumber } from '../Encoding';
 import { getCTokenV, getCErc20DelegatorV } from '../Value/CTokenValue';
 
 function showTrxValue(world: World): string {
