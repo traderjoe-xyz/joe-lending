@@ -209,8 +209,17 @@ async function makeInterestRateModel(opts = {}) {
     const baseRate = etherMantissa(dfn(opts.baseRate, 0));
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
     const jump = etherMantissa(dfn(opts.jump, 0));
-    const kink = etherMantissa(dfn(opts.kink, 0));
-    return await deploy('JumpRateModel', [baseRate, multiplier, jump, kink]);
+    const kink = etherMantissa(dfn(opts.kink, 1));
+    return await deploy('JumpRateModelV2', [baseRate, multiplier, jump, kink, root]);
+  }
+
+  if (kind == 'triple-slope') {
+    const baseRate = etherMantissa(dfn(opts.baseRate, 0));
+    const multiplier = etherMantissa(dfn(opts.multiplier, 0.1));
+    const jump = etherMantissa(dfn(opts.jump, 0));
+    const kink1 = etherMantissa(dfn(opts.kink1, 1));
+    const kink2 = etherMantissa(dfn(opts.kink2, 1));
+    return await deploy('TripleSlopeRateModel', [baseRate, multiplier, jump, kink1, kink2, root]);
   }
 }
 
