@@ -1,4 +1,5 @@
 const {
+  address,
   etherMantissa
 } = require('./Utils/Ethereum');
 
@@ -125,6 +126,67 @@ describe('PriceOracleProxy', () => {
       await setPrice(cOther.underlying, price);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(proxyPrice).toEqual(etherMantissa(price).toFixed());
+    });
+  });
+
+  describe("_setAdmin", () => {
+    it("set admin successfully", async () => {
+      expect(await send(oracle, "_setAdmin", [accounts[0]])).toSucceed();
+    });
+
+    it("fails to set admin for non-admin", async () => {
+      await expect(send(oracle, "_setAdmin", [accounts[0]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set new admin");
+    });
+  });
+
+  describe("_setGuardian", () => {
+    it("set guardian successfully", async () => {
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+    });
+
+    it("fails to set guardian for non-admin", async () => {
+      await expect(send(oracle, "_setGuardian", [accounts[0]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set new guardian");
+    });
+  });
+
+  describe("_setLPs", () => {
+    it("set LPs successfully", async () => {
+      expect(await send(oracle, "_setLPs", [[cOther._address], [true]])).toSucceed();
+    });
+
+    it("fails to set LPs for non-admin", async () => {
+      await expect(send(oracle, "_setLPs", [[cOther._address], [true]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set LPs");
+    });
+
+    it("fails to set LPs for mismatched data", async () => {
+      await expect(send(oracle, "_setLPs", [[cOther._address], [true, true]])).rejects.toRevert("revert mismatched data");
+    });
+  });
+
+  describe("_setAggregators", () => {
+    let mockAggregator;
+
+    beforeEach(async () => {
+      mockAggregator = await makeMockAggregator({answer: etherMantissa(1)});
+    });
+
+    it("set aggregators successfully", async () => {
+      expect(await send(oracle, "_setAggregators", [[cOther._address], [mockAggregator._address]])).toSucceed();
+    });
+
+    it("fails to set aggregators for non-admin", async () => {
+      await expect(send(oracle, "_setAggregators", [[cOther._address], [mockAggregator._address]], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators");
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+      await expect(send(oracle, "_setAggregators", [[cOther._address], [mockAggregator._address]], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator");
+    });
+
+    it("fails to set aggregators for mismatched data", async () => {
+      await expect(send(oracle, "_setAggregators", [[cOther._address], []])).rejects.toRevert("revert mismatched data");
+    });
+
+    it("clear aggregators successfully", async () => {
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[cOther._address], [address(0)]], {from: accounts[0]})).toSucceed();
     });
   });
 });

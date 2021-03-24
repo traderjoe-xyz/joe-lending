@@ -147,6 +147,9 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice Admin address
     address public admin;
 
+    /// @notice Guardian address
+    address public guardian;
+
     /// @notice Indicator that this is a PriceOracle contract (for inspection)
     bool public constant isPriceOracle = true;
 
@@ -306,18 +309,35 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         return v1PriceOracle.assetPrices(token);
     }
 
+    /*** Admin or guardian functions ***/
+
     event AggregatorUpdated(address tokenAddress, address source);
     event IsLPUpdated(address tokenAddress, bool isLP);
+    event SetGuardian(address guardian);
+    event SetAdmin(address admin);
 
+    /**
+     * @notice Set ChainLink aggregators for multiple cTokens
+     * @param tokenAddresses The list of underlying tokens
+     * @param sources The list of ChainLink aggregator sources
+     */
     function _setAggregators(address[] calldata tokenAddresses, address[] calldata sources) external {
-        require(msg.sender == admin, "only the admin may set the aggregators");
+        require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(tokenAddresses.length == sources.length, "mismatched data");
         for (uint i = 0; i < tokenAddresses.length; i++) {
+            if (sources[i] != address(0)) {
+                require(msg.sender == admin, "guardian may only clear the aggregator");
+            }
             aggregators[tokenAddresses[i]] = AggregatorV3Interface(sources[i]);
             emit AggregatorUpdated(tokenAddresses[i], sources[i]);
         }
     }
 
+    /**
+     * @notice See assets as LP tokens for multiple cTokens
+     * @param cTokenAddresses The list of cTokens
+     * @param isLP The list of cToken properties (it's LP or not)
+     */
     function _setLPs(address[] calldata cTokenAddresses, bool[] calldata isLP) external {
         require(msg.sender == admin, "only the admin may set LPs");
         require(cTokenAddresses.length == isLP.length, "mismatched data");
@@ -327,8 +347,23 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
     }
 
+    /**
+     * @notice Set guardian for price oracle proxy
+     * @param _guardian The new guardian
+     */
+    function _setGuardian(address _guardian) external {
+        require(msg.sender == admin, "only the admin may set new guardian");
+        guardian = _guardian;
+        emit SetGuardian(guardian);
+    }
+
+    /**
+     * @notice Set admin for price oracle proxy
+     * @param _admin The new admin
+     */
     function _setAdmin(address _admin) external {
         require(msg.sender == admin, "only the admin may set new admin");
         admin = _admin;
+        emit SetAdmin(admin);
     }
 }
