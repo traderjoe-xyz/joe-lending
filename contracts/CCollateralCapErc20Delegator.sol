@@ -194,6 +194,17 @@ contract CCollateralCapErc20Delegator is CTokenInterface, CCollateralCapErc20Int
     }
 
     /**
+     * @notice Flash loan funds to a given account.
+     * @param receiver The receiver address for the funds
+     * @param amount The amount of the funds to be loaned
+     * @param params The other parameters
+     */
+    function flashLoan(address receiver, uint amount, bytes calldata params) external {
+        receiver; amount; params; // Shh
+        delegateAndReturn();
+    }
+
+    /**
      * @notice Register account collateral tokens if there is space.
      * @param account The account to register
      * @dev This function could only be called by comptroller.

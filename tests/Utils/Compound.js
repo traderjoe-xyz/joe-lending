@@ -272,8 +272,17 @@ async function makeInterestRateModel(opts = {}) {
     const baseRate = etherMantissa(dfn(opts.baseRate, 0));
     const multiplier = etherMantissa(dfn(opts.multiplier, 1e-18));
     const jump = etherMantissa(dfn(opts.jump, 0));
-    const kink = etherMantissa(dfn(opts.kink, 0));
-    return await deploy('JumpRateModel', [baseRate, multiplier, jump, kink]);
+    const kink = etherMantissa(dfn(opts.kink, 1));
+    return await deploy('JumpRateModelV2', [baseRate, multiplier, jump, kink, root]);
+  }
+
+  if (kind == 'triple-slope') {
+    const baseRate = etherMantissa(dfn(opts.baseRate, 0));
+    const multiplier = etherMantissa(dfn(opts.multiplier, 0.1));
+    const jump = etherMantissa(dfn(opts.jump, 0));
+    const kink1 = etherMantissa(dfn(opts.kink1, 1));
+    const kink2 = etherMantissa(dfn(opts.kink2, 1));
+    return await deploy('TripleSlopeRateModel', [baseRate, multiplier, jump, kink1, kink2, root]);
   }
 }
 
@@ -324,6 +333,24 @@ async function preCSLP(underlying) {
   await send(masterChef, 'add', [1, underlying]);
   const sushiBar = await deploy('SushiBar', [sushiToken._address]);
   return encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]); // pid = 0
+}
+
+async function makeFlashloanReceiver(opts = {}) {
+  const {
+    kind = 'normal'
+  } = opts || {};
+  if (kind === 'normal') {
+    return await deploy('FlashloanReceiver', [])
+  }
+  if (kind === 'flashloan-and-mint') {
+    return await deploy('FlashloanAndMint', [])
+  }
+  if (kind === 'flashloan-and-repay-borrow') {
+    return await deploy('FlashloanAndRepayBorrow', [])
+  }
+  if (kind === 'flashloan-twice') {
+    return await deploy('FlashloanTwice', [])
+  }
 }
 
 async function balanceOf(token, account) {
@@ -499,6 +526,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeToken,
+  makeFlashloanReceiver,
   makeMockAggregator,
 
   balanceOf,

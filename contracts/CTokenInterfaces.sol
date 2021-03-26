@@ -302,10 +302,22 @@ contract CErc20Interface is CErc20Storage {
 }
 
 contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
+    /**
+     * @notice Flash loan fee ratio
+     */
+    uint public constant flashFeeBips = 3;
+
+    /*** Market Events ***/
+
+    /**
+     * @notice Event emitted when a flashloan occured
+     */
+    event Flashloan(address indexed receiver, uint amount, uint totalFee, uint reservesFee);
 
     /*** User Interface ***/
 
     function gulp() external;
+    function flashLoan(address receiver, uint amount, bytes calldata params) external;
 }
 
 contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapStorage {
@@ -359,4 +371,13 @@ contract CDelegateInterface {
      * @notice Called by the delegator on a delegate to forfeit its responsibility
      */
     function _resignImplementation() public;
+}
+
+/*** External interface ***/
+
+/**
+ * @title Flash loan receiver interface
+ */
+interface IFlashloanReceiver {
+    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external;
 }
