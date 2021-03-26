@@ -165,7 +165,7 @@ describe('CToken', function () {
 
       await fastForward(masterChef, 1);
 
-      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
+      expect(await send(cToken, 'claimSushi', [minter], { from: minter })).toSucceed();
       expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
     });
   });
@@ -300,7 +300,7 @@ describe('CToken', function () {
       expect(await balanceOf(sushi, minter)).toEqualNumber(etherUnsigned(0));
 
       await fastForward(masterChef, 1);
-      expect(await send(cToken, 'claimSushi', [], { from: minter })).toSucceed();
+      expect(await send(cToken, 'claimSushi', [minter], { from: minter })).toSucceed();
       expect(await balanceOf(sushi, minter)).toEqualNumber(await call(masterChef, 'sushiPerBlock', []));
     });
   });

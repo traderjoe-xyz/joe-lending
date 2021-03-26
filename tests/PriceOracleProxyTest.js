@@ -5,21 +5,22 @@ const {
 const {
   makeCToken,
   makePriceOracle,
+  makeMockAggregator
 } = require('./Utils/Compound');
 
 describe('PriceOracleProxy', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cDai, cYcrv, cYycrv, cYeth, cOther;
+  let oracle, backingOracle, cEth, cDai, cYcrv, cYusd, cYeth, cXSushi, cOther;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
-    cUsdc = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYcrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
-    cYycrv = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cYusd = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cYeth = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
+    cXSushi = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
 
     backingOracle = await makePriceOracle();
     oracle = await deploy('PriceOracleProxy',
@@ -27,10 +28,10 @@ describe('PriceOracleProxy', () => {
         root,
         backingOracle._address,
         cEth._address,
-        cUsdc._address,
         cYcrv._address,
-        cYycrv._address,
+        cYusd._address,
         cYeth._address,
+        cXSushi._address
       ]
      );
   });
@@ -51,24 +52,24 @@ describe('PriceOracleProxy', () => {
       expect(configuredCEther).toEqual(cEth._address);
     });
 
-    it("sets address of cUSDC", async () => {
-      let configuredCUSD = await call(oracle, "cUsdcAddress");
-      expect(configuredCUSD).toEqual(cUsdc._address);
-    });
-
     it("sets address of cYcrv", async () => {
       let configuredCYCRV = await call(oracle, "cYcrvAddress");
       expect(configuredCYCRV).toEqual(cYcrv._address);
     });
 
-    it("sets address of cYycrv", async () => {
-      let configuredCYYCRV = await call(oracle, "cYYcrvAddress");
-      expect(configuredCYYCRV).toEqual(cYycrv._address);
+    it("sets address of cYusd", async () => {
+      let configuredCYUSD = await call(oracle, "cYusdAddress");
+      expect(configuredCYUSD).toEqual(cYusd._address);
     });
 
     it("sets address of cYeth", async () => {
       let configuredCYETH = await call(oracle, "cYethAddress");
       expect(configuredCYETH).toEqual(cYeth._address);
+    });
+
+    it("sets address of cXSushi", async () => {
+      let configuredCXSUSHI = await call(oracle, "cXSushiAddress");
+      expect(configuredCXSUSHI).toEqual(cXSushi._address);
     });
   });
 
@@ -92,6 +93,14 @@ describe('PriceOracleProxy', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
+    let setPrice = async (token, price) => {
+      const mockAggregator = await makeMockAggregator({answer: etherMantissa(price)});
+      await send(
+        oracle,
+        "_setAggregators",
+        [[token._address], [mockAggregator._address]]);
+    }
+
     it("always returns 1e18 for cEth", async () => {
       await readAndVerifyProxyPrice(cEth, 1);
     });
@@ -108,6 +117,14 @@ describe('PriceOracleProxy', () => {
       let unlistedToken = await makeCToken({comptroller: cEth.comptroller});
 
       await readAndVerifyProxyPrice(unlistedToken, 0);
+    });
+
+    it("gets price from chainlink", async () => {
+      const price = 1;
+
+      await setPrice(cOther.underlying, price);
+      let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
+      expect(proxyPrice).toEqual(etherMantissa(price).toFixed());
     });
   });
 });

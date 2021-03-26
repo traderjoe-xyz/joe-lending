@@ -67,20 +67,20 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @notice Manually claim comp rewards by user
      * @return The amount of comp rewards user claims
      */
-    function claimComp() public returns (uint) {
+    function claimComp(address account) public returns (uint) {
         harvestComp();
 
         updateSupplyIndex();
-        updateSupplierIndex(msg.sender);
+        updateSupplierIndex(account);
 
-        uint compBalance = compUserAccrued[msg.sender];
+        uint compBalance = compUserAccrued[account];
         if (compBalance > 0) {
             // Transfer user comp and subtract the balance in supplyState
-            EIP20Interface(comp).transfer(msg.sender, compBalance);
+            EIP20Interface(comp).transfer(account, compBalance);
             supplyState.balance = sub_(supplyState.balance, compBalance);
 
             // Clear user's comp accrued.
-            compUserAccrued[msg.sender] = 0;
+            compUserAccrued[account] = 0;
 
             return compBalance;
         }
@@ -118,6 +118,7 @@ contract CCTokenDelegate is CCapableErc20Delegate {
     function doTransferIn(address from, uint amount) internal returns (uint) {
         uint transferredIn = super.doTransferIn(from, amount);
 
+        harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(from);
 
@@ -130,6 +131,7 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @param amount Amount of underlying to transfer
      */
     function doTransferOut(address payable to, uint amount) internal {
+        harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(to);
 
@@ -140,7 +142,7 @@ contract CCTokenDelegate is CCapableErc20Delegate {
 
     function harvestComp() internal {
         address[] memory holders = new address[](1);
-        holders[0] = msg.sender;
+        holders[0] = address(this);
         CToken[] memory cTokens = new CToken[](1);
         cTokens[0] = CToken(underlying);
 
