@@ -124,7 +124,7 @@ async function makeCToken(opts = {}) {
 
     case 'ccapable':
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      cDelegatee = await deploy('CCapableErc20Delegate');
+      cDelegatee = await deploy('CCapableErc20DelegateHarness');
       cDelegator = await deploy('CErc20Delegator',
         [
           underlying._address,
@@ -139,7 +139,7 @@ async function makeCToken(opts = {}) {
           "0x0"
         ]
       );
-      cToken = await saddle.getContractAt('CCapableErc20Delegate', cDelegator._address);
+      cToken = await saddle.getContractAt('CCapableErc20DelegateHarness', cDelegator._address);
       break;
 
     case 'cslp':
@@ -313,6 +313,24 @@ async function preCSLP(underlying) {
   return encodeParameters(['address', 'address', 'uint'], [masterChef._address, sushiBar._address, 0]); // pid = 0
 }
 
+async function makeFlashloanReceiver(opts = {}) {
+  const {
+    kind = 'normal'
+  } = opts || {};
+  if (kind === 'normal') {
+    return await deploy('FlashloanReceiver', [])
+  }
+  if (kind === 'flashloan-and-mint') {
+    return await deploy('FlashloanAndMint', [])
+  }
+  if (kind === 'flashloan-and-repay-borrow') {
+    return await deploy('FlashloanAndRepayBorrow', [])
+  }
+  if (kind === 'flashloan-twice') {
+    return await deploy('FlashloanTwice', [])
+  }
+}
+
 async function balanceOf(token, account) {
   return etherUnsigned(await call(token, 'balanceOf', [account]));
 }
@@ -475,6 +493,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeToken,
+  makeFlashloanReceiver,
   makeMockAggregator,
 
   balanceOf,

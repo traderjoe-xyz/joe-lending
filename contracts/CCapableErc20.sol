@@ -2,12 +2,20 @@ pragma solidity ^0.5.16;
 
 import "./CToken.sol";
 
+interface IFlashloanReceiver {
+    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external;
+}
+
 /**
  * @title Compound's CCapableErc20 Contract
  * @notice CTokens which wrap an EIP-20 underlying
  * @author Compound
  */
 contract CCapableErc20 is CToken, CCapableErc20Interface, CCapableDelegateInterface {
+
+    event Flashloan(address indexed receiver, uint amount, uint totalFee, uint reservesFee);
+    uint constant flashFeeBips = 3;
+
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -121,7 +129,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface, CCapableDelegateInterf
     /**
      * @notice Absorb excess cash into reserves.
      */
-    function gulp() external {
+    function gulp() external nonReentrant {
         uint256 cashOnChain = getCashOnChain();
         uint256 cashPrior = getCashPrior();
 
@@ -218,5 +226,31 @@ contract CCapableErc20 is CToken, CCapableErc20Interface, CCapableDelegateInterf
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
         internalCash = sub_(internalCash, amount);
+    }
+
+    function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
+        uint cashOnChainBefore = getCashOnChain();
+        uint cashBefore = getCashPrior();
+        require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
+
+        // 1. calculate fee, 1 bips = 1/10000
+        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
+
+        // 2. transfer fund to receiver
+        doTransferOut(address(uint160(receiver)), amount);
+
+        // 3. execute receiver's callback function
+        IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
+
+        // 4. check balance
+        uint cashOnChainAfter = getCashOnChain();
+        require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
+
+        // 5. update reserves and internal cash
+        uint reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
+        totalReserves = add_(totalReserves, reservesFee);
+        internalCash = add_(cashBefore, totalFee);
+
+        emit Flashloan(receiver, amount, totalFee, reservesFee);
     }
 }
