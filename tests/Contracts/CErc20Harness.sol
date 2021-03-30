@@ -684,3 +684,27 @@ contract CCTokenDelegateScenario is CCTokenDelegate {
         return comptrollerScenario.blockNumber();
     }
 }
+
+contract CCapableErc20DelegateHarness is CCapableErc20Delegate {
+    uint blockNumber = 1000000;
+
+    function harnessSetReserveFactorFresh(uint newReserveFactorMantissa) public returns (uint) {
+        return _setReserveFactorFresh(newReserveFactorMantissa);
+    }
+
+    function getBlockNumber() internal view returns (uint) {
+        return blockNumber;
+    }
+
+    function harnessSetBlockNumber(uint newBlockNumber) public {
+        blockNumber = newBlockNumber;
+    }
+
+    function harnessSetAccrualBlockNumber(uint _accrualblockNumber) public {
+        accrualBlockNumber = _accrualblockNumber;
+    }
+
+    function harnessSetInternalCash(uint newInternalCash) public {
+        internalCash = newInternalCash;
+    }
+}
