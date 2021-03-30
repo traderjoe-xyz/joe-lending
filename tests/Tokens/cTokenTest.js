@@ -85,7 +85,7 @@ describe('CToken', function () {
       const multiplier = 0.45;
       const kink = 0.95;
       const jump = 5 * multiplier;
-      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate, multiplier, kink, jump } });
+      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate, multiplier: multiplier*kink, kink, jump } });
       await send(cToken, 'harnessSetReserveFactorFresh', [etherMantissa(.01)]);
       await send(cToken, 'harnessExchangeRateDetails', [1, 1, 0]);
       await send(cToken, 'harnessSetExchangeRate', [etherMantissa(1)]);
