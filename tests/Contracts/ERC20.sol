@@ -165,3 +165,74 @@ contract CTokenHarness is ERC20Harness {
         comptroller = _comptroller;
     }
 }
+
+interface CurveSwapInterface {
+    function lp_token() external view returns (address);
+    function get_virtual_price() external view returns (uint);
+}
+
+contract CurveSwapHarness is CurveSwapInterface {
+    address private lpToken;
+    uint private virtualPrice;
+
+    constructor(address _lpToken, uint _virtualPrice) public {
+        lpToken = _lpToken;
+        virtualPrice = _virtualPrice;
+    }
+
+    function lp_token() external view returns (address) {
+        return lpToken;
+    }
+
+    function get_virtual_price() external view returns (uint) {
+        return virtualPrice;
+    }
+}
+
+interface YVaultV1Interface {
+    function token() external view returns (address);
+    function getPricePerFullShare() external view returns (uint);
+}
+
+contract YVaultV1TokenHarness is ERC20Harness, YVaultV1Interface {
+    address private underlying;
+    uint private price;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _token, uint _price) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        underlying = _token;
+        price = _price;
+    }
+
+    function token() external view returns (address) {
+        return underlying;
+    }
+
+    function getPricePerFullShare() external view returns (uint) {
+        return price;
+    }
+}
+
+interface YVaultV2Interface {
+    function token() external view returns (address);
+    function pricePerShare() external view returns (uint);
+}
+
+contract YVaultV2TokenHarness is ERC20Harness, YVaultV2Interface {
+    address private underlying;
+    uint private price;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _token, uint _price) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        underlying = _token;
+        price = _price;
+    }
+
+    function token() external view returns (address) {
+        return underlying;
+    }
+
+    function pricePerShare() external view returns (uint) {
+        return price;
+    }
+}

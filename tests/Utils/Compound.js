@@ -297,7 +297,26 @@ async function makeToken(opts = {}) {
     const cToken = await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
     await send(comptroller, '_supportMarket', [cToken._address]);
     return cToken;
+  } else if (kind == 'yvaultToken') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'yvIB';
+    const version = (opts.yvOpts && opts.yvOpts.version) || 'v1';
+    const name = opts.name || `yVault ${version} ${symbol}`;
+
+    const underlying = (opts.yvOpts && opts.yvOpts.underlying) || await makeToken();
+    const price = dfn((opts.yvOpts && opts.yvOpts.price), etherMantissa(1));
+    if (version == 'v1') {
+      return await deploy('YVaultV1TokenHarness', [quantity, name, decimals, symbol, underlying._address, price]);
+    } else {
+      return await deploy('YVaultV2TokenHarness', [quantity, name, decimals, symbol, underlying._address, price]);
+    }
   }
+}
+
+async function makeCurveSwap(opts = {}) {
+  const price = dfn(opts.price, etherMantissa(1));
+  return await deploy('CurveSwapHarness', [opts.lp, price]);
 }
 
 async function makeMockAggregator(opts = {}) {
@@ -495,6 +514,7 @@ module.exports = {
   makeToken,
   makeFlashloanReceiver,
   makeMockAggregator,
+  makeCurveSwap,
 
   balanceOf,
   totalSupply,
