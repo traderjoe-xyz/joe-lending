@@ -297,6 +297,12 @@ async function makeToken(opts = {}) {
     const cToken = await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
     await send(comptroller, '_supportMarket', [cToken._address]);
     return cToken;
+  } else if (kind == 'curveToken') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'crvIB';
+    const name = opts.name || `Curve ${symbol}`;
+    return await deploy('CurveTokenHarness', [quantity, name, decimals, symbol, opts.crvOpts.minter]);
   } else if (kind == 'yvaultToken') {
     const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
     const decimals = etherUnsigned(dfn(opts.decimals, 18));
@@ -316,7 +322,7 @@ async function makeToken(opts = {}) {
 
 async function makeCurveSwap(opts = {}) {
   const price = dfn(opts.price, etherMantissa(1));
-  return await deploy('CurveSwapHarness', [opts.lp, price]);
+  return await deploy('CurveSwapHarness', [price]);
 }
 
 async function makeMockAggregator(opts = {}) {

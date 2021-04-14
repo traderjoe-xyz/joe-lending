@@ -166,22 +166,28 @@ contract CTokenHarness is ERC20Harness {
     }
 }
 
+interface CurveTokenV3Interface {
+    function minter() external view returns (address);
+}
+
+contract CurveTokenHarness is ERC20Harness, CurveTokenV3Interface {
+    address public minter;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _minter) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        minter = _minter;
+    }
+}
+
 interface CurveSwapInterface {
-    function lp_token() external view returns (address);
     function get_virtual_price() external view returns (uint);
 }
 
 contract CurveSwapHarness is CurveSwapInterface {
-    address private lpToken;
     uint private virtualPrice;
 
-    constructor(address _lpToken, uint _virtualPrice) public {
-        lpToken = _lpToken;
+    constructor(uint _virtualPrice) public {
         virtualPrice = _virtualPrice;
-    }
-
-    function lp_token() external view returns (address) {
-        return lpToken;
     }
 
     function get_virtual_price() external view returns (uint) {

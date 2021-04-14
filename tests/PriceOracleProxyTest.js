@@ -27,10 +27,10 @@ describe('PriceOracleProxy', () => {
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cXSushi = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
 
-    crvLP = await makeToken({symbol: 'ethCrv', name: 'Curve pool ethCrv'}); // ETH base
-    crvSwap = await makeCurveSwap({lp: crvLP._address, price: crvLPPrice});
-    crvLP2 = await makeToken({symbol: 'usdCrv', name: 'Curve pool usdCrv'}); // USD base
-    crvSwap2 = await makeCurveSwap({lp: crvLP2._address, price: crvLPPrice});
+    crvSwap = await makeCurveSwap({price: crvLPPrice});
+    crvLP = await makeToken({kind: 'curveToken', symbol: 'ethCrv', name: 'Curve pool ethCrv', crvOpts: {minter: crvSwap._address}}); // ETH base
+    crvSwap2 = await makeCurveSwap({price: crvLPPrice});
+    crvLP2 = await makeToken({kind: 'curveToken', symbol: 'usdCrv', name: 'Curve pool usdCrv', crvOpts: {minter: crvSwap2._address}}); // USD base
     yv1 = await makeToken({kind: 'yvaultToken', yvOpts: {price: yvPrice}});
     yv1CrvLP = await makeToken({kind: 'yvaultToken', yvOpts: {underlying: crvLP, price: yvPrice}});
     yv2 = await makeToken({kind: 'yvaultToken', yvOpts: {version: 'v2', price: yvPrice}});
@@ -108,7 +108,7 @@ describe('PriceOracleProxy', () => {
     });
 
     it("gets price for ETH based cCrvLP", async () => {
-      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap._address]])).toSucceed(); // 0: ETH
+      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap._address]])).toSucceed(); // 2: V3, 0: ETH
       let price = await call(oracle, "getUnderlyingPrice", [cCrvLP._address]);
       expect(Number(price)).toEqual(1.01 * 1e18);
     });
@@ -116,7 +116,7 @@ describe('PriceOracleProxy', () => {
     it("gets price for USD based cCrvLP", async () => {
       // Set USDC price to 5e26 (equal to ETH price 2000 USD).
       await send(backingOracle, "setDirectPrice", [await call(oracle, "usdcAddress"), etherMantissa(5, 1e26)]);
-      expect(await send(oracle, "_setCurveTokens", [[crvLP2._address], [1], [crvSwap2._address]])).toSucceed(); // 1: USD
+      expect(await send(oracle, "_setCurveTokens", [[crvLP2._address], [2], [1], [crvSwap2._address]])).toSucceed(); // 2: V3, 1: USD
       let price = await call(oracle, "getUnderlyingPrice", [cCrvLP2._address]);
       expect(Number(price)).toEqual(0.000505 * 1e18);
     });
@@ -130,7 +130,7 @@ describe('PriceOracleProxy', () => {
     });
 
     it("gets price for cYv1 with curve LP underlying", async () => {
-      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap._address]])).toSucceed(); // 0: ETH
+      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap._address]])).toSucceed(); // 2: V3, 0: ETH
       expect(await send(oracle, "_setYVaultTokens", [[yv1CrvLP._address], [0]])).toSucceed(); // 0: v1
       let price = await call(oracle, "getUnderlyingPrice", [cYv1CrvLP._address]);
       expect(Number(price)).toEqual(1.0201 * 1e18);
@@ -145,7 +145,7 @@ describe('PriceOracleProxy', () => {
     });
 
     it("gets price for cYv2 with curve LP underlying", async () => {
-      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap._address]])).toSucceed(); // 0: ETH
+      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap._address]])).toSucceed(); // 2: V3, 0: ETH
       expect(await send(oracle, "_setYVaultTokens", [[yv2CrvLP._address], [1]])).toSucceed(); // 1: v2
       let price = await call(oracle, "getUnderlyingPrice", [cYv2CrvLP._address]);
       expect(Number(price)).toEqual(1.0201 * 1e18);
@@ -260,25 +260,30 @@ describe('PriceOracleProxy', () => {
 
   describe("_setCurveTokens", () => {
     it("set curve pool tokens successfully", async () => {
-      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap._address]])).toSucceed(); // 0: ETH
+      expect(await send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap._address]])).toSucceed(); // 2: V3, 0: ETH
     });
 
     it("fails to set yv tokens for non-admin", async () => {
-      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap._address]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set curve pool tokens"); // 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap._address]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set curve pool tokens"); // 2: V3, 0: ETH
     });
 
     it("fails to set yv tokens for mismatched data", async () => {
-      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [0], []])).rejects.toRevert("revert mismatched data"); // 0: ETH
-      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [], [crvSwap._address]])).rejects.toRevert("revert mismatched data");
-      await expect(send(oracle, "_setCurveTokens", [[], [0], [crvSwap._address]])).rejects.toRevert("revert mismatched data"); // 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], []])).rejects.toRevert("revert mismatched data"); // 2: V3, 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [], [crvSwap._address]])).rejects.toRevert("revert mismatched data"); // 2: V3, 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [], [0], [crvSwap._address]])).rejects.toRevert("revert mismatched data"); // 2: V3, 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[], [2], [0], [crvSwap._address]])).rejects.toRevert("revert mismatched data"); // 2: V3, 0: ETH
     });
 
     it("fails to set yv tokens for invalid pool type", async () => {
-      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [crvSwap._address]])).rejects.toRevert("revert");
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [2], [crvSwap._address]])).rejects.toRevert("revert");
+    });
+
+    it("fails to set yv tokens for invalid version", async () => {
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [3], [0], [crvSwap._address]])).rejects.toRevert("revert");
     });
 
     it("fails to set yv tokens for incorrect pool", async () => {
-      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [0], [crvSwap2._address]])).rejects.toRevert("revert incorrect pool"); // 0: ETH
+      await expect(send(oracle, "_setCurveTokens", [[crvLP._address], [2], [0], [crvSwap2._address]])).rejects.toRevert("revert incorrect pool"); // 2: V3, 0: ETH
     });
   });
 });
