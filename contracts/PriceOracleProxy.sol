@@ -11,8 +11,11 @@ interface V1PriceOracleInterface {
 }
 
 interface CurveSwapInterface {
-    function lp_token() external view returns (address);
     function get_virtual_price() external view returns (uint256);
+}
+
+interface CurveTokenV3Interface {
+    function minter() external view returns (address);
 }
 
 interface YVaultV1Interface {
@@ -155,6 +158,13 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     enum YvTokenVersion {
         V1,
         V2
+    }
+
+    /// @notice Curve token version, currently support v1, v2 and v3
+    enum CurveTokenVersion {
+        V1,
+        V2,
+        V3
     }
 
     /// @notice Curve pool type, currently support ETH and USD base
@@ -444,12 +454,14 @@ contract PriceOracleProxy is PriceOracle, Exponential {
      * @param poolType The list of curve pool type (ETH or USD base only)
      * @param swap The list of curve swap address
      */
-    function _setCurveTokens(address[] calldata tokenAddresses, CurvePoolType[] calldata poolType, address[] calldata swap) external {
+    function _setCurveTokens(address[] calldata tokenAddresses, CurveTokenVersion[] calldata version, CurvePoolType[] calldata poolType, address[] calldata swap) external {
         require(msg.sender == admin, "only the admin may set curve pool tokens");
-        require(tokenAddresses.length == poolType.length && tokenAddresses.length == swap.length, "mismatched data");
+        require(tokenAddresses.length == version.length && tokenAddresses.length == poolType.length && tokenAddresses.length == swap.length, "mismatched data");
         for (uint i = 0; i < tokenAddresses.length; i++) {
-            // Sanity check to make sure version is right.
-            require(CurveSwapInterface(swap[i]).lp_token() == tokenAddresses[i], "incorrect pool");
+            if (version[i] == CurveTokenVersion.V3) {
+                // Sanity check to make sure the token minter is right.
+                require(CurveTokenV3Interface(tokenAddresses[i]).minter() == swap[i], "incorrect pool");
+            }
 
             crvTokens[tokenAddresses[i]] = CrvTokenInfo({isCrvToken: true, poolTpye: poolType[i], curveSwap: swap[i]});
             emit SetCurveToken(tokenAddresses[i], poolType[i], swap[i]);
