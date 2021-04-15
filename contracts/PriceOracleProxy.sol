@@ -186,7 +186,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         bool isCrvToken;
 
         /// @notice The curve pool type
-        CurvePoolType poolTpye;
+        CurvePoolType poolType;
 
         /// @notice The curve swap contract address
         address curveSwap;
@@ -369,7 +369,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         require(crvTokenInfo.isCrvToken, "not a curve pool token");
 
         uint virtualPrice = CurveSwapInterface(crvTokenInfo.curveSwap).get_virtual_price();
-        if (crvTokenInfo.poolTpye == CurvePoolType.ETH) {
+        if (crvTokenInfo.poolType == CurvePoolType.ETH) {
             return virtualPrice;
         }
 
@@ -463,7 +463,7 @@ contract PriceOracleProxy is PriceOracle, Exponential {
                 require(CurveTokenV3Interface(tokenAddresses[i]).minter() == swap[i], "incorrect pool");
             }
 
-            crvTokens[tokenAddresses[i]] = CrvTokenInfo({isCrvToken: true, poolTpye: poolType[i], curveSwap: swap[i]});
+            crvTokens[tokenAddresses[i]] = CrvTokenInfo({isCrvToken: true, poolType: poolType[i], curveSwap: swap[i]});
             emit SetCurveToken(tokenAddresses[i], poolType[i], swap[i]);
         }
     }
