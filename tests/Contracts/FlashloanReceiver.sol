@@ -8,11 +8,14 @@ import "../../contracts/SafeMath.sol";
 contract FlashloanReceiver is IFlashloanReceiver {
     using SafeMath for uint256;
 
+    uint totalBorrows;
+
     function doFlashloan(address cToken, uint borrowAmount, uint repayAmount) external {
         uint balanceBefore = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
-        CCollateralCapErc20(cToken).flashLoan(address(this), borrowAmount, data);
-        uint balanceAfter = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
+        totalBorrows = CCapableErc20(cToken).totalBorrows();
+        CCapableErc20(cToken).flashLoan(address(this), borrowAmount, data);
+        uint balanceAfter = ERC20(CCapableErc20(cToken).underlying()).balanceOf(address(this));
         require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }
 
@@ -20,6 +23,8 @@ contract FlashloanReceiver is IFlashloanReceiver {
       (address cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
       require(underlying == CCollateralCapErc20(cToken).underlying(), "Params not match");
       require(amount == borrowAmount, "Params not match");
+      uint totalBorrowsAfter = CCapableErc20(cToken).totalBorrows();
+      require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
       require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
     }
 }
