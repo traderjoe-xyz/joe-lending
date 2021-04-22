@@ -441,6 +441,15 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.BORROW_COMPTROLLER_REJECTION, allowed);
         }
 
+        /*
+         * Return if borrowAmount is zero.
+         * Put behind `borrowAllowed` for accuring potential COMP rewards.
+         */
+        if (borrowAmount == 0) {
+            accountBorrows[borrower].interestIndex = borrowIndex;
+            return uint(Error.NO_ERROR);
+        }
+
         /* Verify market's block number equals current block number */
         if (accrualBlockNumber != getBlockNumber()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.BORROW_FRESHNESS_CHECK);
@@ -543,6 +552,15 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         uint allowed = comptroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
             return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REPAY_BORROW_COMPTROLLER_REJECTION, allowed), 0);
+        }
+
+        /*
+         * Return if repayAmount is zero.
+         * Put behind `repayBorrowAllowed` for accuring potential COMP rewards.
+         */
+        if (repayAmount == 0) {
+            accountBorrows[borrower].interestIndex = borrowIndex;
+            return (uint(Error.NO_ERROR), 0);
         }
 
         /* Verify market's block number equals current block number */

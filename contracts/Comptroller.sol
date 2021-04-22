@@ -180,7 +180,7 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
             return failOpaque(Error.REJECTION, FailureInfo.EXIT_MARKET_REJECTION, allowed);
         }
 
-        Market storage marketToExit = markets[address(cToken)];
+        Market storage marketToExit = markets[cTokenAddress];
 
         /* Return true if the sender is not already ‘in’ the market */
         if (!marketToExit.accountMembership[msg.sender]) {
@@ -210,7 +210,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         // copy last item in list to location of item to be removed, reduce length by 1
         CToken[] storage storedList = accountAssets[msg.sender];
-        storedList[assetIndex] = storedList[storedList.length - 1];
+        if (assetIndex != storedList.length - 1){
+            storedList[assetIndex] = storedList[storedList.length - 1];
+        }
         storedList.length--;
 
         if (marketToExit.version == Version.COLLATERALCAP) {
@@ -234,9 +236,6 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
     function mintAllowed(address cToken, address minter, uint mintAmount) external returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!mintGuardianPaused[cToken], "mint is paused");
-
-        // Shh - currently unused
-        minter;
 
         if (!markets[cToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
@@ -366,6 +365,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
             Error err = addToMarketInternal(CToken(msg.sender), borrower);
             if (err != Error.NO_ERROR) {
                 return uint(err);
+            }
+            if (markets[cToken].version == Version.COLLATERALCAP) {
+                CCollateralCapErc20Interface(cToken).registerCollateral(borrower);
             }
 
             // it should be impossible to break the important invariant
@@ -998,7 +1000,8 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
     /**
       * @notice Set the given supply caps for the given cToken markets. Supplying that brings total supplys to or above supply cap will revert.
-      * @dev Admin or supplyCapGuardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying.
+      * @dev Admin or supplyCapGuardian function to set the supply caps. A supply cap of 0 corresponds to unlimited supplying. If the total borrows
+      *      already exceeded the cap, it will prevent anyone to borrow.
       * @param cTokens The addresses of the markets (tokens) to change the supply caps for
       * @param newSupplyCaps The new supply cap values in underlying to be set. A value of 0 corresponds to unlimited supplying.
       */
@@ -1018,7 +1021,8 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
     /**
       * @notice Set the given borrow caps for the given cToken markets. Borrowing that brings total borrows to or above borrow cap will revert.
-      * @dev Admin or borrowCapGuardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing.
+      * @dev Admin or borrowCapGuardian function to set the borrow caps. A borrow cap of 0 corresponds to unlimited borrowing. If the total supplies
+      *      already exceeded the cap, it will prevent anyone to mint.
       * @param cTokens The addresses of the markets (tokens) to change the borrow caps for
       * @param newBorrowCaps The new borrow cap values in underlying to be set. A value of 0 corresponds to unlimited borrowing.
       */

@@ -138,6 +138,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param params The other parameters
      */
     function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
+        require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
 
         uint cashOnChainBefore = getCashOnChain();
@@ -289,13 +290,12 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         }
 
         /* Do the calculations, checking for {under,over}flow */
-        uint allowanceNew = sub_(startingAllowance, tokens);
         accountTokens[src] = sub_(accountTokens[src], tokens);
         accountTokens[dst] = add_(accountTokens[dst], tokens);
 
         /* Eat some of the allowance (if necessary) */
         if (startingAllowance != uint(-1)) {
-            transferAllowances[src][spender] = allowanceNew;
+            transferAllowances[src][spender] = sub_(startingAllowance, tokens);
         }
 
         /* We emit a Transfer event */
@@ -333,6 +333,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         uint allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
             return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed), 0);
+        }
+
+        /*
+         * Return if mintAmount is zero.
+         * Put behind `mintAllowed` for accuring potential COMP rewards.
+         */
+        if (mintAmount == 0) {
+            return (uint(Error.NO_ERROR), 0);
         }
 
         /* Verify market's block number equals current block number */
@@ -393,10 +401,10 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
 
     /**
      * @notice User redeems cTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current block. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
      * @param redeemer The address of the account which is redeeming the tokens
-     * @param redeemTokensIn The number of cTokens to redeem into underlying (only one of redeemTokensIn or redeemAmountIn may be non-zero)
-     * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens (only one of redeemTokensIn or redeemAmountIn may be non-zero)
+     * @param redeemTokensIn The number of cTokens to redeem into underlying
+     * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint) {
@@ -430,6 +438,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         uint allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
+        }
+
+        /*
+         * Return if redeemTokensIn and redeemAmountIn are zero.
+         * Put behind `redeemAllowed` for accuring potential COMP rewards.
+         */
+        if (redeemTokensIn == 0 && redeemAmountIn == 0) {
+            return uint(Error.NO_ERROR);
         }
 
         /* Verify market's block number equals current block number */
@@ -491,6 +507,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         uint allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.LIQUIDATE_SEIZE_COMPTROLLER_REJECTION, allowed);
+        }
+
+        /*
+         * Return if seizeTokens is zero.
+         * Put behind `seizeAllowed` for accuring potential COMP rewards.
+         */
+        if (seizeTokens == 0) {
+            return uint(Error.NO_ERROR);
         }
 
         /* Fail if borrower = liquidator */
