@@ -7,7 +7,7 @@ Test "Gas profile for CErc20 minting"
     ListedCToken ZRX cZRX initialExchangeRate:1e9
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
-    Assert Equal LastGas (Exactly 165056)
+    Assert Equal LastGas (Exactly 165073)
 
 Test "Gas profile for CCollateralCapErc20 minting"
     NewComptroller
@@ -15,7 +15,7 @@ Test "Gas profile for CCollateralCapErc20 minting"
     EnterMarkets Geoff cZRX -- Entering market should cost more gas
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
-    Assert Equal LastGas (Exactly 237951)
+    Assert Equal LastGas (Exactly 237968)
 
 Test "Gas profile for CErc20 redeem"
     NewComptroller
@@ -23,7 +23,7 @@ Test "Gas profile for CErc20 redeem"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Redeem Geoff 10e9 cZRX
-    Assert Equal LastGas (Exactly 120437)
+    Assert Equal LastGas (Exactly 120480)
 
 Test "Gas profile for CCollateralCapErc20 redeem"
     NewComptroller
@@ -32,7 +32,7 @@ Test "Gas profile for CCollateralCapErc20 redeem"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Redeem Geoff 10e9 cZRX
-    Assert Equal LastGas (Exactly 175980)
+    Assert Equal LastGas (Exactly 175388)
 
 Test "Gas profile for CErc20 borrow"
     NewComptroller
@@ -45,7 +45,7 @@ Test "Gas profile for CErc20 borrow"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Borrow Geoff 1e18 cBAT
-    Assert Equal LastGas (Exactly 303043)
+    Assert Equal LastGas (Exactly 302717)
 
 Test "Gas profile for CCollateralCapErc20 borrow"
     NewComptroller
@@ -58,7 +58,7 @@ Test "Gas profile for CCollateralCapErc20 borrow"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Borrow Geoff 1e18 cBAT
-    Assert Equal LastGas (Exactly 306914)
+    Assert Equal LastGas (Exactly 354627)
 
 Test "Gas profile for CErc20 repay"
     NewComptroller
@@ -73,7 +73,7 @@ Test "Gas profile for CErc20 repay"
     Borrow Geoff 1e18 cBAT
     From Geoff (Erc20 BAT Approve cBAT 1.0e18)
     RepayBorrow Geoff 1e18 cBAT
-    Assert Equal LastGas (Exactly 56489)
+    Assert Equal LastGas (Exactly 56497)
 
 Test "Gas profile for CCollateralCapErc20 repay"
     NewComptroller
@@ -88,7 +88,7 @@ Test "Gas profile for CCollateralCapErc20 repay"
     Borrow Geoff 1e18 cBAT
     From Geoff (Erc20 BAT Approve cBAT 1.0e18)
     RepayBorrow Geoff 1e18 cBAT
-    Assert Equal LastGas (Exactly 59481)
+    Assert Equal LastGas (Exactly 59489)
 
 Test "Gas profile for CErc20 transfer"
     NewComptroller
@@ -96,7 +96,7 @@ Test "Gas profile for CErc20 transfer"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Transfer Geoff Jared 10e9 cZRX
-    Assert Equal LastGas (Exactly 104646)
+    Assert Equal LastGas (Exactly 104425)
 
 Test "Gas profile for CCollateralCapErc20 transfer"
     NewComptroller
@@ -105,4 +105,4 @@ Test "Gas profile for CCollateralCapErc20 transfer"
     Prep Geoff Some ZRX cZRX
     Mint Geoff 50e18 cZRX
     Transfer Geoff Jared 10e9 cZRX
-    Assert Equal LastGas (Exactly 207322)
+    Assert Equal LastGas (Exactly 206488)
