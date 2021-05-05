@@ -165,3 +165,80 @@ contract CTokenHarness is ERC20Harness {
         comptroller = _comptroller;
     }
 }
+
+interface CurveTokenV3Interface {
+    function minter() external view returns (address);
+}
+
+contract CurveTokenHarness is ERC20Harness, CurveTokenV3Interface {
+    address public minter;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _minter) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        minter = _minter;
+    }
+}
+
+interface CurveSwapInterface {
+    function get_virtual_price() external view returns (uint);
+}
+
+contract CurveSwapHarness is CurveSwapInterface {
+    uint private virtualPrice;
+
+    constructor(uint _virtualPrice) public {
+        virtualPrice = _virtualPrice;
+    }
+
+    function get_virtual_price() external view returns (uint) {
+        return virtualPrice;
+    }
+}
+
+interface YVaultV1Interface {
+    function token() external view returns (address);
+    function getPricePerFullShare() external view returns (uint);
+}
+
+contract YVaultV1TokenHarness is ERC20Harness, YVaultV1Interface {
+    address private underlying;
+    uint private price;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _token, uint _price) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        underlying = _token;
+        price = _price;
+    }
+
+    function token() external view returns (address) {
+        return underlying;
+    }
+
+    function getPricePerFullShare() external view returns (uint) {
+        return price;
+    }
+}
+
+interface YVaultV2Interface {
+    function token() external view returns (address);
+    function pricePerShare() external view returns (uint);
+}
+
+contract YVaultV2TokenHarness is ERC20Harness, YVaultV2Interface {
+    address private underlying;
+    uint private price;
+
+    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol, address _token, uint _price) public
+        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
+        underlying = _token;
+        price = _price;
+    }
+
+    function token() external view returns (address) {
+        return underlying;
+    }
+
+    function pricePerShare() external view returns (uint) {
+        return price;
+    }
+}

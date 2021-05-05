@@ -3,7 +3,7 @@
 
 Unitroller Deploy
 PriceOracle Deploy Fixed 1.0
-PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero)
 ----g2
 ComptrollerImpl Deploy Scenario ComptrollerScen
 Unitroller SetPendingImpl ComptrollerScen

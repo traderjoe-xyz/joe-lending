@@ -320,7 +320,7 @@ describe('CompoundLens', () => {
     });
   });
 
-  describe('getClaimableSushiRewards', () => {
+  describe.skip('getClaimableSushiRewards', () => {
     let root, minter, accounts;
     let cToken;
     beforeEach(async () => {

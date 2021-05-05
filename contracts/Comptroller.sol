@@ -17,6 +17,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when an admin supports a market
     event MarketListed(CToken cToken);
 
+    /// @notice Emitted when an admin delists a market
+    event MarketDelisted(CToken cToken);
+
     /// @notice Emitted when an account enters a market
     event MarketEntered(CToken cToken, address account);
 
@@ -929,13 +932,8 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
       * @return uint 0=success, otherwise a failure. (See enum Error for details)
       */
     function _supportMarket(CToken cToken) external returns (uint) {
-        if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SUPPORT_MARKET_OWNER_CHECK);
-        }
-
-        if (markets[address(cToken)].isListed) {
-            return fail(Error.MARKET_ALREADY_LISTED, FailureInfo.SUPPORT_MARKET_EXISTS);
-        }
+        require(msg.sender == admin, "only admin may support market");
+        require(!markets[address(cToken)].isListed, "market already listed");
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
@@ -946,6 +944,31 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         emit MarketListed(cToken);
 
         return uint(Error.NO_ERROR);
+    }
+
+    /**
+      * @notice Remove the market from the markets mapping
+      * @param cToken The address of the market (token) to delist
+      */
+    function _delistMarket(CToken cToken) external {
+        require(msg.sender == admin, "only admin may delist market");
+        require(markets[address(cToken)].isListed, "market not listed");
+        require(cToken.totalSupply() == 0, "market not empty");
+
+        cToken.isCToken(); // Sanity check to make sure its really a CToken
+
+        delete markets[address(cToken)];
+
+        for (uint i = 0; i < allMarkets.length; i++) {
+            if (allMarkets[i] == cToken) {
+                allMarkets[i] = allMarkets[allMarkets.length - 1];
+                delete allMarkets[allMarkets.length - 1];
+                allMarkets.length--;
+                break;
+            }
+        }
+
+        emit MarketDelisted(cToken);
     }
 
     function _addMarketInternal(address cToken) internal {

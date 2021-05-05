@@ -2,7 +2,7 @@
 Macro FlywheelComptroller price=1.0 borrowRate=0.000005 compInitAmount=5000000e18
     Unitroller Deploy
     PriceOracle Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero)
     ComptrollerImpl Deploy Scenario ComptrollerScen
     Unitroller SetPendingImpl ComptrollerScen
     ComptrollerImpl ComptrollerScen Become

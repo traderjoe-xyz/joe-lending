@@ -9,7 +9,7 @@ Macro AllowFailures
 Macro PricedComptroller closeFactor=0.1
     Unitroller Deploy
     PriceOracle Deploy Simple
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
@@ -19,7 +19,7 @@ Macro PricedComptroller closeFactor=0.1
 Macro NewComptroller price=1.0 closeFactor=0.1
     Unitroller Deploy
     PriceOracle Deploy Fixed price
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address Zero) (Address Zero)
     ComptrollerImpl Deploy Scenario ScenComptroller
     Unitroller SetPendingImpl ScenComptroller
     ComptrollerImpl ScenComptroller Become
@@ -58,7 +58,7 @@ Macro ListedCTokenImmutable erc20 cToken borrowRate=0.000005 initialExchangeRate
 Macro ListedEtherToken cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 admin=Admin
     NewEtherToken cToken borrowRate initialExchangeRate decimals admin
     Comptroller SupportMarket cToken
-    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cETH) (Address Zero) (Address Zero) (Address Zero) (Address Zero)
+    PriceOracleProxy Deploy Admin (PriceOracle Address) (Address cETH) (Address Zero)
     Comptroller SetPriceOracle (PriceOracleProxy Address)
 
 Macro ListedEtherTokenMinted cToken borrowRate=0.000005 initialExchangeRate=2e9 decimals=8 admin=Admin

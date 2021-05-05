@@ -14,34 +14,31 @@ export interface PriceOracleProxyData {
   invokation?: Invokation<PriceOracleProxy>,
   contract?: PriceOracleProxy,
   description: string,
-  address?: string
+  address?: string,
+  cETH: string,
+  cXSUSHI: string
 }
 
 export async function buildPriceOracleProxy(world: World, from: string, event: Event): Promise<{world: World, priceOracleProxy: PriceOracleProxy, invokation: Invokation<PriceOracleProxy>}> {
   const fetchers = [
-    new Fetcher<{guardian: AddressV, priceOracle: AddressV, cETH: AddressV, cYCRV: AddressV, cYYCRV: AddressV, cYETH: AddressV, cXSUSHI: AddressV}, PriceOracleProxyData>(`
+    new Fetcher<{guardian: AddressV, priceOracle: AddressV, cETH: AddressV, cXSUSHI: AddressV}, PriceOracleProxyData>(`
         #### Price Oracle Proxy
-        * "Deploy <Guardian:Address> <PriceOracle:Address> <cETH:Address> <cYCRV:Address> <cYYCRV:Address> <cYETH:Address> <cXSUSHI:Address>" - The Price Oracle which proxies to a backing oracle
-        * E.g. "PriceOracleProxy Deploy Admin (PriceOracle Address) cETH cYCRV cYYCRV cYETH cXSUSHI"
+
+        * "Deploy <Guardian:Address> <PriceOracle:Address> <cETH:Address> <cXSUSHI:Address>" - The Price Oracle which proxies to a backing oracle
+        * E.g. "PriceOracleProxy Deploy Admin (PriceOracle Address) cETH cXSUSHI"
       `,
       "PriceOracleProxy",
       [
         new Arg("guardian", getAddressV),
         new Arg("priceOracle", getAddressV),
         new Arg("cETH", getAddressV),
-        new Arg("cYCRV", getAddressV),
-        new Arg("cYYCRV", getAddressV),
-        new Arg("cYETH", getAddressV),
         new Arg("cXSUSHI", getAddressV)
       ],
-      async (world, {guardian, priceOracle, cETH, cYCRV, cYYCRV, cYETH, cXSUSHI}) => {
+      async (world, {guardian, priceOracle, cETH, cXSUSHI}) => {
         return {
-          invokation: await PriceOracleProxyContract.deploy<PriceOracleProxy>(world, from, [guardian.val, priceOracle.val, cETH.val, cYCRV.val, cYYCRV.val, cYETH.val, cXSUSHI.val]),
+          invokation: await PriceOracleProxyContract.deploy<PriceOracleProxy>(world, from, [guardian.val, priceOracle.val, cETH.val, cXSUSHI.val]),
           description: "Price Oracle Proxy",
           cETH: cETH.val,
-          cYCRV: cYCRV.val,
-          cYYCRV: cYYCRV.val,
-          cYETH: cYETH.val,
           cXSUSHI: cXSUSHI.val,
         };
       },
