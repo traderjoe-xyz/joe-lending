@@ -494,7 +494,7 @@ describe('Flywheel', () => {
       const compBalancePre = await compBalance(comptroller, a2);
       await quickMint(cLOW, a2, mintAmount);
       await fastForward(comptroller, deltaBlocks);
-      const tx = await send(comptroller, 'claimComp', [a2, [cLOW._address]]);
+      const tx = await send(comptroller, 'claimComp', [[a2], [cLOW._address], true, true]);
       const a2AccruedPost = await compAccrued(comptroller, a2);
       const compBalancePost = await compBalance(comptroller, a2);
       expect(tx.gasUsed).toBeLessThan(160000);
@@ -509,7 +509,7 @@ describe('Flywheel', () => {
       const compRemaining = etherExp(1), accruedAmt = etherUnsigned(0.0009e18)
       await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
       await send(comptroller, 'setCompAccrued', [a1, accruedAmt]);
-      await send(comptroller, 'claimComp', [a1, [cLOW._address]]);
+      await send(comptroller, 'claimComp', [[a1], [cLOW._address], true, true]);
       expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
       expect(await compBalance(comptroller, a1)).toEqualNumber(accruedAmt);
     });
@@ -517,7 +517,7 @@ describe('Flywheel', () => {
     it('should revert when a market is not listed', async () => {
       const cNOT = await makeCToken({comptroller});
       await expect(
-        send(comptroller, 'claimComp', [a1, [cNOT._address]])
+        send(comptroller, 'claimComp', [[a1], [cNOT._address], true, true])
       ).rejects.toRevert('revert market must be listed');
     });
   });

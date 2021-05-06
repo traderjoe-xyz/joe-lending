@@ -117,11 +117,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         uint[] memory results = new uint[](len);
         for (uint i = 0; i < len; i++) {
-            Error result = addToMarketInternal(CToken(cTokens[i]), msg.sender);
-            if (result == Error.NO_ERROR && markets[cTokens[i]].version == Version.COLLATERALCAP) {
-                CCollateralCapErc20Interface(cTokens[i]).registerCollateral(msg.sender);
-            }
-            results[i] = uint(result);
+            CToken cToken = CToken(cTokens[i]);
+
+            results[i] = uint(addToMarketInternal(cToken, msg.sender));
         }
 
         return results;
@@ -139,6 +137,11 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
         if (!marketToJoin.isListed) {
             // market is not listed, cannot join
             return Error.MARKET_NOT_LISTED;
+        }
+
+        if (marketToJoin.version == Version.COLLATERALCAP) {
+            // register collateral for the borrower if the token is CollateralCap version.
+            CCollateralCapErc20Interface(address(cToken)).registerCollateral(borrower);
         }
 
         if (marketToJoin.accountMembership[borrower] == true) {
@@ -185,11 +188,12 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
 
         Market storage marketToExit = markets[cTokenAddress];
 
+        if (marketToExit.version == Version.COLLATERALCAP) {
+            CCollateralCapErc20Interface(cTokenAddress).unregisterCollateral(msg.sender);
+        }
+
         /* Return true if the sender is not already ‘in’ the market */
         if (!marketToExit.accountMembership[msg.sender]) {
-            if (marketToExit.version == Version.COLLATERALCAP) {
-                CCollateralCapErc20Interface(cTokenAddress).unregisterCollateral(msg.sender);
-            }
             return uint(Error.NO_ERROR);
         }
 
@@ -217,10 +221,6 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
             storedList[assetIndex] = storedList[storedList.length - 1];
         }
         storedList.length--;
-
-        if (marketToExit.version == Version.COLLATERALCAP) {
-            CCollateralCapErc20Interface(cTokenAddress).unregisterCollateral(msg.sender);
-        }
 
         emit MarketExited(cToken, msg.sender);
 
@@ -368,9 +368,6 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
             Error err = addToMarketInternal(CToken(msg.sender), borrower);
             if (err != Error.NO_ERROR) {
                 return uint(err);
-            }
-            if (markets[cToken].version == Version.COLLATERALCAP) {
-                CCollateralCapErc20Interface(cToken).registerCollateral(borrower);
             }
 
             // it should be impossible to break the important invariant
@@ -1269,18 +1266,9 @@ contract Comptroller is ComptrollerV5Storage, ComptrollerInterface, ComptrollerE
      * @param holder The address to claim COMP for
      */
     function claimComp(address holder) public {
-        return claimComp(holder, allMarkets);
-    }
-
-    /**
-     * @notice Claim all the comp accrued by holder in the specified markets
-     * @param holder The address to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     */
-    function claimComp(address holder, CToken[] memory cTokens) public {
         address[] memory holders = new address[](1);
         holders[0] = holder;
-        claimComp(holders, cTokens, true, true);
+        return claimComp(holders, allMarkets, true, true);
     }
 
     /**
