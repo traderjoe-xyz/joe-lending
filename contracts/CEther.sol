@@ -1,13 +1,13 @@
 pragma solidity ^0.5.16;
 
-import "./CToken.sol";
+import "./CTokenDeprecated.sol";
 
 /**
  * @title Compound's CEther Contract
  * @notice CToken which wraps Ether
  * @author Compound
  */
-contract CEther is CToken {
+contract CEther is CTokenDeprecated {
     /**
      * @notice Construct a new CEther money market
      * @param comptroller_ The address of the Comptroller
@@ -101,7 +101,7 @@ contract CEther is CToken {
      * @param borrower The borrower of this cToken to be liquidated
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      */
-    function liquidateBorrow(address borrower, CToken cTokenCollateral) external payable {
+    function liquidateBorrow(address borrower, CTokenDeprecated cTokenCollateral) external payable {
         (uint err,) = liquidateBorrowInternal(borrower, msg.value, cTokenCollateral);
         requireNoError(err, "liquidateBorrow failed");
     }

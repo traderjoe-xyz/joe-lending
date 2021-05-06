@@ -132,7 +132,7 @@ describe('CToken', function () {
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert unexpected EIP-20 transfer out return");
     });
 
-    it("reverts if borrowVerify fails", async() => {
+    xit("reverts if borrowVerify fails", async() => {
       await send(cToken.comptroller, 'setBorrowVerify', [false]);
       await fillMasterChef(cToken, borrowAmount);
       await expect(borrowFresh(cToken, borrower, borrowAmount)).rejects.toRevert("revert borrowVerify rejected borrow");
@@ -258,7 +258,7 @@ describe('CToken', function () {
           await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert unexpected EIP-20 transfer in return");
         });
 
-        it("reverts if repayBorrowVerify fails", async() => {
+        xit("reverts if repayBorrowVerify fails", async() => {
           await send(cToken.comptroller, 'setRepayBorrowVerify', [false]);
           await expect(repayBorrowFresh(cToken, payer, borrower, repayAmount)).rejects.toRevert("revert repayBorrowVerify rejected repayBorrow");
         });

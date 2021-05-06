@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 
 import "../../contracts/Comptroller.sol";
+import "../../contracts/CToken.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
@@ -154,6 +155,12 @@ contract BoolComptroller is ComptrollerInterface {
     function exitMarket(address _cToken) external returns (uint) {
         _cToken;
         return noError;
+    }
+
+    function checkMembership(address _account, CToken _cToken) external view returns (bool) {
+        _account;
+        _cToken;
+        return true;
     }
 
     /*** Policy Hooks ***/
@@ -320,6 +327,11 @@ contract BoolComptroller is ComptrollerInterface {
         _cTokenCollateral;
         _repayAmount;
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
+    }
+
+    function updateCTokenVersion(address _cToken, ComptrollerV2Storage.Version _version) external {
+        _cToken;
+        _version;
     }
 
     /**** Mock Settors ****/

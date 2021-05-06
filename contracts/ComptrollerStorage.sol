@@ -55,6 +55,11 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 }
 
 contract ComptrollerV2Storage is ComptrollerV1Storage {
+    enum Version {
+        VANILLA,
+        COLLATERALCAP
+    }
+
     struct Market {
         /// @notice Whether or not this market is listed
         bool isListed;
@@ -71,6 +76,9 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
 
         /// @notice Whether or not this market receives COMP
         bool isComped;
+
+        /// @notice CToken version
+        Version version;
     }
 
     /**

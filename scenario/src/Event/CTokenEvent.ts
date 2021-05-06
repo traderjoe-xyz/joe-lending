@@ -25,11 +25,9 @@ import { getContract } from '../Contract';
 import { Arg, Command, View, processCommandEvent } from '../Command';
 import { CTokenErrorReporter } from '../ErrorReporter';
 import { getComptroller, getCTokenData } from '../ContractLookup';
-import { getExpMantissa } from '../Encoding';
 import { buildCToken } from '../Builder/CTokenBuilder';
 import { verify } from '../Verify';
 import { getLiquidity } from '../Value/ComptrollerValue';
-import { encodedNumber } from '../Encoding';
 import { getCTokenV, getCErc20DelegatorV } from '../Value/CTokenValue';
 
 function showTrxValue(world: World): string {
@@ -295,6 +293,18 @@ async function gulp(world: World, from: string, cToken: CToken): Promise<World> 
   world = addAction(
     world,
     `CToken ${cToken.name}: Gulp`,
+    invokation
+  );
+
+  return world;
+}
+
+async function setCollateralCap(world: World, from: string, cToken: CToken, cap: NumberV): Promise<World> {
+  let invokation = await invoke(world, cToken.methods._setCollateralCap(cap.encode()), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `Set collateral cap for ${cToken.name} to ${cap.show()}`,
     invokation
   );
 
@@ -772,6 +782,19 @@ export function cTokenCommands() {
         new Arg("cToken", getCTokenV)
       ],
       (world, from, { cToken }) => gulp(world, from, cToken),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, amount: NumberV }>(`
+        #### SetCollateralCap
+        * "CToken <cToken> SetCollateralCap amount:<Number>" - Sets the collateral cap for the given cToken
+          * E.g. "CToken cZRX SetCollateralCap 1e10"
+      `,
+      "SetCollateralCap",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("amount", getNumberV)
+      ],
+      (world, from, { cToken, amount }) => setCollateralCap(world, from, cToken, amount),
       { namePos: 1 }
     ),
     new Command<{

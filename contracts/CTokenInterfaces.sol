@@ -116,6 +116,50 @@ contract CTokenStorage {
     mapping(address => BorrowSnapshot) internal accountBorrows;
 }
 
+contract CErc20Storage {
+    /**
+     * @notice Underlying asset for this CToken
+     */
+    address public underlying;
+
+    /**
+     * @notice Implementation address for this contract
+     */
+    address public implementation;
+}
+
+contract CSupplyCapStorage {
+    /**
+     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
+     */
+    uint256 public internalCash;
+}
+
+contract CCollateralCapStorage {
+    /**
+     * @notice Total number of tokens used as collateral in circulation.
+     */
+    uint256 public totalCollateralTokens;
+
+    /**
+     * @notice Record of token balances which could be treated as collateral for each account.
+     *         If collateral cap is not set, the value should be equal to accountTokens.
+     */
+    mapping (address => uint) public accountCollateralTokens;
+
+    /**
+     * @notice Check if accountCollateralTokens have been initialized.
+     */
+    mapping (address => bool) public isCollateralTokenInit;
+
+    /**
+     * @notice Collateral cap for this CToken, zero for no cap.
+     */
+    uint256 public collateralCap;
+}
+
+/*** Interface ***/
+
 contract CTokenInterface is CTokenStorage {
     /**
      * @notice Indicator that this is a CToken contract (for inspection)
@@ -240,13 +284,6 @@ contract CTokenInterface is CTokenStorage {
     function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint);
 }
 
-contract CErc20Storage {
-    /**
-     * @notice Underlying asset for this CToken
-     */
-    address public underlying;
-}
-
 contract CErc20Interface is CErc20Storage {
 
     /*** User Interface ***/
@@ -264,39 +301,50 @@ contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external returns (uint);
 }
 
-contract CCapableErc20Interface is CErc20Storage {
+contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
+    /**
+     * @notice Flash loan fee ratio
+     */
+    uint public constant flashFeeBips = 3;
+
+    /*** Market Events ***/
+
+    /**
+     * @notice Event emitted when a flashloan occured
+     */
+    event Flashloan(address indexed receiver, uint amount, uint totalFee, uint reservesFee);
 
     /*** User Interface ***/
 
-    function mint(uint mintAmount) external returns (uint);
-    function redeem(uint redeemTokens) external returns (uint);
-    function redeemUnderlying(uint redeemAmount) external returns (uint);
-    function borrow(uint borrowAmount) external returns (uint);
-    function repayBorrow(uint repayAmount) external returns (uint);
-    function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint);
-    function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint);
     function gulp() external;
+    function flashLoan(address receiver, uint amount, bytes calldata params) external;
+}
+
+contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapStorage {
+
+    /*** Admin Events ***/
+
+    /**
+     * @notice Event emitted when collateral cap is set
+     */
+    event NewCollateralCap(address token, uint newCap);
+
+    /**
+     * @notice Event emitted when user collateral is changed
+     */
+    event UserCollateralChanged(address account, uint newCollateralTokens);
+
+    /*** User Interface ***/
+
+    function registerCollateral(address account) external returns (uint);
+    function unregisterCollateral(address account) external;
 
     /*** Admin Functions ***/
 
-    function _addReserves(uint addAmount) external returns (uint);
+    function _setCollateralCap(uint newCollateralCap) external;
 }
 
-contract CDelegationStorage {
-    /**
-     * @notice Implementation address for this contract
-     */
-    address public implementation;
-}
-
-contract CDelegationStorageExtension is CDelegationStorage {
-    /**
-     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
-     */
-    uint256 public internalCash;
-}
-
-contract CDelegatorInterface is CDelegationStorage {
+contract CDelegatorInterface {
     /**
      * @notice Emitted when implementation is changed
      */
@@ -311,7 +359,7 @@ contract CDelegatorInterface is CDelegationStorage {
     function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
 }
 
-contract CDelegateInterface is CDelegationStorage {
+contract CDelegateInterface {
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @dev Should revert if any issues arise which make it unfit for delegation
@@ -325,16 +373,11 @@ contract CDelegateInterface is CDelegationStorage {
     function _resignImplementation() public;
 }
 
-contract CCapableDelegateInterface is CDelegationStorageExtension {
-    /**
-     * @notice Called by the delegator on a delegate to initialize it for duty
-     * @dev Should revert if any issues arise which make it unfit for delegation
-     * @param data The encoded bytes data for any initialization
-     */
-    function _becomeImplementation(bytes memory data) public;
+/*** External interface ***/
 
-    /**
-     * @notice Called by the delegator on a delegate to forfeit its responsibility
-     */
-    function _resignImplementation() public;
+/**
+ * @title Flash loan receiver interface
+ */
+interface IFlashloanReceiver {
+    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external;
 }

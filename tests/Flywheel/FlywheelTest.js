@@ -30,7 +30,9 @@ describe('Flywheel upgrade', () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
       let compMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        return cToken;
       }));
       compMarkets = compMarkets.map(c => c._address);
       unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, compMarkets});
@@ -40,7 +42,9 @@ describe('Flywheel upgrade', () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
       let allMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        return cToken;
       }));
       allMarkets = allMarkets.map(c => c._address);
       unitroller = await makeComptroller({
@@ -57,7 +61,9 @@ describe('Flywheel upgrade', () => {
       let unitroller = await makeComptroller({kind: 'unitroller-g3'});
       let allMarkets = [];
       for (let _ of Array(10)) {
-        allMarkets.push(await makeCToken({comptroller: unitroller, supportMarket: true}));
+        const cToken = await makeCToken({comptroller: unitroller});
+        await send(unitroller, '_supportMarket', [cToken._address]); // old support market signature
+        allMarkets.push(cToken);
       }
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets.map(c => c._address));
       expect(
@@ -488,7 +494,7 @@ describe('Flywheel', () => {
       const compBalancePre = await compBalance(comptroller, a2);
       await quickMint(cLOW, a2, mintAmount);
       await fastForward(comptroller, deltaBlocks);
-      const tx = await send(comptroller, 'claimComp', [a2, [cLOW._address]]);
+      const tx = await send(comptroller, 'claimComp', [[a2], [cLOW._address], true, true]);
       const a2AccruedPost = await compAccrued(comptroller, a2);
       const compBalancePost = await compBalance(comptroller, a2);
       expect(tx.gasUsed).toBeLessThan(160000);
@@ -503,7 +509,7 @@ describe('Flywheel', () => {
       const compRemaining = etherExp(1), accruedAmt = etherUnsigned(0.0009e18)
       await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
       await send(comptroller, 'setCompAccrued', [a1, accruedAmt]);
-      await send(comptroller, 'claimComp', [a1, [cLOW._address]]);
+      await send(comptroller, 'claimComp', [[a1], [cLOW._address], true, true]);
       expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
       expect(await compBalance(comptroller, a1)).toEqualNumber(accruedAmt);
     });
@@ -511,7 +517,7 @@ describe('Flywheel', () => {
     it('should revert when a market is not listed', async () => {
       const cNOT = await makeCToken({comptroller});
       await expect(
-        send(comptroller, 'claimComp', [a1, [cNOT._address]])
+        send(comptroller, 'claimComp', [[a1], [cNOT._address], true, true])
       ).rejects.toRevert('revert market must be listed');
     });
   });
