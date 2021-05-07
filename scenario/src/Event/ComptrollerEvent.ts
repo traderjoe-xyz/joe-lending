@@ -2,7 +2,6 @@ import {Event} from '../Event';
 import {addAction, describeUser, World} from '../World';
 import {decodeCall, getPastEvents} from '../Contract';
 import {Comptroller} from '../Contract/Comptroller';
-import {ComptrollerImpl} from '../Contract/ComptrollerImpl';
 import {CToken} from '../Contract/CToken';
 import {invoke} from '../Invokation';
 import {
@@ -28,7 +27,6 @@ import {ComptrollerErrorReporter} from '../ErrorReporter';
 import {getComptroller, getComptrollerImpl} from '../ContractLookup';
 import {getLiquidity} from '../Value/ComptrollerValue';
 import {getCTokenV} from '../Value/CTokenValue';
-import {encodedNumber} from '../Encoding';
 import {encodeABI, rawValues} from "../Utils";
 
 async function genComptroller(world: World, from: string, params: Event): Promise<World> {
@@ -58,18 +56,6 @@ async function setPaused(world: World, from: string, comptroller: Comptroller, a
   world = addAction(
     world,
     `Comptroller: set paused for ${actionName} to ${isPaused}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setMaxAssets(world: World, from: string, comptroller: Comptroller, numberOfAssets: NumberV): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setMaxAssets(numberOfAssets.encode()), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Set max assets to ${numberOfAssets.show()}`,
     invokation
   );
 
@@ -230,30 +216,6 @@ async function sendAny(world: World, from:string, comptroller: Comptroller, sign
   return world;
 }
 
-async function addCompMarkets(world: World, from: string, comptroller: Comptroller, cTokens: CToken[]): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._addCompMarkets(cTokens.map(c => c._address)), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Added COMP markets ${cTokens.map(c => c.name)}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function dropCompMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._dropCompMarket(cToken._address), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Drop COMP market ${cToken.name}`,
-    invokation
-  );
-
-  return world;
-}
-
 async function refreshCompSpeeds(world: World, from: string, comptroller: Comptroller): Promise<World> {
   let invokation = await invoke(world, comptroller.methods.refreshCompSpeeds(), from, ComptrollerErrorReporter);
 
@@ -272,30 +234,6 @@ async function claimComp(world: World, from: string, comptroller: Comptroller, h
   world = addAction(
     world,
     `Comp claimed by ${holder}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setCompRate(world: World, from: string, comptroller: Comptroller, rate: NumberV): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCompRate(rate.encode()), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Comp rate set to ${rate.show()}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setCompSpeeds(world: World, from: string, comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCompSpeeds(cTokens.map(c => c._address), speeds.map(s => s.encode())), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Set COMP markets ${cTokens.map(c => c.name)} speeds to ${speeds}`,
     invokation
   );
 
@@ -566,19 +504,6 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, cToken, version}) => updateCTokenVersion(world, from, comptroller, cToken, version)
     ),
-    new Command<{comptroller: Comptroller, maxAssets: NumberV}>(`
-        #### SetMaxAssets
-
-        * "Comptroller SetMaxAssets <Number>" - Sets (or resets) the max allowed asset count
-          * E.g. "Comptroller SetMaxAssets 4"
-      `,
-      "SetMaxAssets",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("maxAssets", getNumberV)
-      ],
-      (world, from, {comptroller, maxAssets}) => setMaxAssets(world, from, comptroller, maxAssets)
-    ),
     new Command<{comptroller: Comptroller, liquidationIncentive: NumberV}>(`
         #### LiquidationIncentive
 
@@ -754,32 +679,6 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, signature, callArgs}) => sendAny(world, from, comptroller, signature.val, rawValues(callArgs))
     ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[]}>(`
-      #### AddCompMarkets
-
-      * "Comptroller AddCompMarkets (<Address> ...)" - Makes a market COMP-enabled
-      * E.g. "Comptroller AddCompMarkets (cZRX cBAT)
-      `,
-      "AddCompMarkets",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true})
-      ],
-      (world, from, {comptroller, cTokens}) => addCompMarkets(world, from, comptroller, cTokens)
-    ),
-    new Command<{comptroller: Comptroller, cToken: CToken}>(`
-      #### DropCompMarket
-
-      * "Comptroller DropCompMarket <Address>" - Makes a market COMP
-      * E.g. "Comptroller DropCompMarket cZRX
-      `,
-      "DropCompMarket",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV)
-      ],
-      (world, from, {comptroller, cToken}) => dropCompMarket(world, from, comptroller, cToken)
-    ),
 
     new Command<{comptroller: Comptroller}>(`
       #### RefreshCompSpeeds
@@ -805,33 +704,6 @@ export function comptrollerCommands() {
         new Arg("holder", getAddressV)
       ],
       (world, from, {comptroller, holder}) => claimComp(world, from, comptroller, holder.val)
-    ),
-    new Command<{comptroller: Comptroller, rate: NumberV}>(`
-      #### SetCompRate
-
-      * "Comptroller SetCompRate <rate>" - Sets COMP rate
-      * E.g. "Comptroller SetCompRate 1e18
-      `,
-      "SetCompRate",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("rate", getNumberV)
-      ],
-      (world, from, {comptroller, rate}) => setCompRate(world, from, comptroller, rate)
-    ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]}>(`
-      #### SetCompSpeeds
-
-      * "Comptroller SetCompSpeeds (<CToken> ...) (<speed> ...)" - Set the COMP market speeds
-      * E.g. "Comptroller SetCompSpeeds (cZRX cBAT) (1e18, 1e18)
-      `,
-      "SetCompSpeeds",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true}),
-        new Arg("speeds", getNumberV, {mapped: true})
-      ],
-      (world, from, {comptroller, cTokens, speeds}) => setCompSpeeds(world, from, comptroller, cTokens, speeds)
     ),
     new Command<{comptroller: Comptroller, cTokens: CToken[], supplyCaps: NumberV[]}>(`
       #### SetMarketSupplyCaps

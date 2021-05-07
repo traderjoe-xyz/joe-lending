@@ -10,7 +10,6 @@ Unitroller SetPendingImpl ComptrollerScenG2
 ComptrollerImpl ComptrollerScenG2 BecomeG2
 --list some tokens
 Comptroller SetPriceOracle (PriceOracleProxy Address)
-Comptroller SetMaxAssets 20
 Comptroller SetCloseFactor 0.5
 Comptroller LiquidationIncentive 1.1
 NewCToken ZRX cZRX

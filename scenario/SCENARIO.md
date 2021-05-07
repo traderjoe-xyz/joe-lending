@@ -50,8 +50,6 @@
   * E.g. `Comptroller SupportMarket cZRX 0`
 * `Comptroller EnterMarkets <User> <CToken> ...` - User enters the given markets
   * E.g. `Comptroller EnterMarkets Geoff cZRX cETH`
-* `Comptroller SetMaxAssets <Number>` - Sets (or resets) the max allowed asset count
-  * E.g. `Comptroller SetMaxAssets 4`
 * `CToken <cToken> SetOracle oracle:<Contract>` - Sets the oracle
   * E.g. `Comptroller SetOracle (Fixed 1.5)`
 * `Comptroller SetCollateralFactor <CToken> <Number>` - Sets the collateral factor for given cToken to number
