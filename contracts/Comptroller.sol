@@ -227,9 +227,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function mintAllowed(address cToken, address minter, uint mintAmount) external returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!mintGuardianPaused[cToken], "mint is paused");
-
-        // Shh - currently unused
-        minter;
+        require(!isCreditAccount(minter), "credit account cannot mint");
 
         if (!markets[cToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
@@ -584,9 +582,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     function transferAllowed(address cToken, address src, address dst, uint transferTokens) external returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!transferGuardianPaused, "transfer is paused");
-
-        // Shh - currently unused
-        dst;
+        require(!isCreditAccount(dst), "cannot transfer to a credit account");
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
@@ -630,6 +626,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
             emit NewCTokenVersion(CToken(cToken), oldVersion, newVersion);
         }
+    }
+
+    /**
+     * @notice Check if the account is a credit account
+     * @param account The account needs to be checked
+     * @return The account is a credit account or not
+     */
+    function isCreditAccount(address account) public view returns (bool) {
+        return creditLimits[account] > 0;
     }
 
     /*** Liquidity/Liquidation Calculations ***/
