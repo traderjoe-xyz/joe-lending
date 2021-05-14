@@ -456,6 +456,8 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         address liquidator,
         address borrower,
         uint repayAmount) external returns (uint) {
+        require(!isCreditAccount(borrower), "cannot liquidate credit account");
+
         // Shh - currently unused
         liquidator;
 
@@ -527,10 +529,10 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint seizeTokens) external returns (uint) {
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!seizeGuardianPaused, "seize is paused");
+        require(!isCreditAccount(borrower), "cannot sieze from credit account");
 
         // Shh - currently unused
         liquidator;
-        borrower;
         seizeTokens;
 
         if (!markets[cTokenCollateral].isListed || !markets[cTokenBorrowed].isListed) {
