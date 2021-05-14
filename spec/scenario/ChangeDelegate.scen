@@ -26,3 +26,23 @@ Test "Update the delegate from CErc20 to CCapableErc20"
     -- Cash: 200e18, Balance: 200e18
     Assert Equal (CToken cZRX Cash) (Exactly 200e18)
     Assert Equal (Erc20 ZRX TokenBalance cZRX) (Exactly 200e18)
+
+Test "Upgrade the delegate from CErc20 to CCollateralCapErc20"
+    NewComptroller
+    NewCToken ZRX cZRX
+    Support cZRX collateralFactor:0.5
+    Assert Equal (Comptroller CheckCTokenVersion cZRX) (Exactly 0)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Comptroller CheckCTokenVersion cZRX) (Exactly 1)
+
+Test "Upgrade the delegate from CCapableErc20 to CCollateralCapErc20"
+    NewComptroller
+    NewCToken ZRX cZRX cTokenType:CCapableErc20Delegate
+    Support cZRX collateralFactor:0.5
+    Assert Equal (Comptroller CheckCTokenVersion cZRX) (Exactly 0)
+    -- New Deleagte
+    CTokenDelegate Deploy CCollateralCapErc20DelegateScenario myCollateralCapDelegate
+    CToken cZRX SetImplementation (CTokenDelegate myCollateralCapDelegate Address) True "0x0"
+    Assert Equal (Comptroller CheckCTokenVersion cZRX) (Exactly 1)

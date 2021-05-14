@@ -26,3 +26,8 @@ export interface CErc20DelegatorScenario extends Contract {
   methods: CErc20DelegatorMethods;
   name: string;
 }
+
+export interface CCollateralCapErc20DelegatorScenario extends Contract {
+  methods: CErc20DelegatorMethods;
+  name: string;
+}

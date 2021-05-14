@@ -93,7 +93,7 @@ Test "Realistic Market Scenario"
 	Comptroller SetCollateralFactor cEth 0.8
 	ListedCToken BAT cBAT
 	NewCToken BAT cBAT
-	Comptroller SupportMarket cBAT
+	Comptroller SupportMarket cBAT 0
 	SetPriceCF cBAT 0.0015 0.3
 	-- Mint some cZRX and cETH
 	Prep Geoff 1250e18 ZRX cZRX

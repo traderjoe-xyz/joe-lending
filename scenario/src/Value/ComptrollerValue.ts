@@ -95,9 +95,9 @@ async function checkListed(world: World, comptroller: Comptroller, cToken: CToke
   return new BoolV(isListed);
 }
 
-async function checkIsComped(world: World, comptroller: Comptroller, cToken: CToken): Promise<BoolV> {
-  let {0: isListed, 1: _collateralFactorMantissa, 2: isComped} = await comptroller.methods.markets(cToken._address).call();
-  return new BoolV(isComped);
+async function checkCTokenVersion(world: World, comptroller: Comptroller, cToken: CToken): Promise<NumberV> {
+  let {0: isListed, 1: _collateralFactorMantissa, 2: version} = await comptroller.methods.markets(cToken._address).call();
+  return new NumberV(version);
 }
 
 
@@ -298,18 +298,18 @@ export function comptrollerFetchers() {
       ],
       (world, {comptroller, cToken}) => checkListed(world, comptroller, cToken)
     ),
-    new Fetcher<{comptroller: Comptroller, cToken: CToken}, BoolV>(`
-        #### CheckIsComped
+    new Fetcher<{comptroller: Comptroller, cToken: CToken}, NumberV>(`
+        #### CheckCTokenVersion
 
-        * "Comptroller CheckIsComped <CToken>" - Returns true if market is listed, false otherwise.
-          * E.g. "Comptroller CheckIsComped cZRX"
+        * "Comptroller CheckCTokenVersion <CToken>" - Returns the version of given CToken.
+          * E.g. "Comptroller CheckCTokenVersion cZRX"
       `,
-      "CheckIsComped",
+      "CheckCTokenVersion",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
         new Arg("cToken", getCTokenV)
       ],
-      (world, {comptroller, cToken}) => checkIsComped(world, comptroller, cToken)
+      (world, {comptroller, cToken}) => checkCTokenVersion(world, comptroller, cToken)
     ),
     new Fetcher<{comptroller: Comptroller}, AddressV>(`
         #### PauseGuardian

@@ -1,0 +1,108 @@
+-- Gas profiling scenario
+--   These results don't equal to the real on-chain gas used for every crToken has different underlying token.
+--   However, it could give us a simple understanding of what we change will improve the gas consumption or not.
+
+Skip "Gas profile for CErc20 minting"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal LastGas (Exactly 165073)
+
+Skip "Gas profile for CCollateralCapErc20 minting"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
+    EnterMarkets Geoff cZRX -- Entering market should cost more gas
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Assert Equal LastGas (Exactly 237968)
+
+Skip "Gas profile for CErc20 redeem"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Redeem Geoff 10e9 cZRX
+    Assert Equal LastGas (Exactly 120480)
+
+Skip "Gas profile for CCollateralCapErc20 redeem"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
+    EnterMarkets Geoff cZRX -- Entering market should cost more gas
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Redeem Geoff 10e9 cZRX
+    Assert Equal LastGas (Exactly 175388)
+
+Skip "Gas profile for CErc20 borrow"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    SetCollateralFactor cZRX collateralFactor:0.5
+    ListedCToken BAT cBAT initialExchangeRate:1e9
+    SetCollateralFactor cBAT collateralFactor:0.5
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Borrow Geoff 1e18 cBAT
+    Assert Equal LastGas (Exactly 302717)
+
+Skip "Gas profile for CCollateralCapErc20 borrow"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    SetCollateralFactor cZRX collateralFactor:0.5
+    ListedCToken BAT cBAT initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
+    SetCollateralFactor cBAT collateralFactor:0.5
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Borrow Geoff 1e18 cBAT
+    Assert Equal LastGas (Exactly 354627)
+
+Skip "Gas profile for CErc20 repay"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    SetCollateralFactor cZRX collateralFactor:0.5
+    ListedCToken BAT cBAT initialExchangeRate:1e9
+    SetCollateralFactor cBAT collateralFactor:0.5
+    Give cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Borrow Geoff 1e18 cBAT
+    From Geoff (Erc20 BAT Approve cBAT 1.0e18)
+    RepayBorrow Geoff 1e18 cBAT
+    Assert Equal LastGas (Exactly 56497)
+
+Skip "Gas profile for CCollateralCapErc20 repay"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    SetCollateralFactor cZRX collateralFactor:0.5
+    ListedCToken BAT cBAT initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
+    SetCollateralFactor cBAT collateralFactor:0.5
+    GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
+    EnterMarkets Geoff cZRX
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Borrow Geoff 1e18 cBAT
+    From Geoff (Erc20 BAT Approve cBAT 1.0e18)
+    RepayBorrow Geoff 1e18 cBAT
+    Assert Equal LastGas (Exactly 59489)
+
+Skip "Gas profile for CErc20 transfer"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Transfer Geoff Jared 10e9 cZRX
+    Assert Equal LastGas (Exactly 104425)
+
+Skip "Gas profile for CCollateralCapErc20 transfer"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9 decimals:8 tokenType:Standard delegatorType:CCollateralCapErc20DelegatorScenario cTokenType:CCollateralCapErc20DelegateScenario version:1
+    EnterMarkets Geoff cZRX -- Entering market should cost more gas
+    Prep Geoff Some ZRX cZRX
+    Mint Geoff 50e18 cZRX
+    Transfer Geoff Jared 10e9 cZRX
+    Assert Equal LastGas (Exactly 206488)

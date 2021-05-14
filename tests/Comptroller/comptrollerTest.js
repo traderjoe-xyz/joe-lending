@@ -148,38 +148,37 @@ describe('Comptroller', () => {
   });
 
   describe('_supportMarket', () => {
+    const version = 0;
+
     it("fails if not called by admin", async () => {
       const cToken = await makeCToken(root);
-      expect(
-        await send(cToken.comptroller, '_supportMarket', [cToken._address], {from: accounts[0]})
-      ).toHaveTrollFailure('UNAUTHORIZED', 'SUPPORT_MARKET_OWNER_CHECK');
+      await expect(send(cToken.comptroller, '_supportMarket', [cToken._address, version], {from: accounts[0]})).rejects.toRevert('revert only admin may support market');
     });
 
     it("fails if asset is not a CToken", async () => {
       const comptroller = await makeComptroller()
       const asset = await makeToken(root);
-      await expect(send(comptroller, '_supportMarket', [asset._address])).rejects.toRevert();
+      await expect(send(comptroller, '_supportMarket', [asset._address, version])).rejects.toRevert();
     });
 
     it("succeeds and sets market", async () => {
       const cToken = await makeCToken();
-      const result = await send(cToken.comptroller, '_supportMarket', [cToken._address]);
+      const result = await send(cToken.comptroller, '_supportMarket', [cToken._address, version]);
       expect(result).toHaveLog('MarketListed', {cToken: cToken._address});
     });
 
     it("cannot list a market a second time", async () => {
       const cToken = await makeCToken();
-      const result1 = await send(cToken.comptroller, '_supportMarket', [cToken._address]);
-      const result2 = await send(cToken.comptroller, '_supportMarket', [cToken._address]);
+      const result1 = await send(cToken.comptroller, '_supportMarket', [cToken._address, version]);
       expect(result1).toHaveLog('MarketListed', {cToken: cToken._address});
-      expect(result2).toHaveTrollFailure('MARKET_ALREADY_LISTED', 'SUPPORT_MARKET_EXISTS');
+      await expect(send(cToken.comptroller, '_supportMarket', [cToken._address, version])).rejects.toRevert('revert market already listed');
     });
 
     it("can list two different markets", async () => {
       const cToken1 = await makeCToken();
       const cToken2 = await makeCToken({comptroller: cToken1.comptroller});
-      const result1 = await send(cToken1.comptroller, '_supportMarket', [cToken1._address]);
-      const result2 = await send(cToken1.comptroller, '_supportMarket', [cToken2._address]);
+      const result1 = await send(cToken1.comptroller, '_supportMarket', [cToken1._address, version]);
+      const result2 = await send(cToken1.comptroller, '_supportMarket', [cToken2._address, version]);
       expect(result1).toHaveLog('MarketListed', {cToken: cToken1._address});
       expect(result2).toHaveLog('MarketListed', {cToken: cToken2._address});
     });
@@ -209,6 +208,46 @@ describe('Comptroller', () => {
       const cToken = await makeCToken();
       const result = await send(cToken.comptroller, '_setCreditLimit', [accounts[0], 0]);
       expect(result).toHaveLog('CreditLimitChanged', {protocol: accounts[0], creditLimit: '0'});
+    });
+  });
+
+  describe('_delistMarket', () => {
+    const version = 0;
+
+    it("fails if not called by admin", async () => {
+      const cToken = await makeCToken(root);
+      await expect(send(cToken.comptroller, '_delistMarket', [cToken._address], {from: accounts[0]})).rejects.toRevert('revert only admin may delist market');
+    });
+
+    it("fails if market not listed", async () => {
+      const comptroller = await makeComptroller()
+      const asset = await makeToken(root);
+      await expect(send(comptroller, '_delistMarket', [asset._address])).rejects.toRevert('revert market not listed');
+    });
+
+    it("fails if market not empty", async () => {
+      const cToken = await makeCToken(root);
+      expect(await send(cToken.comptroller, '_supportMarket', [cToken._address, version])).toSucceed();
+      await send(cToken, 'harnessSetTotalSupply', [1]);
+      await expect(send(cToken.comptroller, '_delistMarket', [cToken._address])).rejects.toRevert('revert market not empty');
+    });
+
+    it("succeeds and delists market", async () => {
+      const cToken = await makeCToken();
+      expect(await send(cToken.comptroller, '_supportMarket', [cToken._address, version])).toSucceed();
+      const result = await send(cToken.comptroller, '_delistMarket', [cToken._address]);
+      expect(result).toHaveLog('MarketDelisted', {cToken: cToken._address});
+    });
+
+    it("can delist two different markets", async () => {
+      const cToken1 = await makeCToken();
+      const cToken2 = await makeCToken({comptroller: cToken1.comptroller});
+      expect(await send(cToken1.comptroller, '_supportMarket', [cToken1._address, version])).toSucceed();
+      expect(await send(cToken2.comptroller, '_supportMarket', [cToken2._address, version])).toSucceed();
+      const result1 = await send(cToken1.comptroller, '_delistMarket', [cToken1._address]);
+      const result2 = await send(cToken2.comptroller, '_delistMarket', [cToken2._address]);
+      expect(result1).toHaveLog('MarketDelisted', {cToken: cToken1._address});
+      expect(result2).toHaveLog('MarketDelisted', {cToken: cToken2._address});
     });
   });
 

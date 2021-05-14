@@ -11,7 +11,8 @@
     "lint": "./script/lint",
     "repl": "./scenario/script/repl",
     "test": "./script/test",
-    "test:prepare": "NO_RUN=true ./script/test"
+    "test:prepare": "NO_RUN=true ./script/test",
+    "checksize": "npx run ./script/saddle/contractSizer.js"
   },
   "repository": "git@github.com:compound-finance/compound-protocol.git",
   "author": "Compound Finance",

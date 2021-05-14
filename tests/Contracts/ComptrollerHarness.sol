@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 
 import "../../contracts/Comptroller.sol";
+import "../../contracts/CToken.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
@@ -55,24 +56,16 @@ contract ComptrollerHarness is Comptroller {
         compSupplierIndex[cToken][supplier] = index;
     }
 
-    function harnessUpdateCompBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
-        updateCompBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
-    }
-
-    function harnessUpdateCompSupplyIndex(address cToken) public {
-        updateCompSupplyIndex(cToken);
-    }
-
     function harnessDistributeBorrowerComp(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
-        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
+        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}));
     }
 
     function harnessDistributeSupplierComp(address cToken, address supplier) public {
-        distributeSupplierComp(cToken, supplier, false);
+        distributeSupplierComp(cToken, supplier);
     }
 
-    function harnessTransferComp(address user, uint userAccrued, uint threshold) public returns (uint) {
-        return transferComp(user, userAccrued, threshold);
+    function harnessTransferComp(address user, uint userAccrued) public returns (uint) {
+        return transferComp(user, userAccrued);
     }
 
     function harnessFastForward(uint blocks) public returns (uint) {
@@ -135,6 +128,12 @@ contract BoolComptroller is ComptrollerInterface {
     function exitMarket(address _cToken) external returns (uint) {
         _cToken;
         return noError;
+    }
+
+    function checkMembership(address _account, CToken _cToken) external view returns (bool) {
+        _account;
+        _cToken;
+        return true;
     }
 
     /*** Policy Hooks ***/
@@ -301,6 +300,11 @@ contract BoolComptroller is ComptrollerInterface {
         _cTokenCollateral;
         _repayAmount;
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
+    }
+
+    function updateCTokenVersion(address _cToken, ComptrollerV1Storage.Version _version) external {
+        _cToken;
+        _version;
     }
 
     /**** Mock Settors ****/
