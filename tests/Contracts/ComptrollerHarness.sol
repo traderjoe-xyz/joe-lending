@@ -56,24 +56,16 @@ contract ComptrollerHarness is Comptroller {
         compSupplierIndex[cToken][supplier] = index;
     }
 
-    function harnessUpdateCompBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
-        updateCompBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
-    }
-
-    function harnessUpdateCompSupplyIndex(address cToken) public {
-        updateCompSupplyIndex(cToken);
-    }
-
     function harnessDistributeBorrowerComp(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
-        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
+        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}));
     }
 
     function harnessDistributeSupplierComp(address cToken, address supplier) public {
-        distributeSupplierComp(cToken, supplier, false);
+        distributeSupplierComp(cToken, supplier);
     }
 
-    function harnessTransferComp(address user, uint userAccrued, uint threshold) public returns (uint) {
-        return transferComp(user, userAccrued, threshold);
+    function harnessTransferComp(address user, uint userAccrued) public returns (uint) {
+        return transferComp(user, userAccrued);
     }
 
     function harnessFastForward(uint blocks) public returns (uint) {
