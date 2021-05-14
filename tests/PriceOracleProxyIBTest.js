@@ -1,4 +1,5 @@
 const {
+  address,
   etherMantissa
 } = require('./Utils/Ethereum');
 
@@ -11,18 +12,17 @@ const {
 
 describe('PriceOracleProxyIB', () => {
   let root, accounts;
-  let oracle, backingOracle, cEth, cUsdc, cDai, cOthers;
+  let oracle, backingOracle, cUsdc, cDai, cOthers;
 
   beforeEach(async () => {
     [root, ...accounts] = saddle.accounts;
     const comptroller = await makeComptroller();
-    cEth = await makeCToken({kind: "cether", comptroller: comptroller, supportMarket: true});
     cUsdc = await makeCToken({comptroller: comptroller, supportMarket: true, underlyingOpts: {decimals: 6}});
     cDai = await makeCToken({comptroller: comptroller, supportMarket: true});
     cOthers = await makeCToken({comptroller: comptroller, supportMarket: true});
 
     backingOracle = await makePriceOracle();
-    oracle = await deploy('PriceOracleProxyIB', [root, backingOracle._address, cEth._address]);
+    oracle = await deploy('PriceOracleProxyIB', [root, backingOracle._address]);
   });
 
   describe("constructor", () => {
@@ -31,14 +31,14 @@ describe('PriceOracleProxyIB', () => {
       expect(configuredGuardian).toEqual(root);
     });
 
-    it("sets address of cEth", async () => {
-      let configuredCEther = await call(oracle, "cEthAddress");
-      expect(configuredCEther).toEqual(cEth._address);
+    it("sets address of backingOracle", async () => {
+      let v1PriceOracle = await call(oracle, "v1PriceOracle");
+      expect(v1PriceOracle).toEqual(backingOracle._address);
     });
   });
 
   describe("getUnderlyingPrice", () => {
-    let setPrice = async (cToken, price) => {
+    let setPrice = async (cToken, price, base) => {
       const answerDecimals = 8;
       const mockAggregator = await makeMockAggregator({answer: price * 1e8});
       await send(
@@ -48,7 +48,7 @@ describe('PriceOracleProxyIB', () => {
       await send(
         oracle,
         "_setAggregators",
-        [[cToken._address], [mockAggregator._address]]);
+        [[cToken._address], [mockAggregator._address], [base]]);
     }
 
     let setAndVerifyBackingPrice = async (cToken, price) => {
@@ -70,21 +70,16 @@ describe('PriceOracleProxyIB', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    it("returns correctly for cEth", async () => {
-      await setPrice(cEth, 100);
-      const proxyPrice = await call(oracle, "getUnderlyingPrice", [cEth._address]);
-      expect(proxyPrice).toEqual(etherMantissa(100).toFixed());
-    });
-
     it("returns correctly for other tokens", async () => {
       const price = 1;
+      const base = 0; // 0: USD
 
-      await setPrice(cUsdc, price);
+      await setPrice(cUsdc, price, base);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cUsdc._address]);
       let underlyingDecimals = await call(cUsdc.underlying, "decimals", []);
       expect(proxyPrice).toEqual(etherMantissa(price * 10**(18 - underlyingDecimals)).toFixed());
 
-      await setPrice(cDai, price);
+      await setPrice(cDai, price, base);
       proxyPrice = await call(oracle, "getUnderlyingPrice", [cUsdc._address]);
       underlyingDecimals = await call(cUsdc.underlying, "decimals", []);
       expect(proxyPrice).toEqual(etherMantissa(price * 10**(18 - underlyingDecimals)).toFixed());
@@ -99,9 +94,58 @@ describe('PriceOracleProxyIB', () => {
     });
 
     it("returns 0 for token without a price", async () => {
-      let unlistedToken = await makeCToken({comptroller: cEth.comptroller});
+      let unlistedToken = await makeCToken({comptroller: cUsdc.comptroller});
 
       await readAndVerifyProxyPrice(unlistedToken, 0);
+    });
+  });
+
+  describe("_setAdmin", () => {
+    it("set admin successfully", async () => {
+      expect(await send(oracle, "_setAdmin", [accounts[0]])).toSucceed();
+    });
+
+    it("fails to set admin for non-admin", async () => {
+      await expect(send(oracle, "_setAdmin", [accounts[0]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set new admin");
+    });
+  });
+
+  describe("_setGuardian", () => {
+    it("set guardian successfully", async () => {
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+    });
+
+    it("fails to set guardian for non-admin", async () => {
+      await expect(send(oracle, "_setGuardian", [accounts[0]], {from: accounts[0]})).rejects.toRevert("revert only the admin may set new guardian");
+    });
+  });
+
+  describe("_setAggregators", () => {
+    let mockAggregator;
+
+    beforeEach(async () => {
+      mockAggregator = await makeMockAggregator({answer: etherMantissa(1)});
+    });
+
+    it("set aggregators successfully", async () => {
+      expect(await send(oracle, "_setAggregators", [[cOthers._address], [mockAggregator._address], [0]])).toSucceed(); // 0: USD
+    });
+
+    it("fails to set aggregators for non-admin", async () => {
+      await expect(send(oracle, "_setAggregators", [[cOthers._address], [mockAggregator._address], [0]], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators"); // 0: USD
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+      await expect(send(oracle, "_setAggregators", [[cOthers._address], [mockAggregator._address], [0]], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator"); // 0: USD
+    });
+
+    it("fails to set aggregators for mismatched data", async () => {
+      await expect(send(oracle, "_setAggregators", [[cOthers._address], [], [0]])).rejects.toRevert("revert mismatched data"); // 0: USD
+      await expect(send(oracle, "_setAggregators", [[cOthers._address], [mockAggregator._address], []])).rejects.toRevert("revert mismatched data"); // 0: USD
+      await expect(send(oracle, "_setAggregators", [[], [mockAggregator._address], [0]])).rejects.toRevert("revert mismatched data"); // 0: USD
+    });
+
+    it("clear aggregators successfully", async () => {
+      expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[cOthers._address], [address(0)], [0]], {from: accounts[0]})).toSucceed(); // 0: USD
     });
   });
 });
