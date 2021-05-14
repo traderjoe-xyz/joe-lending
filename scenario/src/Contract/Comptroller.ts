@@ -46,14 +46,6 @@ interface ComptrollerMethods {
   seizeGuardianPaused(): Callable<boolean>
   mintGuardianPaused(market: string): Callable<boolean>
   borrowGuardianPaused(market: string): Callable<boolean>
-  _setCompSpeeds(cTokens:string[], speeds:encodedNumber[]): Sendable<void>
-  compSupplyState(string): Callable<string>
-  compBorrowState(string): Callable<string>
-  compAccrued(string): Callable<string>
-  compSupplierIndex(market: string, account: string): Callable<string>
-  compBorrowerIndex(market: string, account: string): Callable<string>
-  compSpeeds(string): Callable<string>
-  claimComp(string): Sendable<void>
   _setMarketSupplyCaps(cTokens:string[], supplyCaps:encodedNumber[]): Sendable<void>
   _setSupplyCapGuardian(string): Sendable<void>
   supplyCapGuardian(): Callable<string>

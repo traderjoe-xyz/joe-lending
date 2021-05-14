@@ -307,66 +307,6 @@ describe('CompoundLens', () => {
     });
   });
 
-  describe('comp', () => {
-    let comp, currentBlock;
-
-    beforeEach(async () => {
-      currentBlock = +(await web3.eth.getBlockNumber());
-      comp = await deploy('Comp', [acct]);
-    });
-
-    describe('getCompBalanceMetadata', () => {
-      it('gets correct values', async () => {
-        expect(
-          cullTuple(await call(compoundLens, 'getCompBalanceMetadata', [comp._address, acct]))
-        ).toEqual({
-          balance: "9000000000000000000000000",
-          delegate: "0x0000000000000000000000000000000000000000",
-          votes: "0",
-        });
-      });
-    });
-
-    describe('getCompBalanceMetadataExt', () => {
-      it('gets correct values', async () => {
-        let comptroller = await makeComptroller();
-        await send(comptroller, 'setCompAccrued', [acct, 5]); // harness only
-
-        expect(
-          cullTuple(await call(compoundLens, 'getCompBalanceMetadataExt', [comp._address, comptroller._address, acct]))
-        ).toEqual({
-          balance: "9000000000000000000000000",
-          delegate: "0x0000000000000000000000000000000000000000",
-          votes: "0",
-          allocated: "5"
-        });
-      });
-    });
-
-    describe('getCompVotes', () => {
-      it('gets correct values', async () => {
-        expect(
-          (await call(compoundLens, 'getCompVotes', [comp._address, acct, [currentBlock, currentBlock - 1]])).map(cullTuple)
-        ).toEqual([
-          {
-            blockNumber: currentBlock.toString(),
-            votes: "0",
-          },
-          {
-            blockNumber: (Number(currentBlock) - 1).toString(),
-            votes: "0",
-          }
-        ]);
-      });
-
-      it('reverts on future value', async () => {
-        await expect(
-          call(compoundLens, 'getCompVotes', [comp._address, acct, [currentBlock + 1]])
-        ).rejects.toRevert('revert Comp::getPriorVotes: not yet determined')
-      });
-    });
-  });
-
   describe('getClaimableSushiRewards', () => {
     let root, minter, accounts;
     let cToken;

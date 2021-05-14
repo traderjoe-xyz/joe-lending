@@ -34,9 +34,9 @@ async function makeComptroller(opts = {}) {
     return Object.assign(comptroller, { priceOracle });
   }
 
-  if (kind == 'unitroller') {
+  if (kind == 'compound') {
     const unitroller = opts.unitroller || await deploy('Unitroller');
-    const comptroller = await deploy('ComptrollerHarness');
+    const comptroller = await deploy('CompoundComptrollerHarness');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const liquidationIncentive = etherMantissa(1);
@@ -51,6 +51,23 @@ async function makeComptroller(opts = {}) {
     await send(unitroller, 'setCompAddress', [comp._address]); // harness only
 
     return Object.assign(unitroller, { priceOracle, comp });
+  }
+
+  if (kind == 'unitroller') {
+    const unitroller = opts.unitroller || await deploy('Unitroller');
+    const comptroller = await deploy('ComptrollerHarness');
+    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
+    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const liquidationIncentive = etherMantissa(1);
+
+    await send(unitroller, '_setPendingImplementation', [comptroller._address]);
+    await send(comptroller, '_become', [unitroller._address]);
+    mergeInterface(unitroller, comptroller);
+    await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
+    await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
+
+    return Object.assign(unitroller, { priceOracle });
   }
 }
 
@@ -69,7 +86,7 @@ async function makeCToken(opts = {}) {
   const admin = opts.admin || root;
 
   let cToken, underlying;
-  let cDelegator, cDelegatee, cDaiMaker;
+  let cDelegator, cDelegatee;
   let version = 0;
 
   switch (kind) {
@@ -274,7 +291,7 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'cOMG';
     const name = opts.name || `Compound ${symbol}`;
 
-    const comptroller = opts.comptroller || await makeComptroller();
+    const comptroller = await makeComptroller({kind: "compound"});
     const cToken = await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
     await send(comptroller, '_supportMarket', [cToken._address, 0]);
     return cToken;
