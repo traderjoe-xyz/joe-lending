@@ -15,15 +15,17 @@ interface ComptrollerMethods {
   getBlockNumber(): Callable<number>
   setBlockNumber(encodedNumber): Sendable<number>
   collateralFactor(string): Callable<string>
-  markets(string): Callable<{0: boolean, 1: number, 2?: boolean}>
+  markets(string): Callable<{0: boolean, 1: number, 2?: number}>
   _setMintPaused(bool): Sendable<number>
   _setLiquidationIncentive(encodedNumber): Sendable<number>
   _supportMarket(string): Sendable<number>
+  _supportMarket(string, encodedNumber): Sendable<number>
   _setPriceOracle(string): Sendable<number>
   _setCollateralFactor(string, encodedNumber): Sendable<number>
   _setCloseFactor(encodedNumber): Sendable<number>
   enterMarkets(markets: string[]): Sendable<number>
   exitMarket(market: string): Sendable<number>
+  updateCTokenVersion(cToken: string, version: encodedNumber): Sendable<void>
   fastForward(encodedNumber): Sendable<number>
   _setPendingImplementation(string): Sendable<number>
   comptrollerImplementation(): Callable<string>
@@ -44,14 +46,6 @@ interface ComptrollerMethods {
   seizeGuardianPaused(): Callable<boolean>
   mintGuardianPaused(market: string): Callable<boolean>
   borrowGuardianPaused(market: string): Callable<boolean>
-  _setCompSpeeds(cTokens:string[], speeds:encodedNumber[]): Sendable<void>
-  compSupplyState(string): Callable<string>
-  compBorrowState(string): Callable<string>
-  compAccrued(string): Callable<string>
-  compSupplierIndex(market: string, account: string): Callable<string>
-  compBorrowerIndex(market: string, account: string): Callable<string>
-  compSpeeds(string): Callable<string>
-  claimComp(string): Sendable<void>
   _setMarketSupplyCaps(cTokens:string[], supplyCaps:encodedNumber[]): Sendable<void>
   _setSupplyCapGuardian(string): Sendable<void>
   supplyCapGuardian(): Callable<string>

@@ -74,7 +74,7 @@ async function setLiquidationIncentive(world: World, from: string, comptroller: 
   return world;
 }
 
-async function supportMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
+async function oldSupportMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
   if (world.dryRun) {
     // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
     world.printer.printLine(`Dry run: Supporting market  \`${cToken._address}\``);
@@ -82,6 +82,24 @@ async function supportMarket(world: World, from: string, comptroller: Comptrolle
   }
 
   let invokation = await invoke(world, comptroller.methods._supportMarket(cToken._address), from, ComptrollerErrorReporter);
+
+  world = addAction(
+    world,
+    `Supported market ${cToken.name}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function supportMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken, version: NumberV): Promise<World> {
+  if (world.dryRun) {
+    // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
+    world.printer.printLine(`Dry run: Supporting market  \`${cToken._address}\``);
+    return world;
+  }
+
+  let invokation = await invoke(world, comptroller.methods._supportMarket(cToken._address, version.encode()), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
@@ -122,6 +140,18 @@ async function exitMarket(world: World, from: string, comptroller: Comptroller, 
   world = addAction(
     world,
     `Called exit market ${asset} as ${describeUser(world, from)}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function updateCTokenVersion(world: World, from: string, comptroller: Comptroller, cToken: CToken, version: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods.updateCTokenVersion(cToken._address, version.encode()), from, ComptrollerErrorReporter);
+
+  world = addAction(
+    world,
+    `Update market ${cToken.name} version to ${version.show()}`,
     invokation
   );
 
@@ -170,40 +200,6 @@ async function fastForward(world: World, from: string, comptroller: Comptroller,
   world = addAction(
     world,
     `Fast forward ${blocks.show()} blocks to #${invokation.value}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function sendAny(world: World, from:string, comptroller: Comptroller, signature: string, callArgs: string[]): Promise<World> {
-  const fnData = encodeABI(world, signature, callArgs);
-  await world.web3.eth.sendTransaction({
-      to: comptroller._address,
-      data: fnData,
-      from: from
-    })
-  return world;
-}
-
-async function claimComp(world: World, from: string, comptroller: Comptroller, holder: string): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods.claimComp(holder), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Comp claimed by ${holder}`,
-    invokation
-  );
-
-  return world;
-}
-
-async function setCompSpeeds(world: World, from: string, comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCompSpeeds(cTokens.map(c => c._address), speeds.map(s => s.encode())), from, ComptrollerErrorReporter);
-
-  world = addAction(
-    world,
-    `Set COMP markets ${cTokens.map(c => c.name)} speeds to ${speeds}`,
     invokation
   );
 
@@ -405,17 +401,31 @@ export function comptrollerCommands() {
       (world, from, {comptroller, action, isPaused}) => setPaused(world, from, comptroller, action.val, isPaused.val)
     ),
     new Command<{comptroller: Comptroller, cToken: CToken}>(`
-        #### SupportMarket
+        #### OldSupportMarket
 
-        * "Comptroller SupportMarket <CToken>" - Adds support in the Comptroller for the given cToken
-          * E.g. "Comptroller SupportMarket cZRX"
+        * "Comptroller OldSupportMarket <CToken>" - Adds support in the Comptroller for the given cToken
+          * E.g. "Comptroller OldSupportMarket cZRX"
       `,
-      "SupportMarket",
+      "OldSupportMarket",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
         new Arg("cToken", getCTokenV)
       ],
-      (world, from, {comptroller, cToken}) => supportMarket(world, from, comptroller, cToken)
+      (world, from, {comptroller, cToken}) => oldSupportMarket(world, from, comptroller, cToken)
+    ),
+    new Command<{comptroller: Comptroller, cToken: CToken, version: NumberV}>(`
+        #### SupportMarket
+
+        * "Comptroller SupportMarket <CToken> <Number>" - Adds support in the Comptroller for the given cToken
+          * E.g. "Comptroller SupportMarket cZRX 0"
+      `,
+      "SupportMarket",
+      [
+        new Arg("comptroller", getComptroller, {implicit: true}),
+        new Arg("cToken", getCTokenV),
+        new Arg("version", getNumberV)
+      ],
+      (world, from, {comptroller, cToken, version}) => supportMarket(world, from, comptroller, cToken, version)
     ),
     new Command<{comptroller: Comptroller, cToken: CToken}>(`
         #### UnList
@@ -455,6 +465,20 @@ export function comptrollerCommands() {
         new Arg("cToken", getCTokenV)
       ],
       (world, from, {comptroller, cToken}) => exitMarket(world, from, comptroller, cToken._address)
+    ),
+    new Command<{comptroller: Comptroller, cToken: CToken, version: NumberV}>(`
+        #### UpdateCTokenVersion
+
+        * "Comptroller UpdateCTokenVersion <CToken> <Number>" - Update a CToken's version
+          * E.g. "Comptroller UpdateCTokenVersion cZRX 1"
+      `,
+      "UpdateCTokenVersion",
+      [
+        new Arg("comptroller", getComptroller, {implicit: true}),
+        new Arg("cToken", getCTokenV),
+        new Arg("version", getNumberV)
+      ],
+      (world, from, {comptroller, cToken, version}) => updateCTokenVersion(world, from, comptroller, cToken, version)
     ),
     new Command<{comptroller: Comptroller, liquidationIncentive: NumberV}>(`
         #### LiquidationIncentive
@@ -616,47 +640,6 @@ export function comptrollerCommands() {
 
       ],
       (world, {comptroller, input}) => decodeCall(world, comptroller, input.val)
-    ),
-
-    new Command<{comptroller: Comptroller, signature: StringV, callArgs: StringV[]}>(`
-      #### Send
-      * Comptroller Send functionSignature:<String> callArgs[] - Sends any transaction to comptroller
-      * E.g: Comptroller Send "setCompAddress(address)" (Address COMP)
-      `,
-      "Send",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("signature", getStringV),
-        new Arg("callArgs", getCoreValue, {variadic: true, mapped: true})
-      ],
-      (world, from, {comptroller, signature, callArgs}) => sendAny(world, from, comptroller, signature.val, rawValues(callArgs))
-    ),
-    new Command<{comptroller: Comptroller, holder: AddressV}>(`
-      #### ClaimComp
-
-      * "Comptroller ClaimComp <holder>" - Claims comp
-      * E.g. "Comptroller ClaimComp Geoff
-      `,
-      "ClaimComp",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("holder", getAddressV)
-      ],
-      (world, from, {comptroller, holder}) => claimComp(world, from, comptroller, holder.val)
-    ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[], speeds: NumberV[]}>(`
-      #### SetCompSpeeds
-
-      * "Comptroller SetCompSpeeds (<CToken> ...) (<speed> ...)" - Set the COMP market speeds
-      * E.g. "Comptroller SetCompSpeeds (cZRX cBAT) (1e18, 1e18)
-      `,
-      "SetCompSpeeds",
-      [
-        new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true}),
-        new Arg("speeds", getNumberV, {mapped: true})
-      ],
-      (world, from, {comptroller, cTokens, speeds}) => setCompSpeeds(world, from, comptroller, cTokens, speeds)
     ),
     new Command<{comptroller: Comptroller, cTokens: CToken[], supplyCaps: NumberV[]}>(`
       #### SetMarketSupplyCaps

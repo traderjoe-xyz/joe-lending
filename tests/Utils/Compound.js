@@ -34,9 +34,9 @@ async function makeComptroller(opts = {}) {
     return Object.assign(comptroller, { priceOracle });
   }
 
-  if (kind == 'unitroller') {
+  if (kind == 'compound') {
     const unitroller = opts.unitroller || await deploy('Unitroller');
-    const comptroller = await deploy('ComptrollerHarness');
+    const comptroller = await deploy('CompoundComptrollerHarness');
     const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const liquidationIncentive = etherMantissa(1);
@@ -51,6 +51,23 @@ async function makeComptroller(opts = {}) {
     await send(unitroller, 'setCompAddress', [comp._address]); // harness only
 
     return Object.assign(unitroller, { priceOracle, comp });
+  }
+
+  if (kind == 'unitroller') {
+    const unitroller = opts.unitroller || await deploy('Unitroller');
+    const comptroller = await deploy('ComptrollerHarness');
+    const priceOracle = opts.priceOracle || await makePriceOracle(opts.priceOracleOpts);
+    const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
+    const liquidationIncentive = etherMantissa(1);
+
+    await send(unitroller, '_setPendingImplementation', [comptroller._address]);
+    await send(comptroller, '_become', [unitroller._address]);
+    mergeInterface(unitroller, comptroller);
+    await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
+    await send(unitroller, '_setCloseFactor', [closeFactor]);
+    await send(unitroller, '_setPriceOracle', [priceOracle._address]);
+
+    return Object.assign(unitroller, { priceOracle });
   }
 }
 
@@ -69,7 +86,8 @@ async function makeCToken(opts = {}) {
   const admin = opts.admin || root;
 
   let cToken, underlying;
-  let cDelegator, cDelegatee, cDaiMaker;
+  let cDelegator, cDelegatee;
+  let version = 0;
 
   switch (kind) {
     case 'cether':
@@ -87,7 +105,7 @@ async function makeCToken(opts = {}) {
 
     case 'ccapable':
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      cDelegatee = await deploy('CCapableErc20DelegateHarness');
+      cDelegatee = await deploy('CCapableErc20Delegate');
       cDelegator = await deploy('CErc20Delegator',
         [
           underlying._address,
@@ -102,7 +120,28 @@ async function makeCToken(opts = {}) {
           "0x0"
         ]
       );
-      cToken = await saddle.getContractAt('CCapableErc20DelegateHarness', cDelegator._address);
+      cToken = await saddle.getContractAt('CCapableErc20Delegate', cDelegator._address);
+      break;
+
+    case 'ccollateralcap':
+      underlying = opts.underlying || await makeToken(opts.underlyingOpts);
+      cDelegatee = await deploy('CCollateralCapErc20DelegateHarness');
+      cDelegator = await deploy('CCollateralCapErc20Delegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          "0x0"
+        ]
+      );
+      cToken = await saddle.getContractAt('CCollateralCapErc20DelegateHarness', cDelegator._address);
+      version = 1; // ccollateralcap's version is 1
       break;
 
     case 'cslp':
@@ -173,7 +212,7 @@ async function makeCToken(opts = {}) {
   }
 
   if (opts.supportMarket) {
-    await send(comptroller, '_supportMarket', [cToken._address]);
+    await send(comptroller, '_supportMarket', [cToken._address, version]);
   }
 
   if (opts.underlyingPrice) {
@@ -261,9 +300,9 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'cOMG';
     const name = opts.name || `Compound ${symbol}`;
 
-    const comptroller = opts.comptroller || await makeComptroller();
+    const comptroller = await makeComptroller({kind: "compound"});
     const cToken = await deploy('CTokenHarness', [quantity, name, decimals, symbol, comptroller._address]);
-    await send(comptroller, '_supportMarket', [cToken._address]);
+    await send(comptroller, '_supportMarket', [cToken._address, 0]);
     return cToken;
   } else if (kind == 'curveToken') {
     const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
@@ -323,12 +362,20 @@ async function balanceOf(token, account) {
   return etherUnsigned(await call(token, 'balanceOf', [account]));
 }
 
+async function collateralTokenBalance(token, account) {
+  return etherUnsigned(await call(token, 'accountCollateralTokens', [account]));
+}
+
 async function cash(token) {
   return etherUnsigned(await call(token, 'getCash', []));
 }
 
 async function totalSupply(token) {
   return etherUnsigned(await call(token, 'totalSupply'));
+}
+
+async function totalCollateralTokens(token) {
+  return etherUnsigned(await call(token, 'totalCollateralTokens'));
 }
 
 async function borrowSnapshot(cToken, account) {
@@ -427,6 +474,9 @@ async function preSupply(cToken, account, tokens, opts = {}) {
   if (dfn(opts.total, true)) {
     expect(await send(cToken, 'harnessSetTotalSupply', [tokens])).toSucceed();
   }
+  if (dfn(opts.totalCollateralTokens)) {
+    expect(await send(cToken, 'harnessSetTotalCollateralTokens', [tokens])).toSucceed();
+  }
   return send(cToken, 'harnessSetBalance', [account, tokens]);
 }
 
@@ -487,7 +537,9 @@ module.exports = {
   makeCurveSwap,
 
   balanceOf,
+  collateralTokenBalance,
   totalSupply,
+  totalCollateralTokens,
   borrowSnapshot,
   totalBorrows,
   totalReserves,

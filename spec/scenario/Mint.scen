@@ -103,3 +103,13 @@ Test "mint reverts if mint is paused"
     Mint Geoff 2e18 cZRX
     Assert Revert "revert mint is paused"
     Comptroller SetGuardianMarketPaused cZRX "Mint" False
+
+Test "Mint reverts if it's a credit account"
+    NewComptroller
+    ListedCToken ZRX cZRX initialExchangeRate:1e9
+    Prep Geoff Some ZRX cZRX
+    Comptroller SetCreditLimit Geoff 100e18
+    AllowFailures
+    Mint Geoff 50e18 cZRX
+    Assert Revert "revert credit account cannot mint"
+    Assert Equal (Erc20 cZRX TokenBalance Geoff) (Exactly 0e9)

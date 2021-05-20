@@ -105,14 +105,12 @@ describe('Comptroller', () => {
       expect(shortfall).toEqualNumber(0);
 
       await enterMarkets([cToken], user);
-      await quickMint(cToken, user, amount);
-
-      ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
-      expect(error).toEqualNumber(0);
-      expect(liquidity).toEqualNumber(creditLimit);
-      expect(shortfall).toEqualNumber(0);
+      await expect(quickMint(cToken, user, amount)).rejects.toRevert('revert credit account cannot mint');
 
       await send(cToken.comptroller, '_setCreditLimit', [user, 0]);
+
+      await enterMarkets([cToken], user);
+      await quickMint(cToken, user, amount);
 
       ({0: error, 1: liquidity, 2: shortfall} = await call(cToken.comptroller, 'getAccountLiquidity', [user]));
       expect(error).toEqualNumber(0);

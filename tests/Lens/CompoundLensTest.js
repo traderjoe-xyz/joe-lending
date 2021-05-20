@@ -66,7 +66,8 @@ describe('CompoundLens', () => {
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
           cTokenDecimals: "8",
-          underlyingDecimals: "18"
+          underlyingDecimals: "18",
+          version: "0"
         }
       );
     });
@@ -90,7 +91,33 @@ describe('CompoundLens', () => {
         totalSupply: "0",
         underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
         underlyingDecimals: "18",
+        version: "0"
       });
+    });
+
+    it('is correct for a cCollateralCapErc20', async () => {
+      let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
+      expect(
+        cullTuple(await call(compoundLens, 'cTokenMetadata', [cCollateralCapErc20._address]))
+      ).toEqual(
+        {
+          cToken: cCollateralCapErc20._address,
+          exchangeRateCurrent: "1000000000000000000",
+          supplyRatePerBlock: "0",
+          borrowRatePerBlock: "0",
+          reserveFactorMantissa: "0",
+          totalBorrows: "0",
+          totalReserves: "0",
+          totalSupply: "0",
+          totalCash: "0",
+          isListed: true,
+          collateralFactorMantissa: "0",
+          underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
+          cTokenDecimals: "8",
+          underlyingDecimals: "18",
+          version: "1"
+        }
+      );
     });
   });
 
@@ -98,8 +125,9 @@ describe('CompoundLens', () => {
     it('is correct for a cErc20 and cEther', async () => {
       let cErc20 = await makeCToken();
       let crEth = await makeCToken({kind: 'cether'});
+      let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
       expect(
-        (await call(compoundLens, 'cTokenMetadataAll', [[cErc20._address, crEth._address]])).map(cullTuple)
+        (await call(compoundLens, 'cTokenMetadataAll', [[cErc20._address, crEth._address, cCollateralCapErc20._address]])).map(cullTuple)
       ).toEqual([
         {
           cToken: cErc20._address,
@@ -115,7 +143,8 @@ describe('CompoundLens', () => {
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
           cTokenDecimals: "8",
-          underlyingDecimals: "18"
+          underlyingDecimals: "18",
+          version: "0"
         },
         {
           borrowRatePerBlock: "0",
@@ -132,6 +161,24 @@ describe('CompoundLens', () => {
           totalSupply: "0",
           underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
           underlyingDecimals: "18",
+          version: "0"
+        },
+        {
+          borrowRatePerBlock: "0",
+          cToken: cCollateralCapErc20._address,
+          cTokenDecimals: "8",
+          collateralFactorMantissa: "0",
+          exchangeRateCurrent: "1000000000000000000",
+          isListed: true,
+          reserveFactorMantissa: "0",
+          supplyRatePerBlock: "0",
+          totalBorrows: "0",
+          totalCash: "0",
+          totalReserves: "0",
+          totalSupply: "0",
+          underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
+          underlyingDecimals: "18",
+          version: "1"
         }
       ]);
     });
@@ -260,67 +307,7 @@ describe('CompoundLens', () => {
     });
   });
 
-  describe('comp', () => {
-    let comp, currentBlock;
-
-    beforeEach(async () => {
-      currentBlock = +(await web3.eth.getBlockNumber());
-      comp = await deploy('Comp', [acct]);
-    });
-
-    describe('getCompBalanceMetadata', () => {
-      it('gets correct values', async () => {
-        expect(
-          cullTuple(await call(compoundLens, 'getCompBalanceMetadata', [comp._address, acct]))
-        ).toEqual({
-          balance: "9000000000000000000000000",
-          delegate: "0x0000000000000000000000000000000000000000",
-          votes: "0",
-        });
-      });
-    });
-
-    describe('getCompBalanceMetadataExt', () => {
-      it('gets correct values', async () => {
-        let comptroller = await makeComptroller();
-        await send(comptroller, 'setCompAccrued', [acct, 5]); // harness only
-
-        expect(
-          cullTuple(await call(compoundLens, 'getCompBalanceMetadataExt', [comp._address, comptroller._address, acct]))
-        ).toEqual({
-          balance: "9000000000000000000000000",
-          delegate: "0x0000000000000000000000000000000000000000",
-          votes: "0",
-          allocated: "5"
-        });
-      });
-    });
-
-    describe('getCompVotes', () => {
-      it('gets correct values', async () => {
-        expect(
-          (await call(compoundLens, 'getCompVotes', [comp._address, acct, [currentBlock, currentBlock - 1]])).map(cullTuple)
-        ).toEqual([
-          {
-            blockNumber: currentBlock.toString(),
-            votes: "0",
-          },
-          {
-            blockNumber: (Number(currentBlock) - 1).toString(),
-            votes: "0",
-          }
-        ]);
-      });
-
-      it('reverts on future value', async () => {
-        await expect(
-          call(compoundLens, 'getCompVotes', [comp._address, acct, [currentBlock + 1]])
-        ).rejects.toRevert('revert Comp::getPriorVotes: not yet determined')
-      });
-    });
-  });
-
-  describe.skip('getClaimableSushiRewards', () => {
+  describe('getClaimableSushiRewards', () => {
     let root, minter, accounts;
     let cToken;
     beforeEach(async () => {

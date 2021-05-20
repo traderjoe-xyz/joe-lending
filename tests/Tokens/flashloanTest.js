@@ -19,7 +19,7 @@ describe('Flashloan test', function () {
   let reservesFactor = 0.5;
 
   beforeEach(async () => {
-    cToken = await makeCToken({kind: 'ccapable', supportMarket: true});
+    cToken = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
     flashloanReceiver = await makeFlashloanReceiver()
 
     // so that we can format cToken event logs
@@ -212,7 +212,7 @@ describe('Flashloan re-entry test', () => {
   let cash = 1000_000;
 
   beforeEach(async () => {
-    cToken = await makeCToken({kind: 'ccapable', supportMarket: true});
+    cToken = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
     await send(cToken.underlying, 'harnessSetBalance', [cToken._address, cash]);
     await send(cToken, 'harnessSetInternalCash', [cash]);
     await send(cToken, 'harnessSetBlockNumber', [etherUnsigned(1e6)]);

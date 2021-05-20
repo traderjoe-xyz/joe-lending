@@ -1,6 +1,8 @@
 pragma solidity ^0.5.16;
 
 import "../../contracts/Comptroller.sol";
+import "../../contracts/ComptrollerG1.sol";
+import "../../contracts/CToken.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
@@ -16,63 +18,12 @@ contract ComptrollerRopsten is Comptroller {
 }
 
 contract ComptrollerHarness is Comptroller {
-    address compAddress;
     uint public blockNumber;
 
     constructor() Comptroller() public {}
 
     function setPauseGuardian(address harnessedPauseGuardian) public {
         pauseGuardian = harnessedPauseGuardian;
-    }
-
-    function setCompSupplyState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compSupplyState[cToken].index = index;
-        compSupplyState[cToken].block = blockNumber_;
-    }
-
-    function setCompBorrowState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compBorrowState[cToken].index = index;
-        compBorrowState[cToken].block = blockNumber_;
-    }
-
-    function setCompAccrued(address user, uint userAccrued) public {
-        compAccrued[user] = userAccrued;
-    }
-
-    function setCompAddress(address compAddress_) public {
-        compAddress = compAddress_;
-    }
-
-    function getCompAddress() public view returns (address) {
-        return compAddress;
-    }
-
-    function setCompBorrowerIndex(address cToken, address borrower, uint index) public {
-        compBorrowerIndex[cToken][borrower] = index;
-    }
-
-    function setCompSupplierIndex(address cToken, address supplier, uint index) public {
-        compSupplierIndex[cToken][supplier] = index;
-    }
-
-    function harnessUpdateCompBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
-        updateCompBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
-    }
-
-    function harnessUpdateCompSupplyIndex(address cToken) public {
-        updateCompSupplyIndex(cToken);
-    }
-
-    function harnessDistributeBorrowerComp(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
-        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
-    }
-
-    function harnessDistributeSupplierComp(address cToken, address supplier) public {
-        distributeSupplierComp(cToken, supplier, false);
-    }
-
-    function harnessTransferComp(address user, uint userAccrued, uint threshold) public returns (uint) {
-        return transferComp(user, userAccrued, threshold);
     }
 
     function harnessFastForward(uint blocks) public returns (uint) {
@@ -86,6 +37,30 @@ contract ComptrollerHarness is Comptroller {
 
     function getBlockNumber() public view returns (uint) {
         return blockNumber;
+    }
+}
+
+// CompoundComptrollerHarness is only used for CCTokenHarness
+contract CompoundComptrollerHarness is ComptrollerHarness {
+    address compAddress;
+
+    constructor() ComptrollerHarness() public {}
+
+    function setCompAddress(address compAddress_) public {
+        compAddress = compAddress_;
+    }
+
+    function getCompAddress() public view returns (address) {
+        return compAddress;
+    }
+
+    function setCompAccrued(address user, uint userAccrued) public {
+        compAccrued[user] = userAccrued;
+    }
+
+    function claimComp(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
+        // unused
+        holders; cTokens; borrowers; suppliers;
     }
 }
 
@@ -135,6 +110,12 @@ contract BoolComptroller is ComptrollerInterface {
     function exitMarket(address _cToken) external returns (uint) {
         _cToken;
         return noError;
+    }
+
+    function checkMembership(address _account, CToken _cToken) external view returns (bool) {
+        _account;
+        _cToken;
+        return true;
     }
 
     /*** Policy Hooks ***/
@@ -301,6 +282,11 @@ contract BoolComptroller is ComptrollerInterface {
         _cTokenCollateral;
         _repayAmount;
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
+    }
+
+    function updateCTokenVersion(address _cToken, ComptrollerV1Storage.Version _version) external {
+        _cToken;
+        _version;
     }
 
     /**** Mock Settors ****/

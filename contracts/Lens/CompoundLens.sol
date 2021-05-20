@@ -5,15 +5,12 @@ import "../CErc20.sol";
 import "../CToken.sol";
 import "../PriceOracle.sol";
 import "../EIP20Interface.sol";
-import "../Governance/Comp.sol";
 
 interface ComptrollerLensInterface {
-    function markets(address) external view returns (bool, uint);
+    function markets(address) external view returns (bool, uint, uint);
     function oracle() external view returns (PriceOracle);
     function getAccountLiquidity(address) external view returns (uint, uint, uint);
     function getAssetsIn(address) external view returns (CToken[] memory);
-    function claimComp(address) external;
-    function compAccrued(address) external view returns (uint);
 }
 
 interface CSLPInterface {
@@ -40,12 +37,13 @@ contract CompoundLens {
         address underlyingAssetAddress;
         uint cTokenDecimals;
         uint underlyingDecimals;
+        uint version;
     }
 
     function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
         uint exchangeRateCurrent = cToken.exchangeRateCurrent();
         ComptrollerLensInterface comptroller = ComptrollerLensInterface(address(cToken.comptroller()));
-        (bool isListed, uint collateralFactorMantissa) = comptroller.markets(address(cToken));
+        (bool isListed, uint collateralFactorMantissa, uint version) = comptroller.markets(address(cToken));
         address underlyingAssetAddress;
         uint underlyingDecimals;
 
@@ -72,7 +70,8 @@ contract CompoundLens {
             collateralFactorMantissa: collateralFactorMantissa,
             underlyingAssetAddress: underlyingAssetAddress,
             cTokenDecimals: cToken.decimals(),
-            underlyingDecimals: underlyingDecimals
+            underlyingDecimals: underlyingDecimals,
+            version: version
         });
     }
 
@@ -171,59 +170,6 @@ contract CompoundLens {
         });
     }
 
-    struct CompBalanceMetadata {
-        uint balance;
-        uint votes;
-        address delegate;
-    }
-
-    function getCompBalanceMetadata(Comp comp, address account) external view returns (CompBalanceMetadata memory) {
-        return CompBalanceMetadata({
-            balance: comp.balanceOf(account),
-            votes: uint256(comp.getCurrentVotes(account)),
-            delegate: comp.delegates(account)
-        });
-    }
-
-    struct CompBalanceMetadataExt {
-        uint balance;
-        uint votes;
-        address delegate;
-        uint allocated;
-    }
-
-    function getCompBalanceMetadataExt(Comp comp, ComptrollerLensInterface comptroller, address account) external returns (CompBalanceMetadataExt memory) {
-        uint balance = comp.balanceOf(account);
-        comptroller.claimComp(account);
-        uint newBalance = comp.balanceOf(account);
-        uint accrued = comptroller.compAccrued(account);
-        uint total = add(accrued, newBalance, "sum comp total");
-        uint allocated = sub(total, balance, "sub allocated");
-
-        return CompBalanceMetadataExt({
-            balance: balance,
-            votes: uint256(comp.getCurrentVotes(account)),
-            delegate: comp.delegates(account),
-            allocated: allocated
-        });
-    }
-
-    struct CompVotes {
-        uint blockNumber;
-        uint votes;
-    }
-
-    function getCompVotes(Comp comp, address account, uint32[] calldata blockNumbers) external view returns (CompVotes[] memory) {
-        CompVotes[] memory res = new CompVotes[](blockNumbers.length);
-        for (uint i = 0; i < blockNumbers.length; i++) {
-            res[i] = CompVotes({
-                blockNumber: uint256(blockNumbers[i]),
-                votes: uint256(comp.getPriorVotes(account, blockNumbers[i]))
-            });
-        }
-        return res;
-    }
-
     function getClaimableSushiRewards(CSLPInterface[] calldata cTokens, address sushi, address account) external returns (uint[] memory) {
         uint cTokenCount = cTokens.length;
         uint[] memory rewards = new uint[](cTokenCount);
@@ -250,12 +196,6 @@ contract CompoundLens {
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-    }
-
-    function add(uint a, uint b, string memory errorMessage) internal pure returns (uint) {
-        uint c = a + b;
-        require(c >= a, errorMessage);
-        return c;
     }
 
     function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {

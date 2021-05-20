@@ -102,8 +102,8 @@ Test "Reserves should not affect supply cap"
 Test "Infimint attack"
     NewComptroller price:1.0
     CTokenDelegate Deploy CCapableErc20Delegate myCapableDelegate
-    NewCToken ZRX cZRX 0.000005 2e9 8 Standard CErc20DelegatorScenario CCapableErc20Delegate
-    NewCToken BAT cBAT 0.000005 2e9 8 Standard CErc20DelegatorScenario CCapableErc20Delegate
+    NewCToken ZRX cZRX 0.000005 2e9 8 Standard CCollateralCapErc20DelegatorScenario CCollateralCapErc20DelegateScenario version:1
+    NewCToken BAT cBAT 0.000005 2e9 8 Standard CCollateralCapErc20DelegatorScenario CCollateralCapErc20DelegateScenario version:1
     GiveCToken cBAT 10e18 BAT -- Faucet some bat to borrow
     GiveCToken cZRX 1000e18 ZRX
     Support cZRX collateralFactor:0.5
