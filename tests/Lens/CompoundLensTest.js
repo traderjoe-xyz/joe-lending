@@ -67,7 +67,8 @@ describe('CompoundLens', () => {
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
           cTokenDecimals: "8",
           underlyingDecimals: "18",
-          version: "0"
+          version: "0",
+          collateralCap: "0"
         }
       );
     });
@@ -91,7 +92,8 @@ describe('CompoundLens', () => {
         totalSupply: "0",
         underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
         underlyingDecimals: "18",
-        version: "0"
+        version: "0",
+        collateralCap: "0"
       });
     });
 
@@ -115,7 +117,35 @@ describe('CompoundLens', () => {
           underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
           cTokenDecimals: "8",
           underlyingDecimals: "18",
-          version: "1"
+          version: "1",
+          collateralCap: "0"
+        }
+      );
+    });
+
+    it('is correct for a cCollateralCapErc20 and collateral cap', async () => {
+      let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
+      expect(await send(cCollateralCapErc20, '_setCollateralCap', [100])).toSucceed();
+      expect(
+        cullTuple(await call(compoundLens, 'cTokenMetadata', [cCollateralCapErc20._address]))
+      ).toEqual(
+        {
+          cToken: cCollateralCapErc20._address,
+          exchangeRateCurrent: "1000000000000000000",
+          supplyRatePerBlock: "0",
+          borrowRatePerBlock: "0",
+          reserveFactorMantissa: "0",
+          totalBorrows: "0",
+          totalReserves: "0",
+          totalSupply: "0",
+          totalCash: "0",
+          isListed: true,
+          collateralFactorMantissa: "0",
+          underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
+          cTokenDecimals: "8",
+          underlyingDecimals: "18",
+          version: "1",
+          collateralCap: "100"
         }
       );
     });
@@ -126,6 +156,7 @@ describe('CompoundLens', () => {
       let cErc20 = await makeCToken();
       let crEth = await makeCToken({kind: 'cether'});
       let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
+      expect(await send(cCollateralCapErc20, '_setCollateralCap', [100])).toSucceed();
       expect(
         (await call(compoundLens, 'cTokenMetadataAll', [[cErc20._address, crEth._address, cCollateralCapErc20._address]])).map(cullTuple)
       ).toEqual([
@@ -144,7 +175,8 @@ describe('CompoundLens', () => {
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
           cTokenDecimals: "8",
           underlyingDecimals: "18",
-          version: "0"
+          version: "0",
+          collateralCap: "0"
         },
         {
           borrowRatePerBlock: "0",
@@ -161,7 +193,8 @@ describe('CompoundLens', () => {
           totalSupply: "0",
           underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
           underlyingDecimals: "18",
-          version: "0"
+          version: "0",
+          collateralCap: "0"
         },
         {
           borrowRatePerBlock: "0",
@@ -178,7 +211,8 @@ describe('CompoundLens', () => {
           totalSupply: "0",
           underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
           underlyingDecimals: "18",
-          version: "1"
+          version: "1",
+          collateralCap: "100"
         }
       ]);
     });
