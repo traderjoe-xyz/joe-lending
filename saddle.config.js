@@ -209,6 +209,51 @@ module.exports = {
         {file: "~/.ethereum/mainnet"}                        // Load from given file with contents as the private key (e.g. 0x...)
       ]
     },
+    bsc: {
+      providers: [
+        {http: "https://bsc-dataseed1.defibit.io/"}
+      ],
+      accounts: [
+        {file: "~/.ethereum/bsc"}
+      ],
+      web3: {
+        gas: [
+          {env: "GAS"},
+          {default: "6000000"}
+        ],
+        gas_price: [
+          {env: "GAS_PRICE"},
+          {default: "12000000000"}
+        ],
+        options: {
+          transactionConfirmationBlocks: 1,
+          transactionBlockTimeout: 5
+        }
+      },
+    },
+    fantom: {
+      providers: [
+        {http: "https://rpcapi.fantom.network"}
+      ],
+      web3: {
+        gas: [
+          {env: "GAS"},
+          {default: "6000000"}
+        ],
+        gas_price: [
+          {env: "GAS_PRICE"},
+          {default: "22000000000"}
+        ],
+        options: {
+          transactionConfirmationBlocks: 1,
+          transactionBlockTimeout: 5
+        }
+      },
+      accounts: [
+        {env: "ACCOUNT"},
+        {file: "~/.ethereum/fantom"}
+      ]
+    }
   },
   get_network_file: (network) => {
     return null;
