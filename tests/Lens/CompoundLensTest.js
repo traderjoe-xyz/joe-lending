@@ -62,6 +62,7 @@ describe('CompoundLens', () => {
           totalReserves: "0",
           totalSupply: "0",
           totalCash: "0",
+          totalCollateralTokens: "0",
           isListed:false,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
@@ -90,6 +91,7 @@ describe('CompoundLens', () => {
         totalCash: "0",
         totalReserves: "0",
         totalSupply: "0",
+        totalCollateralTokens: "0",
         underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
         underlyingDecimals: "18",
         version: "0",
@@ -112,6 +114,7 @@ describe('CompoundLens', () => {
           totalReserves: "0",
           totalSupply: "0",
           totalCash: "0",
+          totalCollateralTokens: "0",
           isListed: true,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
@@ -123,7 +126,7 @@ describe('CompoundLens', () => {
       );
     });
 
-    it('is correct for a cCollateralCapErc20 and collateral cap', async () => {
+    it('is correct for a cCollateralCapErc20 with collateral cap', async () => {
       let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
       expect(await send(cCollateralCapErc20, '_setCollateralCap', [100])).toSucceed();
       expect(
@@ -139,6 +142,7 @@ describe('CompoundLens', () => {
           totalReserves: "0",
           totalSupply: "0",
           totalCash: "0",
+          totalCollateralTokens: "0",
           isListed: true,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
@@ -170,6 +174,7 @@ describe('CompoundLens', () => {
           totalReserves: "0",
           totalSupply: "0",
           totalCash: "0",
+          totalCollateralTokens: "0",
           isListed:false,
           collateralFactorMantissa: "0",
           underlyingAssetAddress: await call(cErc20, 'underlying', []),
@@ -191,6 +196,7 @@ describe('CompoundLens', () => {
           totalCash: "0",
           totalReserves: "0",
           totalSupply: "0",
+          totalCollateralTokens: "0",
           underlyingAssetAddress: "0x0000000000000000000000000000000000000000",
           underlyingDecimals: "18",
           version: "0",
@@ -209,6 +215,7 @@ describe('CompoundLens', () => {
           totalCash: "0",
           totalReserves: "0",
           totalSupply: "0",
+          totalCollateralTokens: "0",
           underlyingAssetAddress: await call(cCollateralCapErc20, 'underlying', []),
           underlyingDecimals: "18",
           version: "1",
@@ -231,6 +238,7 @@ describe('CompoundLens', () => {
           cToken: cErc20._address,
           tokenAllowance: "0",
           tokenBalance: "10000000000000000000000000",
+          collateralBalance: "0",
         }
       );
     });
@@ -248,6 +256,27 @@ describe('CompoundLens', () => {
           cToken: cEth._address,
           tokenAllowance: ethBalance,
           tokenBalance: ethBalance,
+          collateralBalance: "0",
+        }
+      );
+    });
+
+    it('is correct for cCollateralCapErc20', async () => {
+      let cCollateralCapErc20 = await makeCToken({kind: 'ccollateralcap', comptrollerOpts: {kind: 'bool'}});
+      await send(cCollateralCapErc20, 'harnessSetBalance', [acct, mintTokens]);
+      await send(cCollateralCapErc20, 'harnessSetCollateralBalance', [acct, mintTokens]);
+      await send(cCollateralCapErc20, 'harnessSetCollateralBalanceInit', [acct]);
+      expect(
+        cullTuple(await call(compoundLens, 'cTokenBalances', [cCollateralCapErc20._address, acct]))
+      ).toEqual(
+        {
+          balanceOf: "2",
+          balanceOfUnderlying: "2",
+          borrowBalanceCurrent: "0",
+          cToken: cCollateralCapErc20._address,
+          tokenAllowance: "0",
+          tokenBalance: "10000000000000000000000000",
+          collateralBalance: "2",
         }
       );
     });
@@ -269,6 +298,7 @@ describe('CompoundLens', () => {
           cToken: cErc20._address,
           tokenAllowance: "0",
           tokenBalance: "10000000000000000000000000",
+          collateralBalance: "0",
         },
         {
           balanceOf: "0",
@@ -277,6 +307,7 @@ describe('CompoundLens', () => {
           cToken: cEth._address,
           tokenAllowance: ethBalance,
           tokenBalance: ethBalance,
+          collateralBalance: "0",
         }
       ]);
     })
