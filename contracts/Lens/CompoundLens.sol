@@ -13,6 +13,7 @@ interface ComptrollerLensInterface {
     function oracle() external view returns (PriceOracle);
     function getAccountLiquidity(address) external view returns (uint, uint, uint);
     function getAssetsIn(address) external view returns (CToken[] memory);
+    function checkMembership(address account, CToken cToken) external view returns (bool);
     function claimComp(address) external;
     function compAccrued(address) external view returns (uint);
 }
@@ -36,6 +37,7 @@ contract CompoundLens {
         uint totalReserves;
         uint totalSupply;
         uint totalCash;
+        uint totalCollateralTokens;
         bool isListed;
         uint collateralFactorMantissa;
         address underlyingAssetAddress;
@@ -52,6 +54,7 @@ contract CompoundLens {
         address underlyingAssetAddress;
         uint underlyingDecimals;
         uint collateralCap;
+        uint totalCollateralTokens;
 
         if (compareStrings(cToken.symbol(), "crETH")) {
             underlyingAssetAddress = address(0);
@@ -64,6 +67,7 @@ contract CompoundLens {
 
         if (version == 1) {
             collateralCap = CCollateralCapErc20Interface(address(cToken)).collateralCap();
+            totalCollateralTokens = CCollateralCapErc20Interface(address(cToken)).totalCollateralTokens();
         }
 
         return CTokenMetadata({
@@ -76,6 +80,7 @@ contract CompoundLens {
             totalReserves: cToken.totalReserves(),
             totalSupply: cToken.totalSupply(),
             totalCash: cToken.getCash(),
+            totalCollateralTokens: totalCollateralTokens,
             isListed: isListed,
             collateralFactorMantissa: collateralFactorMantissa,
             underlyingAssetAddress: underlyingAssetAddress,
@@ -102,14 +107,17 @@ contract CompoundLens {
         uint balanceOfUnderlying;
         uint tokenBalance;
         uint tokenAllowance;
+        uint collateralBalance;
     }
 
     function cTokenBalances(CToken cToken, address payable account) public returns (CTokenBalances memory) {
         uint balanceOf = cToken.balanceOf(account);
         uint borrowBalanceCurrent = cToken.borrowBalanceCurrent(account);
         uint balanceOfUnderlying = cToken.balanceOfUnderlying(account);
+        address comptroller = address(cToken.comptroller());
         uint tokenBalance;
         uint tokenAllowance;
+        uint collateralBalance;
 
         if (compareStrings(cToken.symbol(), "crETH")) {
             tokenBalance = account.balance;
@@ -121,13 +129,18 @@ contract CompoundLens {
             tokenAllowance = underlying.allowance(account, address(cToken));
         }
 
+        if (ComptrollerLensInterface(comptroller).checkMembership(account, cToken)) {
+            (, collateralBalance, , ) = cToken.getAccountSnapshot(account);
+        }
+
         return CTokenBalances({
             cToken: address(cToken),
             balanceOf: balanceOf,
             borrowBalanceCurrent: borrowBalanceCurrent,
             balanceOfUnderlying: balanceOfUnderlying,
             tokenBalance: tokenBalance,
-            tokenAllowance: tokenAllowance
+            tokenAllowance: tokenAllowance,
+            collateralBalance: collateralBalance
         });
     }
 
