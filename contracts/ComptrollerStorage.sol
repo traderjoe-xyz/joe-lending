@@ -132,4 +132,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 
     // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
     mapping(address => uint) public creditLimits;
+
+    // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
+    mapping(address => bool) public flashloanGuardianPaused;
 }
