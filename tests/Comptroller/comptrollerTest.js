@@ -243,5 +243,5 @@ describe('Comptroller', () => {
       const cToken = await makeCToken({comptroller: comptroller});
       await expect(call(comptroller, 'redeemVerify', [cToken._address, accounts[0], 5, 0])).rejects.toRevert("revert redeemTokens zero");
     });
-  })
+  });
 });
