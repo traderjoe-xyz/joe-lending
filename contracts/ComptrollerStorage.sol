@@ -151,3 +151,8 @@ contract ComptrollerV5Storage is ComptrollerV4Storage {
     // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint) public supplyCaps;
 }
+
+contract ComptrollerV6Storage is ComptrollerV5Storage {
+    // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
+    mapping(address => bool) public flashloanGuardianPaused;
+}

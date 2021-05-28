@@ -10,6 +10,8 @@ interface ComptrollerInterfaceExtension {
     function checkMembership(address account, CToken cToken) external view returns (bool);
 
     function updateCTokenVersion(address cToken, ComptrollerV2Storage.Version version) external;
+
+    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
 }
 
 /**
@@ -160,6 +162,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
+        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), receiver, amount, params);
 
         uint cashOnChainBefore = getCashOnChain();
         uint cashBefore = getCashPrior();
