@@ -203,7 +203,20 @@ describe('Flashloan test', function () {
       const result = send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + 100])
       await expect(result).rejects.toRevert('revert BALANCE_INCONSISTENT')
     })
+  })
 
+  it('reject by comptroller', async () => {
+    const borrowAmount = 10_000;
+    const totalFee = 3
+    expect(await send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + totalFee])).toSucceed();
+
+    await send(cToken.comptroller, '_setFlashloanPaused', [cToken._address, true]);
+
+    await expect(send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + totalFee])).rejects.toRevert('revert flashloan is paused');
+
+    await send(cToken.comptroller, '_setFlashloanPaused', [cToken._address, false]);
+
+    expect(await send(flashloanReceiver, 'doFlashloan', [cToken._address, borrowAmount, borrowAmount + totalFee])).toSucceed();
   })
 });
 
