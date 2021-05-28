@@ -114,7 +114,7 @@ describe('Comptroller', () => {
       });
     });
 
-    let marketMethods = ["Borrow", "Mint"];
+    let marketMethods = ["Borrow", "Mint", "Flashloan"];
     describe('succeeding', () => {
       let pauseGuardian;
       beforeEach(async () => {
