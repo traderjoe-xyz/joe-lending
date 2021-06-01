@@ -30,8 +30,6 @@ contract CCapableErc20Delegate is CCapableErc20 {
 
         // Set internal cash when becoming implementation
         internalCash = getCashOnChain();
-
-        accrualBlockNumber = block.timestamp;
     }
 
     /**
