@@ -3,11 +3,11 @@ pragma solidity ^0.5.16;
 import "./CCapableErc20.sol";
 
 /**
- * @title Compound's CCapableWrappedNativeDelegate Contract
+ * @title Cream's CWrappedNativeDelegate Contract
  * @notice CTokens which wrap an EIP-20 underlying and are delegated to
- * @author Compound
+ * @author Cream
  */
-contract CCapableWrappedNativeDelegate is CCapableErc20 {
+contract CWrappedNativeDelegate is CCapableErc20 {
     /**
      * @notice Construct an empty delegate
      */
@@ -45,6 +45,6 @@ contract CCapableWrappedNativeDelegate is CCapableErc20 {
     }
 
     function () external payable {
-        require(msg.value == 0,"CCapableWrappedNativeDelegate: not implemented yet");
+        require(msg.value == 0,"CWrappedNativeDelegate: not implemented yet");
     }
 }
