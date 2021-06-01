@@ -3,11 +3,11 @@ pragma solidity ^0.5.16;
 import "./CToken.sol";
 
 /**
- * @title Deprecated Cream's CCapableErc20 Contract
- * @notice CTokens which wrap an EIP-20 underlying
+ * @title Cream's CWrappedNative Contract
+ * @notice CTokens which wrap the native token
  * @author Cream
  */
-contract CCapableErc20 is CToken, CCapableErc20Interface {
+contract CWrappedNative is CToken, CErc20Interface {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -118,75 +118,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         return _addReservesInternal(addAmount);
     }
 
-    /**
-     * @notice Absorb excess cash into reserves.
-     */
-    function gulp() external nonReentrant {
-        uint256 cashOnChain = getCashOnChain();
-        uint256 cashPrior = getCashPrior();
-
-        uint excessCash = sub_(cashOnChain, cashPrior);
-        totalReserves = add_(totalReserves, excessCash);
-        internalCash = cashOnChain;
-    }
-
-    /**
-     * @notice Flash loan funds to a given account.
-     * @param receiver The receiver address for the funds
-     * @param amount The amount of the funds to be loaned
-     * @param params The other parameters
-     */
-    function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
-        require(amount > 0, "flashLoan amount should be greater than zero");
-        require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
-
-        uint cashOnChainBefore = getCashOnChain();
-        uint cashBefore = getCashPrior();
-        require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
-
-        // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
-
-        // 2. transfer fund to receiver
-        doTransferOut(address(uint160(receiver)), amount);
-
-        // 3. update totalBorrows
-        totalBorrows = add_(totalBorrows, amount);
-
-        // 4. execute receiver's callback function
-        IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
-
-        // 5. check balance
-        uint cashOnChainAfter = getCashOnChain();
-        require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
-
-        // 6. update reserves and internal cash and totalBorrows
-        uint reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
-        totalReserves = add_(totalReserves, reservesFee);
-        internalCash = add_(cashBefore, totalFee);
-        totalBorrows = sub_(totalBorrows, amount);
-
-        emit Flashloan(receiver, amount, totalFee, reservesFee);
-    }
-
     /*** Safe Token ***/
 
     /**
-     * @notice Gets internal balance of this contract in terms of the underlying.
-     *  It excludes balance from direct transfer.
+     * @notice Gets balance of this contract in terms of the underlying
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
     function getCashPrior() internal view returns (uint) {
-        return internalCash;
-    }
-
-    /**
-     * @notice Gets total balance of this contract in terms of the underlying
-     * @dev This excludes the value of the current message, if any
-     * @return The quantity of underlying tokens owned by this contract
-     */
-    function getCashOnChain() internal view returns (uint) {
         EIP20Interface token = EIP20Interface(underlying);
         return token.balanceOf(address(this));
     }
@@ -223,9 +162,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
 
         // Calculate the amount that was *actually* transferred
         uint balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-        uint transferredIn = sub_(balanceAfter, balanceBefore);
-        internalCash = add_(internalCash, transferredIn);
-        return transferredIn;
+        return sub_(balanceAfter, balanceBefore);
     }
 
     /**
@@ -256,7 +193,6 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
                 }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
-        internalCash = sub_(internalCash, amount);
     }
 
     /**
