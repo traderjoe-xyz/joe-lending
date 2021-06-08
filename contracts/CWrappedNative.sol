@@ -220,6 +220,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
     function flashLoan(address payable receiver, uint amount, bytes calldata params) external nonReentrant {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
+        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), receiver, amount, params);
 
         uint cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
@@ -248,12 +249,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         emit Flashloan(receiver, amount, totalFee, reservesFee);
     }
 
-    /**
-     * @notice Send ethers to mint
-     */
     function () external payable {
-        (uint err,) = mintInternal(msg.value, true);
-        require(err == 0, "mint native failed");
+        require(msg.sender == underlying, "only wrapped native contract could send native token");
     }
 
     /**

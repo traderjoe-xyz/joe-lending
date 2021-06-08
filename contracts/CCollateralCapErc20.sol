@@ -1,18 +1,6 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
-import "./ComptrollerStorage.sol";
-
-/**
- * @title Cream's Comptroller interface extension
- */
-interface ComptrollerInterfaceExtension {
-    function checkMembership(address account, CToken cToken) external view returns (bool);
-
-    function updateCTokenVersion(address cToken, ComptrollerV2Storage.Version version) external;
-
-    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
-}
 
 /**
  * @title Cream's CCollateralCapErc20 Contract
