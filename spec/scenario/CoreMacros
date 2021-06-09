@@ -96,6 +96,10 @@ Macro Prep user amount erc20 token allowanceAmount=Nothing
     Erc20 erc20 Faucet user amount
     From user (Erc20 erc20 Approve token (Default allowanceAmount amount))
 
+Macro WETHPrep user amount erc20 token allowanceAmount=Nothing
+    From user (Trx GasPrice 0 (Trx Value amount (Erc20 erc20 Deposit)))
+    From user (Erc20 erc20 Approve token (Default allowanceAmount amount))
+
 Macro Allow user token
     From user (Erc20 (CToken token Underlying) Approve token UInt256Max)
 
@@ -104,6 +108,9 @@ Macro AccrueInterest token
 
 Macro Mint user amount token
     From user (CToken token Mint amount)
+
+Macro MintNative user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (CToken token MintNative)))
 
 Macro SendMintEth user amount token
     From user (Trx GasPrice 0 (Trx Value amount (Send token amount)))
@@ -114,11 +121,17 @@ Macro CallMintEth user amount token
 Macro Redeem user amount token
     From user (CToken token Redeem amount)
 
+Macro RedeemNative user amount token
+    Trx GasPrice 0 (From user (CToken token RedeemNative amount))
+
 Macro RedeemEth user amount token
     Trx GasPrice 0 (From user (CToken token Redeem amount))
 
 Macro RedeemUnderlying user amount token
     From user (CToken token RedeemUnderlying amount)
+
+Macro RedeemUnderlyingNative user amount token
+    Trx GasPrice 0 (From user (CToken token RedeemUnderlyingNative amount))
 
 Macro RedeemUnderlyingEth user amount token
     Trx GasPrice 0 (From user (CToken token RedeemUnderlying amount))
@@ -129,14 +142,23 @@ Macro BorrowEth user amount token
 Macro Borrow user amount token
     From user (CToken token Borrow amount)
 
+Macro BorrowNative user amount token
+    Trx GasPrice 0 (From user (CToken token BorrowNative amount))
+
 Macro RepayBorrow user amount token
     From user (CToken token RepayBorrow amount)
+
+Macro RepayBorrowNative user amount token
+    From user (Trx GasPrice 0 (Trx Value amount (CToken token RepayBorrowNative)))
 
 Macro RepayBorrowEth user amount token
     From user (Trx GasPrice 0 (Trx Value amount (CToken token RepayBorrow)))
 
 Macro RepayBorrowBehalf user behalf amount token
     From user (CToken token RepayBorrowBehalf behalf amount)
+
+Macro RepayBorrowBehalfNative user behalf amount token
+    From user (Trx GasPrice 0 (Trx Value amount (CToken token RepayBorrowBehalfNative behalf)))
 
 Macro RepayBorrowEthBehalf user behalf amount token
     From user (Trx GasPrice 0 (Trx Value amount (CToken token RepayBorrowBehalf behalf)))

@@ -1,23 +1,21 @@
 
 import {Event} from '../Event';
-import {addAction, World} from '../World';
+import {World} from '../World';
 import {Erc20} from '../Contract/Erc20';
 import {Invokation, invoke} from '../Invokation';
 import {
   getAddressV,
-  getCoreValue,
   getNumberV,
   getStringV
 } from '../CoreValue';
 import {
   AddressV,
   NumberV,
-  StringV,
-  Value
+  StringV
 } from '../Value';
 import {Arg, Fetcher, getFetcherValue} from '../Command';
 import {storeAndSaveContract} from '../Networks';
-import {getContract, getTestContract} from '../Contract';
+import {getContract} from '../Contract';
 import {encodeABI} from '../Utils';
 
 const ExistingToken = getContract("EIP20Interface");
@@ -28,6 +26,7 @@ const FaucetTokenNonStandardHarness = getContract("FaucetNonStandardToken");
 const FaucetTokenReEntrantHarness = getContract("FaucetTokenReEntrantHarness");
 const EvilTokenHarness = getContract("EvilToken");
 const WBTCTokenHarness = getContract("WBTCToken");
+const WETHToken = getContract("WETH9");
 const FeeTokenHarness = getContract("FeeToken");
 
 export interface TokenData {
@@ -215,6 +214,30 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
           symbol: symbol.val,
           decimals: decimals,
           contract: 'WBTCToken'
+        };
+      }
+    ),
+
+    new Fetcher<{symbol: StringV, name: StringV}, TokenData>(`
+        #### WETH
+
+        * "WETH symbol:<String> name:<String>" - The WETH contract
+          * E.g. "Erc20 Deploy WETH WETH \"Wrapped Ether\""
+      `,
+      "WETH", [
+        new Arg("symbol", getStringV, {default: new StringV("WETH")}),
+        new Arg("name", getStringV, {default: new StringV("Wrapped Ether")})
+      ],
+      async (world, {symbol, name}) => {
+        let decimals = 18;
+
+        return {
+          invokation: await WETHToken.deploy<Erc20>(world, from, []),
+          description: "WETH",
+          name: name.val,
+          symbol: symbol.val,
+          decimals: decimals,
+          contract: 'WETH9'
         };
       }
     ),

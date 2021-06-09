@@ -1,5 +1,5 @@
 import {Event} from '../Event';
-import {addAction, World} from '../World';
+import {addAction, describeUser, World} from '../World';
 import {Erc20} from '../Contract/Erc20';
 import {invoke} from '../Invokation';
 import {buildErc20} from '../Builder/Erc20Builder';
@@ -20,8 +20,11 @@ import {getErc20V} from '../Value/Erc20Value';
 import {verify} from '../Verify';
 import {Arg, Command, View, processCommandEvent} from '../Command';
 import {CTokenErrorReporter} from '../ErrorReporter';
-import {encodedNumber} from '../Encoding';
 import {getErc20Data} from '../ContractLookup';
+
+function showTrxValue(world: World): string {
+  return new NumberV(world.trxInvokationOpts.get('value')).show();
+}
 
 async function genToken(world: World, from: string, params: Event): Promise<World> {
   let {world: newWorld, erc20, tokenData} = await buildErc20(world, from, params);
@@ -125,6 +128,19 @@ async function setFee(world: World, from: string, erc20: Erc20, basisPointFee: N
   world = addAction(
     world,
     `Set fee on ${erc20.name} to ${basisPointFee} with a max of ${maxFee}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function deposit(world: World, from: string, erc20: Erc20): Promise<World> {
+  const showAmount = showTrxValue(world);
+  let invokation = await invoke(world, erc20.methods.deposit(), from);
+
+  world = addAction(
+    world,
+    `WETH: ${describeUser(world, from)} deposits ${showAmount}`,
     invokation
   );
 
@@ -261,7 +277,7 @@ export function erc20Commands() {
     new Command<{erc20: Erc20, basisPointFee: NumberV, maxFee: NumberV}>(`
         #### SetFee
 
-        * "Erc20 <Erc20> SetFee basisPointFee:<Number> maxFee:<Number>" - Sets the current fee and max fee on Tether. Current 
+        * "Erc20 <Erc20> SetFee basisPointFee:<Number> maxFee:<Number>" - Sets the current fee and max fee on Tether. Current
         * Current fee (basisPointFee) has a max of 20 basis points, while maxFee is capped at 50 Tether (a max absolute fee of 50 * 10 ^ decimals)
           * E.g. "Erc20 USDT SetFee 10 10"
       `,
@@ -272,6 +288,20 @@ export function erc20Commands() {
         new Arg("maxFee", getNumberV)
       ],
       (world, from, {erc20, basisPointFee, maxFee}) => setFee(world, from, erc20, basisPointFee, maxFee),
+      {namePos: 1}
+    ),
+    new Command<{erc20: Erc20}>(`
+        #### Deposit
+
+        * "Erc20 <Erc20> Deposit" - Deposit ether to WETH
+        * The deposit amount is included in the transaction data.
+          * E.g. "Erc20 WETH Deposit"
+      `,
+      "Deposit",
+      [
+        new Arg("erc20", getErc20V)
+      ],
+      (world, from, {erc20}) => deposit(world, from, erc20),
       {namePos: 1}
     )
   ];

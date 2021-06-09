@@ -80,8 +80,33 @@ async function mint(world: World, from: string, cToken: CToken, amount: NumberV 
   return world;
 }
 
+async function mintNative(world: World, from: string, cToken: CToken): Promise<World> {
+  const showAmount = showTrxValue(world);
+  let invokation = await invoke(world, cToken.methods.mintNative(), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} mints ${showAmount}`,
+    invokation
+  );
+
+  return world;
+}
+
 async function redeem(world: World, from: string, cToken: CToken, tokens: NumberV): Promise<World> {
   let invokation = await invoke(world, cToken.methods.redeem(tokens.encode()), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} redeems ${tokens.show()} tokens`,
+    invokation
+  );
+
+  return world;
+}
+
+async function redeemNative(world: World, from: string, cToken: CToken, tokens: NumberV): Promise<World> {
+  let invokation = await invoke(world, cToken.methods.redeemNative(tokens.encode()), from, CTokenErrorReporter);
 
   world = addAction(
     world,
@@ -104,8 +129,32 @@ async function redeemUnderlying(world: World, from: string, cToken: CToken, amou
   return world;
 }
 
+async function redeemUnderlyingNative(world: World, from: string, cToken: CToken, amount: NumberV): Promise<World> {
+  let invokation = await invoke(world, cToken.methods.redeemUnderlyingNative(amount.encode()), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} redeems ${amount.show()} underlying`,
+    invokation
+  );
+
+  return world;
+}
+
 async function borrow(world: World, from: string, cToken: CToken, amount: NumberV): Promise<World> {
   let invokation = await invoke(world, cToken.methods.borrow(amount.encode()), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} borrows ${amount.show()}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function borrowNative(world: World, from: string, cToken: CToken, amount: NumberV): Promise<World> {
+  let invokation = await invoke(world, cToken.methods.borrowNative(amount.encode()), from, CTokenErrorReporter);
 
   world = addAction(
     world,
@@ -137,6 +186,19 @@ async function repayBorrow(world: World, from: string, cToken: CToken, amount: N
   return world;
 }
 
+async function repayBorrowNative(world: World, from: string, cToken: CToken): Promise<World> {
+  const showAmount = showTrxValue(world);
+  let invokation = await invoke(world, cToken.methods.repayBorrowNative(), from, CTokenErrorReporter);
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} repays ${showAmount} of borrow`,
+    invokation
+  );
+
+  return world;
+}
+
 async function repayBorrowBehalf(world: World, from: string, behalf: string, cToken: CToken, amount: NumberV | NothingV): Promise<World> {
   let invokation;
   let showAmount;
@@ -148,6 +210,19 @@ async function repayBorrowBehalf(world: World, from: string, behalf: string, cTo
     showAmount = showTrxValue(world);
     invokation = await invoke(world, cToken.methods.repayBorrowBehalf(behalf), from, CTokenErrorReporter);
   }
+
+  world = addAction(
+    world,
+    `CToken ${cToken.name}: ${describeUser(world, from)} repays ${showAmount} of borrow on behalf of ${describeUser(world, behalf)}`,
+    invokation
+  );
+
+  return world;
+}
+
+async function repayBorrowBehalfNative(world: World, from: string, behalf: string, cToken: CToken): Promise<World> {
+  const showAmount = showTrxValue(world);
+  let invokation = await invoke(world, cToken.methods.repayBorrowBehalfNative(behalf), from, CTokenErrorReporter);
 
   world = addAction(
     world,
@@ -554,6 +629,19 @@ export function cTokenCommands() {
       (world, from, { cToken, amount }) => mint(world, from, cToken, amount),
       { namePos: 1 }
     ),
+    new Command<{ cToken: CToken }>(`
+        #### MintNative
+
+        * "CToken <cToken> MintNative" - Mints the given amount of cToken as specified user
+          * E.g. "CToken cWETH MintNative"
+      `,
+      "MintNative",
+      [
+        new Arg("cToken", getCTokenV)
+      ],
+      (world, from, { cToken }) => mintNative(world, from, cToken),
+      { namePos: 1 }
+    ),
     new Command<{ cToken: CToken, tokens: NumberV }>(`
         #### Redeem
 
@@ -566,6 +654,20 @@ export function cTokenCommands() {
         new Arg("tokens", getNumberV)
       ],
       (world, from, { cToken, tokens }) => redeem(world, from, cToken, tokens),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, tokens: NumberV }>(`
+        #### RedeemNative
+
+        * "CToken <cToken> RedeemNative tokens:<Number>" - Redeems the given amount of cTokens as specified user
+          * E.g. "CToken cZRX RedeemNative 1.0e9"
+      `,
+      "RedeemNative",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("tokens", getNumberV)
+      ],
+      (world, from, { cToken, tokens }) => redeemNative(world, from, cToken, tokens),
       { namePos: 1 }
     ),
     new Command<{ cToken: CToken, amount: NumberV }>(`
@@ -583,6 +685,20 @@ export function cTokenCommands() {
       { namePos: 1 }
     ),
     new Command<{ cToken: CToken, amount: NumberV }>(`
+        #### RedeemUnderlyingNative
+
+        * "CToken <cToken> RedeemUnderlyingNative amount:<Number>" - Redeems the given amount of underlying as specified user
+          * E.g. "CToken cZRX RedeemUnderlyingNative 1.0e18"
+      `,
+      "RedeemUnderlyingNative",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("amount", getNumberV)
+      ],
+      (world, from, { cToken, amount }) => redeemUnderlyingNative(world, from, cToken, amount),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, amount: NumberV }>(`
         #### Borrow
 
         * "CToken <cToken> Borrow amount:<Number>" - Borrows the given amount of this cToken as specified user
@@ -595,6 +711,21 @@ export function cTokenCommands() {
       ],
       // Note: we override from
       (world, from, { cToken, amount }) => borrow(world, from, cToken, amount),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, amount: NumberV }>(`
+        #### BorrowNative
+
+        * "CToken <cToken> BorrowNative amount:<Number>" - Borrows the given amount of this cToken as specified user
+          * E.g. "CToken cZRX BorrowNative 1.0e18"
+      `,
+      "BorrowNative",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("amount", getNumberV)
+      ],
+      // Note: we override from
+      (world, from, { cToken, amount }) => borrowNative(world, from, cToken, amount),
       { namePos: 1 }
     ),
     new Command<{ cToken: CToken, amount: NumberV | NothingV }>(`
@@ -611,6 +742,19 @@ export function cTokenCommands() {
       (world, from, { cToken, amount }) => repayBorrow(world, from, cToken, amount),
       { namePos: 1 }
     ),
+    new Command<{ cToken: CToken, amount: NumberV | NothingV }>(`
+        #### RepayBorrowNative
+
+        * "CToken <cToken> RepayBorrowNative" - Repays borrow in the given underlying amount as specified user
+          * E.g. "CToken cZRX RepayBorrowNative"
+      `,
+      "RepayBorrowNative",
+      [
+        new Arg("cToken", getCTokenV)
+      ],
+      (world, from, { cToken, amount }) => repayBorrowNative(world, from, cToken),
+      { namePos: 1 }
+    ),
     new Command<{ cToken: CToken, behalf: AddressV, amount: NumberV | NothingV }>(`
         #### RepayBorrowBehalf
 
@@ -624,6 +768,20 @@ export function cTokenCommands() {
         new Arg("amount", getNumberV, { nullable: true })
       ],
       (world, from, { cToken, behalf, amount }) => repayBorrowBehalf(world, from, behalf.val, cToken, amount),
+      { namePos: 1 }
+    ),
+    new Command<{ cToken: CToken, behalf: AddressV, amount: NumberV | NothingV }>(`
+        #### RepayBorrowBehalfNative
+
+        * "CToken <cToken> RepayBorrowBehalfNative behalf:<User>" - Repays borrow in the given underlying amount on behalf of another user
+          * E.g. "CToken cZRX RepayBorrowBehalfNative Geoff"
+      `,
+      "RepayBorrowBehalfNative",
+      [
+        new Arg("cToken", getCTokenV),
+        new Arg("behalf", getAddressV)
+      ],
+      (world, from, { cToken, behalf, amount }) => repayBorrowBehalfNative(world, from, behalf.val, cToken),
       { namePos: 1 }
     ),
     new Command<{ borrower: AddressV, cToken: CToken, collateral: CToken, repayAmount: NumberV | NothingV }>(`
