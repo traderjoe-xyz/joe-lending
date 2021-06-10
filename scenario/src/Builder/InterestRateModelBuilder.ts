@@ -1,17 +1,15 @@
 import {Event} from '../Event';
-import {addAction, World} from '../World';
+import {World} from '../World';
 import {InterestRateModel} from '../Contract/InterestRateModel';
-import {Invokation, invoke} from '../Invokation';
+import {Invokation} from '../Invokation';
 import {
   getAddressV,
   getExpNumberV,
-  getNumberV,
   getPercentV,
   getStringV,
 } from '../CoreValue';
 import {
   AddressV,
-  EventV,
   NumberV,
   StringV,
 } from '../Value';
@@ -20,7 +18,7 @@ import {storeAndSaveContract} from '../Networks';
 import {getContract, getTestContract} from '../Contract';
 
 const FixedInterestRateModel = getTestContract('InterestRateModelHarness');
-const JumpRateModel = getContract('JumpRateModel');
+const JumpRateModel = getContract('JumpRateModelv2');
 
 export interface InterestRateModelData {
   invokation: Invokation<InterestRateModel>
@@ -32,6 +30,8 @@ export interface InterestRateModelData {
   slope?: string
   kink?: string
   jump?: string
+  roof?: string
+  admin?: string
 }
 
 export async function buildInterestRateModel(world: World, from: string, event: Event): Promise<{world: World, interestRateModel: InterestRateModel, interestRateModelData: InterestRateModelData}> {
@@ -55,11 +55,11 @@ export async function buildInterestRateModel(world: World, from: string, event: 
       })
     ),
 
-    new Fetcher<{name: StringV, baseRate: NumberV, multiplier: NumberV, jump: NumberV, kink: NumberV}, InterestRateModelData>(`
+    new Fetcher<{name: StringV, baseRate: NumberV, multiplier: NumberV, jump: NumberV, kink: NumberV, roof: NumberV, admin: AddressV}, InterestRateModelData>(`
          #### JumpRateModel
 
-         * "JumpRateModel name:<String> baseRate:<Number> multiplier:<Number> jump:<Number> kink:<Number>" - The Jump interest rate
-           * E.g. "InterestRateModel Deploy JumpRateModel MyInterestRateModel 0.05 0.2 2 0.90" - 5% base rate and 20% utilization multiplier and 200% multiplier at 90% utilization
+         * "JumpRateModel name:<String> baseRate:<Number> multiplier:<Number> jump:<Number> kink:<Number> roof:<Number> admin:<String>" - The Jump interest rate
+           * E.g. "InterestRateModel Deploy JumpRateModel MyInterestRateModel 0.05 0.2 2 0.90 1 Geoff" - 5% base rate and 20% utilization multiplier and 200% multiplier at 90% utilization
        `,
        "JumpRateModel",
        [
@@ -67,17 +67,21 @@ export async function buildInterestRateModel(world: World, from: string, event: 
          new Arg("baseRate", getExpNumberV),
          new Arg("multiplier", getExpNumberV),
          new Arg("jump", getExpNumberV),
-         new Arg("kink", getExpNumberV)
+         new Arg("kink", getExpNumberV),
+         new Arg("roof", getExpNumberV),
+         new Arg("admin", getAddressV)
        ],
-       async (world, {name, baseRate, multiplier, jump, kink}) => ({
-         invokation: await JumpRateModel.deploy<InterestRateModel>(world, from, [baseRate.encode(), multiplier.encode(), jump.encode(), kink.val]),
+       async (world, {name, baseRate, multiplier, jump, kink, roof, admin}) => ({
+         invokation: await JumpRateModel.deploy<InterestRateModel>(world, from, [baseRate.encode(), multiplier.encode(), jump.encode(), kink.val, roof.val, admin.val]),
          name: name.val,
-         contract: "JumpRateModel",
-         description: `JumpRateModel baseRate=${baseRate.encode().toString()} multiplier=${multiplier.encode().toString()} jump=${jump.encode().toString()} kink=${kink.encode().toString()}`,
+         contract: "JumpRateModelv2",
+         description: `JumpRateModel baseRate=${baseRate.encode().toString()} multiplier=${multiplier.encode().toString()} jump=${jump.encode().toString()} kink=${kink.encode().toString()} roof=${roof.encode().toString()}`,
          base: baseRate.encode().toString(),
          slope: multiplier.encode().toString(),
          jump: jump.encode().toString(),
-         kink: kink.encode().toString()
+         kink: kink.encode().toString(),
+         roof: roof.encode().toString(),
+         admin: admin.val
        })
     )
   ];

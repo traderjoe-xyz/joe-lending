@@ -115,11 +115,15 @@ describe('InterestRateModel', () => {
         });
 
         it('handles overflow utilization rate times slope', async () => {
-          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: -1, jump: -1 })).rejects.toRevert("revert SafeMath: multiplication overflow");
+          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: -1, jump: -1, roof: 1 })).rejects.toRevert("revert SafeMath: multiplication overflow");
         });
 
         it('handles overflow utilization rate times slope + base', async () => {
-          await expect(makeInterestRateModel({ kind, baseRate: -1, multiplier: 1e48, jump: 1e48 })).rejects.toRevert("revert SafeMath: multiplication overflow");
+          await expect(makeInterestRateModel({ kind, baseRate: -1, multiplier: 1e48, jump: 1e48, roof: 1 })).rejects.toRevert("revert SafeMath: multiplication overflow");
+        });
+
+        it('handles invalid roof', async () => {
+          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: 0, kink: 0.7, roof: 0.9 })).rejects.toRevert("revert invalid roof value");
         });
       }
 
@@ -134,7 +138,11 @@ describe('InterestRateModel', () => {
         });
 
         it('handles kink2 > kink1', async () => {
-          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: 0, kink1: 0.8, kink2: 0.7 })).rejects.toRevert("revert kink1 must less than or equal to kink2");
+          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: 0, kink1: 0.8, kink2: 0.7, roof: 1 })).rejects.toRevert("revert kink1 must less than or equal to kink2");
+        });
+
+        it('handles invalid roof', async () => {
+          await expect(makeInterestRateModel({ kind, baseRate: 0, multiplier: 0, kink1: 0.7, kink2: 0.8, roof: 0.9 })).rejects.toRevert("revert invalid roof value");
         });
       }
 
@@ -147,6 +155,7 @@ describe('InterestRateModel', () => {
             {
               jump: 100,
               kink: 90,
+              roof: 100,
               base: 10,
               slope: 18,
               points: [
@@ -155,44 +164,51 @@ describe('InterestRateModel', () => {
                 [89, 27.8],
                 [90, 28],
                 [91, 29],
-                [100, 38]
+                [100, 38],
+                [120, 38]
               ]
             },
             {
               jump: 20,
               kink: 90,
+              roof: 100,
               base: 10,
               slope: 18,
               points: [
                 [0, 10],
                 [10, 12],
-                [100, 30]
+                [100, 30],
+                [120, 30]
               ]
             },
             {
               jump: 0,
               kink: 90,
+              roof: 100,
               base: 10,
               slope: 18,
               points: [
                 [0, 10],
                 [10, 12],
-                [100, 28]
+                [100, 28],
+                [120, 28]
               ]
             },
             {
               jump: 0,
               kink: 110,
+              roof: 120,
               base: 10,
               slope: 22,
               points: [
                 [0, 10],
                 [10, 12],
-                [100, 30]
+                [100, 30],
+                [120, 32]
               ]
             }
-          ].forEach(({jump, kink, base, slope, points}) => {
-            describe(`for jump=${jump}, kink=${kink}, base=${base}, slope=${slope}`, () => {
+          ].forEach(({jump, kink, roof, base, slope, points}) => {
+            describe(`for jump=${jump}, kink=${kink}, base=${base}, slope=${slope}, roof=${roof}`, () => {
               let jumpModel;
 
               beforeAll(async () => {
@@ -202,6 +218,7 @@ describe('InterestRateModel', () => {
                   multiplier: slope / 100,
                   jump: jump / 100,
                   kink: kink / 100,
+                  roof: roof / 100
                 });
               });
 
@@ -229,6 +246,7 @@ describe('InterestRateModel', () => {
               jump: 200,
               kink1: 80,
               kink2: 90,
+              roof: 100,
               base: 0,
               slope: 14,
               points: [
@@ -237,7 +255,8 @@ describe('InterestRateModel', () => {
                 [80, 14],
                 [84, 14],
                 [91, 16],
-                [100, 34]
+                [100, 34],
+                [120, 34]
               ]
             },
             // Stable
@@ -245,6 +264,7 @@ describe('InterestRateModel', () => {
               jump: 800,
               kink1: 80,
               kink2: 90,
+              roof: 100,
               base: 0,
               slope: 18.4,
               points: [
@@ -253,11 +273,12 @@ describe('InterestRateModel', () => {
                 [80, 18.4],
                 [87, 18.4],
                 [91, 26.4],
-                [100, 98.4]
+                [100, 98.4],
+                [120, 98.4]
               ]
             },
-          ].forEach(({jump, kink1, kink2, base, slope, points}) => {
-            describe(`for jump=${jump}, kink1=${kink1}, kink2=${kink2}, base=${base}, slope=${slope}`, () => {
+          ].forEach(({jump, kink1, kink2, roof, base, slope, points}) => {
+            describe(`for jump=${jump}, kink1=${kink1}, kink2=${kink2}, base=${base}, slope=${slope}, roof=${roof}`, () => {
               let tripleRateModel;
 
               beforeAll(async () => {
@@ -267,7 +288,8 @@ describe('InterestRateModel', () => {
                   multiplier: slope / 100,
                   jump: jump / 100,
                   kink1: kink1 / 100,
-                  kink2: kink2 / 100
+                  kink2: kink2 / 100,
+                  roof: roof / 100
                 });
               });
 
