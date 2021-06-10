@@ -10,7 +10,7 @@ import "./SafeMath.sol";
 contract TripleSlopeRateModel is InterestRateModel {
     using SafeMath for uint;
 
-    event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink1, uint kink2);
+    event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink1, uint kink2, uint roof);
 
     /**
      * @notice The address of the owner, i.e. the Timelock contract, which can update parameters directly
@@ -21,6 +21,11 @@ contract TripleSlopeRateModel is InterestRateModel {
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
     uint public constant blocksPerYear = 2102400;
+
+    /**
+     * @notice The minimum utilization rate used for calculating borrow rate.
+     */
+    uint internal constant minUtilizationRate = 1e18;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
@@ -48,18 +53,24 @@ contract TripleSlopeRateModel is InterestRateModel {
     uint public kink2;
 
     /**
+     * @notice The utilization point at which the borrow rate is fixed
+     */
+    uint public roof;
+
+    /**
      * @notice Construct an interest rate model
      * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by 1e18)
      * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by 1e18)
      * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
      * @param kink1_ The utilization point at which the interest rate is fixed
      * @param kink2_ The utilization point at which the jump multiplier is applied
+     * @param roof_ The utilization point at which the borrow rate is fixed
      * @param owner_ The address of the owner, i.e. the Timelock contract (which has the ability to update parameters directly)
      */
-    constructor(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_, address owner_) public {
+    constructor(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_, uint roof_, address owner_) public {
         owner = owner_;
 
-        updateTripleRateModelInternal(baseRatePerYear,  multiplierPerYear, jumpMultiplierPerYear, kink1_, kink2_);
+        updateTripleRateModelInternal(baseRatePerYear,  multiplierPerYear, jumpMultiplierPerYear, kink1_, kink2_, roof_);
     }
 
     /**
@@ -69,11 +80,12 @@ contract TripleSlopeRateModel is InterestRateModel {
      * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
      * @param kink1_ The utilization point at which the interest rate is fixed
      * @param kink2_ The utilization point at which the jump multiplier is applied
+     * @param roof_ The utilization point at which the borrow rate is fixed
      */
-    function updateTripleRateModel(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_) external {
+    function updateTripleRateModel(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_, uint roof_) external {
         require(msg.sender == owner, "only the owner may call this function.");
 
-        updateTripleRateModelInternal(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink1_, kink2_);
+        updateTripleRateModelInternal(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink1_, kink2_, roof_);
     }
 
     /**
@@ -107,6 +119,9 @@ contract TripleSlopeRateModel is InterestRateModel {
         } else if (util <= kink2) {
             return kink1.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
         } else {
+            if (util > roof) {
+                util = roof;
+            }
             uint normalRate = kink1.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
             uint excessUtil = util.sub(kink2);
             return excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(normalRate);
@@ -135,16 +150,19 @@ contract TripleSlopeRateModel is InterestRateModel {
      * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
      * @param kink1_ The utilization point at which the interest rate is fixed
      * @param kink2_ The utilization point at which the jump multiplier is applied
+     * @param roof_ The utilization point at which the borrow rate is fixed
      */
-    function updateTripleRateModelInternal(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_) internal {
+    function updateTripleRateModelInternal(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_, uint roof_) internal {
         require(kink1_ <= kink2_, "kink1 must less than or equal to kink2");
+        require(roof_ >= minUtilizationRate, "invalid roof value");
 
         baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
         multiplierPerBlock = (multiplierPerYear.mul(1e18)).div(blocksPerYear.mul(kink1_));
         jumpMultiplierPerBlock = jumpMultiplierPerYear.div(blocksPerYear);
         kink1 = kink1_;
         kink2 = kink2_;
+        roof = roof_;
 
-        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink1, kink2);
+        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink1, kink2, roof);
     }
 }

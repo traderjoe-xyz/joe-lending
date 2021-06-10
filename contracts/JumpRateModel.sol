@@ -10,12 +10,17 @@ import "./SafeMath.sol";
 contract JumpRateModel is InterestRateModel {
     using SafeMath for uint;
 
-    event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink);
+    event NewInterestParams(uint baseRatePerBlock, uint multiplierPerBlock, uint jumpMultiplierPerBlock, uint kink, uint roof);
 
     /**
      * @notice The approximate number of blocks per year that is assumed by the interest rate model
      */
     uint public constant blocksPerYear = 2102400;
+
+    /**
+     * @notice The minimum utilization rate used for calculating borrow rate.
+     */
+    uint internal constant minUtilizationRate = 1e18;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
@@ -38,19 +43,28 @@ contract JumpRateModel is InterestRateModel {
     uint public kink;
 
     /**
+     * @notice The utilization point at which the borrow rate is fixed
+     */
+    uint public roof;
+
+    /**
      * @notice Construct an interest rate model
      * @param baseRatePerYear The approximate target base APR, as a mantissa (scaled by 1e18)
      * @param multiplierPerYear The rate of increase in interest rate wrt utilization (scaled by 1e18)
      * @param jumpMultiplierPerYear The multiplierPerBlock after hitting a specified utilization point
      * @param kink_ The utilization point at which the jump multiplier is applied
+     * @param roof_ The utilization point at which the borrow rate is fixed
      */
-    constructor(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_) public {
+    constructor(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink_, uint roof_) public {
+        require(roof_ >= minUtilizationRate, "invalid roof value");
+
         baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
         multiplierPerBlock = multiplierPerYear.div(blocksPerYear);
         jumpMultiplierPerBlock = jumpMultiplierPerYear.div(blocksPerYear);
         kink = kink_;
+        roof = roof_;
 
-        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink, roof);
     }
 
     /**
@@ -82,6 +96,9 @@ contract JumpRateModel is InterestRateModel {
         if (util <= kink) {
             return util.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
         } else {
+            if (util > roof) {
+                util = roof;
+            }
             uint normalRate = kink.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
             uint excessUtil = util.sub(kink);
             return excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(normalRate);
