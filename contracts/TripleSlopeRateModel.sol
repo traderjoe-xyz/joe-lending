@@ -23,9 +23,9 @@ contract TripleSlopeRateModel is InterestRateModel {
     uint public constant blocksPerYear = 2102400;
 
     /**
-     * @notice The minimum utilization rate used for calculating borrow rate.
+     * @notice The minimum roof value used for calculating borrow rate.
      */
-    uint internal constant minUtilizationRate = 1e18;
+    uint internal constant minRoofValue = 1e18;
 
     /**
      * @notice The multiplier of utilization rate that gives the slope of the interest rate
@@ -53,7 +53,7 @@ contract TripleSlopeRateModel is InterestRateModel {
     uint public kink2;
 
     /**
-     * @notice The utilization point at which the borrow rate is fixed
+     * @notice The utilization point at which the rate is fixed
      */
     uint public roof;
 
@@ -95,13 +95,18 @@ contract TripleSlopeRateModel is InterestRateModel {
      * @param reserves The amount of reserves in the market (currently unused)
      * @return The utilization rate as a mantissa between [0, 1e18]
      */
-    function utilizationRate(uint cash, uint borrows, uint reserves) public pure returns (uint) {
+    function utilizationRate(uint cash, uint borrows, uint reserves) public view returns (uint) {
         // Utilization rate is 0 when there are no borrows
         if (borrows == 0) {
             return 0;
         }
 
-        return borrows.mul(1e18).div(cash.add(borrows).sub(reserves));
+        uint util = borrows.mul(1e18).div(cash.add(borrows).sub(reserves));
+        // If the utilization is above the roof, cap it.
+        if (util > roof) {
+            util = roof;
+        }
+        return util;
     }
 
     /**
@@ -119,9 +124,6 @@ contract TripleSlopeRateModel is InterestRateModel {
         } else if (util <= kink2) {
             return kink1.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
         } else {
-            if (util > roof) {
-                util = roof;
-            }
             uint normalRate = kink1.mul(multiplierPerBlock).div(1e18).add(baseRatePerBlock);
             uint excessUtil = util.sub(kink2);
             return excessUtil.mul(jumpMultiplierPerBlock).div(1e18).add(normalRate);
@@ -154,7 +156,7 @@ contract TripleSlopeRateModel is InterestRateModel {
      */
     function updateTripleRateModelInternal(uint baseRatePerYear, uint multiplierPerYear, uint jumpMultiplierPerYear, uint kink1_, uint kink2_, uint roof_) internal {
         require(kink1_ <= kink2_, "kink1 must less than or equal to kink2");
-        require(roof_ >= minUtilizationRate, "invalid roof value");
+        require(roof_ >= minRoofValue, "invalid roof value");
 
         baseRatePerBlock = baseRatePerYear.div(blocksPerYear);
         multiplierPerBlock = (multiplierPerYear.mul(1e18)).div(blocksPerYear.mul(kink1_));
