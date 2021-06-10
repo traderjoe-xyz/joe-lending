@@ -67,7 +67,7 @@ describe('CToken', function () {
 
   describe('borrowRatePerBlock', () => {
     it("has a borrow rate", async () => {
-      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate: .05, multiplier: 0.45, kink: 0.95, jump: 5 } });
+      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate: .05, multiplier: 0.45, kink: 0.95, jump: 5, roof: 1 } });
       const perBlock = await call(cToken, 'borrowRatePerBlock');
       expect(Math.abs(perBlock * 31536000 - 5e16)).toBeLessThanOrEqual(1e8);
     });
@@ -75,7 +75,7 @@ describe('CToken', function () {
 
   describe('supplyRatePerBlock', () => {
     it("returns 0 if there's no supply", async () => {
-      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate: .05, multiplier: 0.45, kink: 0.95, jump: 5 } });
+      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate: .05, multiplier: 0.45, kink: 0.95, jump: 5, roof: 1 } });
       const perBlock = await call(cToken, 'supplyRatePerBlock');
       await expect(perBlock).toEqualNumber(0);
     });
@@ -85,7 +85,8 @@ describe('CToken', function () {
       const multiplier = 0.45;
       const kink = 0.95;
       const jump = 5 * multiplier;
-      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate, multiplier: multiplier*kink, kink, jump } });
+      const roof = 1;
+      const cToken = await makeCToken({ supportMarket: true, interestRateModelOpts: { kind: 'jump-rate', baseRate, multiplier: multiplier*kink, kink, jump, roof } });
       await send(cToken, 'harnessSetReserveFactorFresh', [etherMantissa(.01)]);
       await send(cToken, 'harnessExchangeRateDetails', [1, 1, 0]);
       await send(cToken, 'harnessSetExchangeRate', [etherMantissa(1)]);
