@@ -1,5 +1,8 @@
 pragma solidity ^0.5.16;
 
+import "./CToken.sol";
+import "./ComptrollerStorage.sol";
+
 contract ComptrollerInterface {
     /// @notice Indicator that this is a Comptroller contract (for inspection)
     bool public constant isComptroller = true;
@@ -68,4 +71,12 @@ contract ComptrollerInterface {
         address cTokenBorrowed,
         address cTokenCollateral,
         uint repayAmount) external view returns (uint, uint);
+}
+
+interface ComptrollerInterfaceExtension {
+    function checkMembership(address account, CToken cToken) external view returns (bool);
+
+    function updateCTokenVersion(address cToken, ComptrollerV1Storage.Version version) external;
+
+    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
 }

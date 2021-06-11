@@ -1,18 +1,6 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
-import "./ComptrollerStorage.sol";
-
-/**
- * @title Cream's Comptroller interface extension
- */
-interface ComptrollerInterfaceExtension {
-    function checkMembership(address account, CToken cToken) external view returns (bool);
-
-    function updateCTokenVersion(address cToken, ComptrollerV1Storage.Version version) external;
-
-    function flashloanAllowed(address cToken, address receiver, uint amount, bytes calldata params) external;
-}
 
 /**
  * @title Cream's CCollateralCapErc20 Contract
@@ -54,7 +42,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint mintAmount) external returns (uint) {
-        (uint err,) = mintInternal(mintAmount);
+        (uint err,) = mintInternal(mintAmount, false);
         return err;
     }
 
@@ -65,7 +53,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint redeemTokens) external returns (uint) {
-        return redeemInternal(redeemTokens);
+        return redeemInternal(redeemTokens, false);
     }
 
     /**
@@ -75,7 +63,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint redeemAmount) external returns (uint) {
-        return redeemUnderlyingInternal(redeemAmount);
+        return redeemUnderlyingInternal(redeemAmount, false);
     }
 
     /**
@@ -84,7 +72,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
       * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
       */
     function borrow(uint borrowAmount) external returns (uint) {
-        return borrowInternal(borrowAmount);
+        return borrowInternal(borrowAmount, false);
     }
 
     /**
@@ -93,7 +81,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint repayAmount) external returns (uint) {
-        (uint err,) = repayBorrowInternal(repayAmount);
+        (uint err,) = repayBorrowInternal(repayAmount, false);
         return err;
     }
 
@@ -106,7 +94,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint) {
-        (uint err,) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -116,7 +104,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _addReserves(uint addAmount) external returns (uint) {
-        return _addReservesInternal(addAmount);
+        return _addReservesInternal(addAmount, false);
     }
 
     /**
@@ -161,7 +149,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
         // 2. transfer fund to receiver
-        doTransferOut(address(uint160(receiver)), amount);
+        doTransferOut(address(uint160(receiver)), amount, false);
 
         // 3. update totalBorrows
         totalBorrows = add_(totalBorrows, amount);
@@ -267,7 +255,9 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferIn(address from, uint amount) internal returns (uint) {
+    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+        isNative; // unused
+
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
         uint balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
         token.transferFrom(from, address(this), amount);
@@ -304,7 +294,9 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+        isNative; // unused
+
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
         token.transfer(to, amount);
 
@@ -477,9 +469,10 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @dev Assumes interest has already been accrued up to the current block
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
+     * @param isNative The amount is in native or not
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
      */
-    function mintFresh(address minter, uint mintAmount) internal returns (uint, uint) {
+    function mintFresh(address minter, uint mintAmount, bool isNative) internal returns (uint, uint) {
         // Make sure accountCollateralTokens of `minter` is initialized.
         initializeAccountCollateralTokens(minter);
 
@@ -518,7 +511,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
          *  in case of a fee. On success, the cToken holds an additional `actualMintAmount`
          *  of cash.
          */
-        vars.actualMintAmount = doTransferIn(minter, mintAmount);
+        vars.actualMintAmount = doTransferIn(minter, mintAmount, isNative);
 
         /*
          * We get the current exchange rate and calculate the number of cTokens to be minted:
@@ -564,9 +557,10 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of cTokens to redeem into underlying
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens
+     * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn) internal returns (uint) {
+    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn, bool isNative) internal returns (uint) {
         // Make sure accountCollateralTokens of `redeemer` is initialized.
         initializeAccountCollateralTokens(redeemer);
 
@@ -628,7 +622,7 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
          *  On success, the cToken has redeemAmount less of cash.
          *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
          */
-        doTransferOut(redeemer, vars.redeemAmount);
+        doTransferOut(redeemer, vars.redeemAmount, isNative);
 
         /*
          * We calculate the new total supply and redeemer balance, checking for underflow:

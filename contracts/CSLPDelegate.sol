@@ -165,9 +165,12 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @notice Transfer the underlying to this contract and sweep into master chef
      * @param from Address to transfer funds from
      * @param amount Amount of underlying to transfer
+     * @param isNative The amount is in native or not
      * @return The actual amount that is transferred
      */
-    function doTransferIn(address from, uint amount) internal returns (uint) {
+    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+        isNative; // unused
+
         // Perform the EIP-20 transfer in
         EIP20Interface token = EIP20Interface(underlying);
         require(token.transferFrom(from, address(this), amount), "unexpected EIP-20 transfer in return");
@@ -190,8 +193,11 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @notice Transfer the underlying from this contract, after sweeping out of master chef
      * @param to Address to transfer funds to
      * @param amount Amount of underlying to transfer
+     * @param isNative The amount is in native or not
      */
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+        isNative; // unused
+
         // Withdraw the underlying tokens from masterChef.
         IMasterChef(masterChef).withdraw(pid, amount);
 
