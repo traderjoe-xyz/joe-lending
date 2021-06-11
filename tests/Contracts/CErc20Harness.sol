@@ -8,6 +8,8 @@ import "../../contracts/CSLPDelegate.sol";
 import "../../contracts/CCTokenDelegate.sol";
 import "../../contracts/CCollateralCapErc20Delegate.sol";
 import "../../contracts/CCollateralCapErc20Delegator.sol";
+import "../../contracts/CWrappedNativeDelegate.sol";
+import "../../contracts/CWrappedNativeDelegator.sol";
 import "./ComptrollerScenario.sol";
 
 contract CErc20Harness is CErc20Immutable {
@@ -35,9 +37,9 @@ contract CErc20Harness is CErc20Immutable {
     decimals_,
     admin_) public {}
 
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
         require(failTransferToAddresses[to] == false, "TOKEN_TRANSFER_OUT_FAILED");
-        return super.doTransferOut(to, amount);
+        return super.doTransferOut(to, amount, isNative);
     }
 
     function exchangeRateStoredInternal() internal view returns (uint) {
@@ -99,12 +101,12 @@ contract CErc20Harness is CErc20Immutable {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,) = super.mintFresh(account, mintAmount, false);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+        return super.redeemFresh(account, cTokenAmount, underlyingAmount, false);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -121,16 +123,16 @@ contract CErc20Harness is CErc20Immutable {
     }
 
     function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
-        return borrowFresh(account, borrowAmount);
+        return borrowFresh(account, borrowAmount, false);
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, false);
         return err;
     }
 
     function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -276,6 +278,40 @@ contract CCollateralCapErc20DelegatorScenario is CCollateralCapErc20Delegator {
     }
 }
 
+contract CWrappedNativeDelegatorScenario is CWrappedNativeDelegator {
+    constructor(address underlying_,
+                ComptrollerInterface comptroller_,
+                InterestRateModel interestRateModel_,
+                uint initialExchangeRateMantissa_,
+                string memory name_,
+                string memory symbol_,
+                uint8 decimals_,
+                address payable admin_,
+                address implementation_,
+                bytes memory becomeImplementationData)
+    CWrappedNativeDelegator(
+    underlying_,
+    comptroller_,
+    interestRateModel_,
+    initialExchangeRateMantissa_,
+    name_,
+    symbol_,
+    decimals_,
+    admin_,
+    implementation_,
+    becomeImplementationData) public {}
+
+    function setTotalBorrows(uint totalBorrows_) public {
+        totalBorrows = totalBorrows_;
+    }
+
+    function setTotalReserves(uint totalReserves_) public {
+        totalReserves = totalReserves_;
+    }
+
+    function () external payable {}
+}
+
 contract CErc20DelegateHarness is CErc20Delegate {
     event Log(string x, address y);
     event Log(string x, uint y);
@@ -293,9 +329,9 @@ contract CErc20DelegateHarness is CErc20Delegate {
         return super.exchangeRateStoredInternal();
     }
 
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
         require(failTransferToAddresses[to] == false, "TOKEN_TRANSFER_OUT_FAILED");
-        return super.doTransferOut(to, amount);
+        return super.doTransferOut(to, amount, isNative);
     }
 
     function getBlockNumber() internal view returns (uint) {
@@ -354,12 +390,12 @@ contract CErc20DelegateHarness is CErc20Delegate {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,) = super.mintFresh(account, mintAmount, false);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+        return super.redeemFresh(account, cTokenAmount, underlyingAmount, false);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -376,16 +412,16 @@ contract CErc20DelegateHarness is CErc20Delegate {
     }
 
     function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
-        return borrowFresh(account, borrowAmount);
+        return borrowFresh(account, borrowAmount, false);
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, false);
         return err;
     }
 
     function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -507,12 +543,12 @@ contract CSLPDelegateHarness is CSLPDelegate {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,) = super.mintFresh(account, mintAmount, false);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+        return super.redeemFresh(account, cTokenAmount, underlyingAmount, false);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -529,16 +565,16 @@ contract CSLPDelegateHarness is CSLPDelegate {
     }
 
     function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
-        return borrowFresh(account, borrowAmount);
+        return borrowFresh(account, borrowAmount, false);
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, false);
         return err;
     }
 
     function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -644,12 +680,12 @@ contract CCTokenDelegateHarness is CCTokenDelegate {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,) = super.mintFresh(account, mintAmount, false);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+        return super.redeemFresh(account, cTokenAmount, underlyingAmount, false);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -666,16 +702,16 @@ contract CCTokenDelegateHarness is CCTokenDelegate {
     }
 
     function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
-        return borrowFresh(account, borrowAmount);
+        return borrowFresh(account, borrowAmount, false);
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, false);
         return err;
     }
 
     function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -736,9 +772,9 @@ contract CCollateralCapErc20DelegateHarness is CCollateralCapErc20Delegate {
         return super.exchangeRateStoredInternal();
     }
 
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
         require(failTransferToAddresses[to] == false, "TOKEN_TRANSFER_OUT_FAILED");
-        return super.doTransferOut(to, amount);
+        return super.doTransferOut(to, amount, isNative);
     }
 
     function getBlockNumber() internal view returns (uint) {
@@ -809,12 +845,12 @@ contract CCollateralCapErc20DelegateHarness is CCollateralCapErc20Delegate {
     }
 
     function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
-        (uint err,) = super.mintFresh(account, mintAmount);
+        (uint err,) = super.mintFresh(account, mintAmount, false);
         return err;
     }
 
     function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+        return super.redeemFresh(account, cTokenAmount, underlyingAmount, false);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -831,16 +867,16 @@ contract CCollateralCapErc20DelegateHarness is CCollateralCapErc20Delegate {
     }
 
     function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
-        return borrowFresh(account, borrowAmount);
+        return borrowFresh(account, borrowAmount, false);
     }
 
     function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public returns (uint) {
-        (uint err,) = repayBorrowFresh(payer, account, repayAmount);
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, false);
         return err;
     }
 
     function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -884,4 +920,172 @@ contract CCollateralCapErc20DelegateScenario is CCollateralCapErc20Delegate {
         ComptrollerScenario comptrollerScenario = ComptrollerScenario(address(comptroller));
         return comptrollerScenario.blockNumber();
     }
+}
+
+contract CWrappedNativeDelegateHarness is CWrappedNativeDelegate {
+    event Log(string x, address y);
+    event Log(string x, uint y);
+
+    uint blockNumber = 100000;
+    uint harnessExchangeRate;
+    bool harnessExchangeRateStored;
+
+    mapping (address => bool) public failTransferToAddresses;
+
+    function exchangeRateStoredInternal() internal view returns (uint) {
+        if (harnessExchangeRateStored) {
+            return harnessExchangeRate;
+        }
+        return super.exchangeRateStoredInternal();
+    }
+
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+        require(failTransferToAddresses[to] == false, "TOKEN_TRANSFER_OUT_FAILED");
+        return super.doTransferOut(to, amount, isNative);
+    }
+
+    function getBlockNumber() internal view returns (uint) {
+        return blockNumber;
+    }
+
+    function getBorrowRateMaxMantissa() public pure returns (uint) {
+        return borrowRateMaxMantissa;
+    }
+
+    function harnessSetBlockNumber(uint newBlockNumber) public {
+        blockNumber = newBlockNumber;
+    }
+
+    function harnessFastForward(uint blocks) public {
+        blockNumber += blocks;
+    }
+
+    function harnessSetBalance(address account, uint amount) external {
+        accountTokens[account] = amount;
+    }
+
+    function harnessSetAccrualBlockNumber(uint _accrualblockNumber) public {
+        accrualBlockNumber = _accrualblockNumber;
+    }
+
+    function harnessSetTotalSupply(uint totalSupply_) public {
+        totalSupply = totalSupply_;
+    }
+
+    function harnessSetTotalBorrows(uint totalBorrows_) public {
+        totalBorrows = totalBorrows_;
+    }
+
+    function harnessIncrementTotalBorrows(uint addtlBorrow_) public {
+        totalBorrows = totalBorrows + addtlBorrow_;
+    }
+
+    function harnessSetTotalReserves(uint totalReserves_) public {
+        totalReserves = totalReserves_;
+    }
+
+    function harnessExchangeRateDetails(uint totalSupply_, uint totalBorrows_, uint totalReserves_) public {
+        totalSupply = totalSupply_;
+        totalBorrows = totalBorrows_;
+        totalReserves = totalReserves_;
+    }
+
+    function harnessSetExchangeRate(uint exchangeRate) public {
+        harnessExchangeRate = exchangeRate;
+        harnessExchangeRateStored = true;
+    }
+
+    function harnessSetFailTransferToAddress(address _to, bool _fail) public {
+        failTransferToAddresses[_to] = _fail;
+    }
+
+    function harnessMintFresh(address account, uint mintAmount) public returns (uint) {
+        // isNative is not important for mint fresh testing.
+        (uint err,) = mintFresh(account, mintAmount, true);
+        return err;
+    }
+
+    function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
+        // isNative is not important for redeem fresh testing.
+        return redeemFresh(account, cTokenAmount, underlyingAmount, true);
+    }
+
+    function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
+        BorrowSnapshot memory snapshot = accountBorrows[account];
+        return (snapshot.principal, snapshot.interestIndex);
+    }
+
+    function harnessSetAccountBorrows(address account, uint principal, uint interestIndex) public {
+        accountBorrows[account] = BorrowSnapshot({principal: principal, interestIndex: interestIndex});
+    }
+
+    function harnessSetBorrowIndex(uint borrowIndex_) public {
+        borrowIndex = borrowIndex_;
+    }
+
+    function harnessBorrowFresh(address payable account, uint borrowAmount) public returns (uint) {
+        // isNative is not important for borrow fresh testing.
+        return borrowFresh(account, borrowAmount, true);
+    }
+
+    function harnessRepayBorrowFresh(address payer, address account, uint repayAmount) public payable returns (uint) {
+        // isNative is not important for repay borrow fresh testing.
+        (uint err,) = repayBorrowFresh(payer, account, repayAmount, true);
+        return err;
+    }
+
+    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
+        // isNative is not important for liquidate borrow fresh testing.
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral, true);
+        return err;
+    }
+
+    function harnessReduceReservesFresh(uint amount) public returns (uint) {
+        return _reduceReservesFresh(amount);
+    }
+
+    function harnessSetReserveFactorFresh(uint newReserveFactorMantissa) public returns (uint) {
+        return _setReserveFactorFresh(newReserveFactorMantissa);
+    }
+
+    function harnessSetInterestRateModelFresh(InterestRateModel newInterestRateModel) public returns (uint) {
+        return _setInterestRateModelFresh(newInterestRateModel);
+    }
+
+    function harnessSetInterestRateModel(address newInterestRateModelAddress) public {
+        interestRateModel = InterestRateModel(newInterestRateModelAddress);
+    }
+
+    function harnessCallBorrowAllowed(uint amount) public returns (uint) {
+        return comptroller.borrowAllowed(address(this), msg.sender, amount);
+    }
+
+    function harnessDoTransferIn(address from, uint amount) public payable returns (uint) {
+        return doTransferIn(from, amount, true);
+    }
+
+    function harnessDoTransferOut(address payable to, uint amount) public payable {
+        return doTransferOut(to, amount, true);
+    }
+
+    function () external payable {}
+}
+
+contract CWrappedNativeDelegateScenario is CWrappedNativeDelegate {
+    constructor() public {}
+
+    function setTotalBorrows(uint totalBorrows_) public {
+        totalBorrows = totalBorrows_;
+    }
+
+    function setTotalReserves(uint totalReserves_) public {
+        totalReserves = totalReserves_;
+    }
+
+    function getBlockNumber() internal view returns (uint) {
+        ComptrollerScenario comptrollerScenario = ComptrollerScenario(address(comptroller));
+        return comptrollerScenario.blockNumber();
+    }
+
+    function () external payable {}
 }
