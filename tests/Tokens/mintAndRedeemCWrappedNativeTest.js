@@ -75,7 +75,7 @@ describe('CWrappedNative', () => {
   });
 
   [mintNative, mint].forEach((mint) => {
-    describe.only(mint.name, () => {
+    describe(mint.name, () => {
       beforeEach(async () => {
         await preMint(cToken, minter, mintAmount, mintTokens, exchangeRate);
       });
