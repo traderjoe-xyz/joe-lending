@@ -17,6 +17,8 @@ interface Erc20Methods {
   pause(): Sendable<void>
   unpause(): Sendable<void>
   setParams(newBasisPoints: encodedNumber, maxFee: encodedNumber): Sendable<void>
+  deposit(): Sendable<void>
+  withdraw(amount: encodedNumber): Sendable<void>
 }
 
 export interface Erc20 extends Contract {

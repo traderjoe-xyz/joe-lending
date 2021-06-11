@@ -113,10 +113,11 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @notice Transfer the underlying to this contract
      * @param from Address to transfer funds from
      * @param amount Amount of underlying to transfer
+     * @param isNative The amount is in native or not
      * @return The actual amount that is transferred
      */
-    function doTransferIn(address from, uint amount) internal returns (uint) {
-        uint transferredIn = super.doTransferIn(from, amount);
+    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+        uint transferredIn = super.doTransferIn(from, amount, isNative);
 
         harvestComp();
         updateSupplyIndex();
@@ -129,13 +130,14 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @notice Transfer the underlying from this contract
      * @param to Address to transfer funds to
      * @param amount Amount of underlying to transfer
+     * @param isNative The amount is in native or not
      */
-    function doTransferOut(address payable to, uint amount) internal {
+    function doTransferOut(address payable to, uint amount, bool isNative) internal {
         harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(to);
 
-        super.doTransferOut(to, amount);
+        super.doTransferOut(to, amount, isNative);
     }
 
     /*** Internal functions ***/

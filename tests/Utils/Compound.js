@@ -209,6 +209,26 @@ async function makeCToken(opts = {}) {
       cToken = await saddle.getContractAt('CCTokenDelegateHarness', cDelegator._address); // XXXS at
       break;
 
+    case 'cwrapped':
+      underlying = await makeToken({kind: "wrapped"});
+      cDelegatee = await deploy('CWrappedNativeDelegateHarness');
+      cDelegator = await deploy('CWrappedNativeDelegator',
+        [
+          underlying._address,
+          comptroller._address,
+          interestRateModel._address,
+          exchangeRate,
+          name,
+          symbol,
+          decimals,
+          admin,
+          cDelegatee._address,
+          "0x0"
+        ]
+      );
+      cToken = await saddle.getContractAt('CWrappedNativeDelegateHarness', cDelegator._address); // XXXS at
+      break;
+
     case 'cerc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
@@ -341,6 +361,8 @@ async function makeToken(opts = {}) {
     } else {
       return await deploy('YVaultV2TokenHarness', [quantity, name, decimals, symbol, underlying._address, price]);
     }
+  } else if (kind == 'wrapped') {
+    return await deploy('WETH9');
   }
 }
 
@@ -377,6 +399,18 @@ async function makeFlashloanReceiver(opts = {}) {
   }
   if (kind === 'flashloan-twice') {
     return await deploy('FlashloanTwice', [])
+  }
+  if (kind === 'native') {
+    return await deploy('FlashloanReceiverNative');
+  }
+  if (kind === 'flashloan-and-mint-native') {
+    return await deploy('FlashloanAndMintNative');
+  }
+  if (kind === 'flashloan-and-repay-borrow-native') {
+    return await deploy('FlashloanAndRepayBorrowNative');
+  }
+  if (kind === 'flashloan-twice-native') {
+    return await deploy('FlashloanTwiceNative');
   }
 }
 
