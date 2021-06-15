@@ -234,6 +234,9 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!mintGuardianPaused[cToken], "mint is paused");
 
+        // Shh - currently unused
+        minter;
+
         if (!markets[cToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
         }
@@ -252,7 +255,6 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
             require(nextTotalSupplies < supplyCap, "market supply cap reached");
         }
 
-        distributeSupplierComp(cToken, minter);
         return uint(Error.NO_ERROR);
     }
 
@@ -284,13 +286,7 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
-        uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
-        if (allowed != uint(Error.NO_ERROR)) {
-            return allowed;
-        }
-
-        distributeSupplierComp(cToken, redeemer);
-        return uint(Error.NO_ERROR);
+        return redeemAllowedInternal(cToken, redeemer, redeemTokens);
     }
 
     function redeemAllowedInternal(address cToken, address redeemer, uint redeemTokens) internal view returns (uint) {
@@ -382,8 +378,6 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.INSUFFICIENT_LIQUIDITY);
         }
 
-        Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
-        distributeBorrowerComp(cToken, borrower, borrowIndex);
         return uint(Error.NO_ERROR);
     }
 
@@ -427,8 +421,6 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.MARKET_NOT_LISTED);
         }
 
-        Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
-        distributeBorrowerComp(cToken, borrower, borrowIndex);
         return uint(Error.NO_ERROR);
     }
 
@@ -545,6 +537,8 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
         require(!seizeGuardianPaused, "seize is paused");
 
         // Shh - currently unused
+        liquidator;
+        borrower;
         seizeTokens;
 
         if (!markets[cTokenCollateral].isListed || !markets[cTokenBorrowed].isListed) {
@@ -555,8 +549,6 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.COMPTROLLER_MISMATCH);
         }
 
-        distributeSupplierComp(cTokenCollateral, borrower);
-        distributeSupplierComp(cTokenCollateral, liquidator);
         return uint(Error.NO_ERROR);
     }
 
@@ -599,16 +591,12 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!transferGuardianPaused, "transfer is paused");
 
+        // Shh - currently unused
+        dst;
+
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
-        uint allowed = redeemAllowedInternal(cToken, src, transferTokens);
-        if (allowed != uint(Error.NO_ERROR)) {
-            return allowed;
-        }
-
-        distributeSupplierComp(cToken, src);
-        distributeSupplierComp(cToken, dst);
-        return uint(Error.NO_ERROR);
+        return redeemAllowedInternal(cToken, src, transferTokens);
     }
 
     /**
@@ -1151,6 +1139,7 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
      * @param supplier The address of the supplier to distribute COMP to
      */
     function distributeSupplierComp(address cToken, address supplier) internal {
+        // We won't relaunch LM program on comptroller again. Do nothing if the user's supplierIndex is 0.
         if (compSupplierIndex[cToken][supplier] == 0) {
             return;
         }
@@ -1179,6 +1168,7 @@ contract Comptroller is ComptrollerV6Storage, ComptrollerInterface, ComptrollerE
      * @param borrower The address of the borrower to distribute COMP to
      */
     function distributeBorrowerComp(address cToken, address borrower, Exp memory marketBorrowIndex) internal {
+        // We won't relaunch LM program on comptroller again. Do nothing if the user's borrowerIndex is 0.
         if (compBorrowerIndex[cToken][borrower] == 0) {
             return;
         }
