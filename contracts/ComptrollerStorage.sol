@@ -156,3 +156,8 @@ contract ComptrollerV6Storage is ComptrollerV5Storage {
     // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
     mapping(address => bool) public flashloanGuardianPaused;
 }
+
+contract ComptrollerV7Storage is ComptrollerV6Storage {
+    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
+    address public liquidityMining;
+}
