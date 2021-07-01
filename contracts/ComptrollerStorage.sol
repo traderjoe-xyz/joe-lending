@@ -57,7 +57,8 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 contract ComptrollerV2Storage is ComptrollerV1Storage {
     enum Version {
         VANILLA,
-        COLLATERALCAP
+        COLLATERALCAP,
+        WRAPPEDNATIVE
     }
 
     struct Market {

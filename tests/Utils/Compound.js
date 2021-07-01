@@ -227,6 +227,7 @@ async function makeCToken(opts = {}) {
         ]
       );
       cToken = await saddle.getContractAt('CWrappedNativeDelegateHarness', cDelegator._address); // XXXS at
+      version = 2; // cwrappednative's version is 2
       break;
 
     case 'cerc20':
