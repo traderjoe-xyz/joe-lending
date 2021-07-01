@@ -27,6 +27,9 @@ contract CWrappedNativeDelegate is CWrappedNative {
         }
 
         require(msg.sender == admin, "only the admin may call _becomeImplementation");
+
+        // Set CToken version in comptroller
+        ComptrollerInterfaceExtension(address(comptroller)).updateCTokenVersion(address(this), ComptrollerV1Storage.Version.WRAPPEDNATIVE);
     }
 
     /**

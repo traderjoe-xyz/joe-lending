@@ -49,7 +49,8 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 
     enum Version {
         VANILLA,
-        COLLATERALCAP
+        COLLATERALCAP,
+        WRAPPEDNATIVE
     }
 
     struct Market {
@@ -135,4 +136,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
 
     // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
     mapping(address => bool) public flashloanGuardianPaused;
+
+    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
+    address public liquidityMining;
 }

@@ -6,12 +6,13 @@ import "./Exponential.sol";
 import "./PriceOracle.sol";
 import "./ComptrollerInterface.sol";
 import "./ComptrollerStorage.sol";
+import "./LiquidityMiningInterface.sol";
 import "./Unitroller.sol";
 import "./Governance/Comp.sol";
 
 /**
  * @title Compound's Comptroller Contract
- * @author Compound (modified by Arr00)
+ * @author Compound (modified by Cream)
  */
 contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
@@ -40,6 +41,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     /// @notice Emitted when pause guardian is changed
     event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
+
+    /// @notice Emitted when liquidity mining module is changed
+    event NewLiquidityMining(address oldLiquidityMining, address newLiquidityMining);
 
     /// @notice Emitted when an action is paused globally
     event ActionPaused(string action, bool pauseState);
@@ -247,6 +251,12 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             require(nextTotalSupplies < supplyCap, "market supply cap reached");
         }
 
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](1);
+            accounts[0] = minter;
+            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
+        }
+
         return uint(Error.NO_ERROR);
     }
 
@@ -278,7 +288,18 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
-        return redeemAllowedInternal(cToken, redeemer, redeemTokens);
+        uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
+        if (allowed != uint(Error.NO_ERROR)) {
+            return allowed;
+        }
+
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](1);
+            accounts[0] = redeemer;
+            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
+        }
+
+        return uint(Error.NO_ERROR);
     }
 
     function redeemAllowedInternal(address cToken, address redeemer, uint redeemTokens) internal view returns (uint) {
@@ -370,6 +391,12 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.INSUFFICIENT_LIQUIDITY);
         }
 
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](1);
+            accounts[0] = borrower;
+            LiquidityMiningInterface(liquidityMining).updateBorrowIndex(cToken, accounts);
+        }
+
         return uint(Error.NO_ERROR);
     }
 
@@ -406,11 +433,16 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint repayAmount) external returns (uint) {
         // Shh - currently unused
         payer;
-        borrower;
         repayAmount;
 
         if (!markets[cToken].isListed) {
             return uint(Error.MARKET_NOT_LISTED);
+        }
+
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](1);
+            accounts[0] = borrower;
+            LiquidityMiningInterface(liquidityMining).updateBorrowIndex(cToken, accounts);
         }
 
         return uint(Error.NO_ERROR);
@@ -543,6 +575,13 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.COMPTROLLER_MISMATCH);
         }
 
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](2);
+            accounts[0] = borrower;
+            accounts[1] = liquidator;
+            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cTokenCollateral, accounts);
+        }
+
         return uint(Error.NO_ERROR);
     }
 
@@ -588,7 +627,19 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
-        return redeemAllowedInternal(cToken, src, transferTokens);
+        uint allowed = redeemAllowedInternal(cToken, src, transferTokens);
+        if (allowed != uint(Error.NO_ERROR)) {
+            return allowed;
+        }
+
+        if (liquidityMining != address(0)) {
+            address[] memory accounts = new address[](2);
+            accounts[0] = src;
+            accounts[1] = dst;
+            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
+        }
+
+        return uint(Error.NO_ERROR);
     }
 
     /**
@@ -1087,6 +1138,24 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         emit NewPauseGuardian(oldPauseGuardian, pauseGuardian);
 
         return uint(Error.NO_ERROR);
+    }
+
+    /**
+     * @notice Admin function to set the liquidity mining module address
+     * @dev Removing the liquidity mining module address could cause the inconsistency in the LM module.
+     * @param newLiquidityMining The address of the new liquidity mining module
+     */
+    function _setLiquidityMining(address newLiquidityMining) external {
+        require(msg.sender == admin, "only admin can set liquidity mining module");
+
+        // Save current value for inclusion in log
+        address oldLiquidityMining = liquidityMining;
+
+        // Store pauseGuardian with value newLiquidityMining
+        liquidityMining = newLiquidityMining;
+
+        // Emit NewLiquidityMining(OldLiquidityMining, NewLiquidityMining)
+        emit NewLiquidityMining(oldLiquidityMining, liquidityMining);
     }
 
     function _setMintPaused(CToken cToken, bool state) public returns (bool) {
