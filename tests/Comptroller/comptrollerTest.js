@@ -8,7 +8,8 @@ const {
   makeComptroller,
   makePriceOracle,
   makeCToken,
-  makeToken
+  makeToken,
+  makeLiquidityMining
 } = require('../Utils/Compound');
 
 describe('Comptroller', () => {
@@ -98,25 +99,31 @@ describe('Comptroller', () => {
   });
 
   describe('_setLiquidityMining', () => {
-    // We don't test liquidity mining module here.
-    const liquidityMining = address(1);
     let comptroller;
+    let liquidityMining;
+
     beforeEach(async () => {
       comptroller = await makeComptroller();
+      liquidityMining = await makeLiquidityMining({comptroller: comptroller});
     });
 
     it("fails if called by non-admin", async () => {
-      await expect(send(comptroller, '_setLiquidityMining', [liquidityMining], {from: accounts[0]})).rejects.toRevert("revert only admin can set liquidity mining module");
+      await expect(send(comptroller, '_setLiquidityMining', [liquidityMining._address], {from: accounts[0]})).rejects.toRevert("revert only admin can set liquidity mining module");
+    });
+
+    it("fails for mismatch comptroller", async () => {
+      liquidityMining = await makeLiquidityMining();
+      await expect(send(comptroller, '_setLiquidityMining', [liquidityMining._address])).rejects.toRevert("revert mismatch comptroller");
     });
 
     it("succeeds and emits a NewLiquidityMining event", async () => {
-      const result = await send(comptroller, '_setLiquidityMining', [liquidityMining]);
+      const result = await send(comptroller, '_setLiquidityMining', [liquidityMining._address]);
       expect(result).toSucceed();
       expect(result).toHaveLog('NewLiquidityMining', {
         oldLiquidityMining: address(0),
-        newLiquidityMining: liquidityMining
+        newLiquidityMining: liquidityMining._address
       });
-      expect(await call(comptroller, 'liquidityMining')).toEqual(liquidityMining);
+      expect(await call(comptroller, 'liquidityMining')).toEqual(liquidityMining._address);
     });
   });
 
