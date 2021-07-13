@@ -1133,6 +1133,7 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
      */
     function _setLiquidityMining(address newLiquidityMining) external {
         require(msg.sender == admin, "only admin can set liquidity mining module");
+        require(LiquidityMiningInterface(newLiquidityMining).comptroller() == address(this), "mismatch comptroller");
 
         // Save current value for inclusion in log
         address oldLiquidityMining = liquidityMining;
