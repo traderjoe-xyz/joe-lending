@@ -377,6 +377,11 @@ async function makeMockAggregator(opts = {}) {
   return await deploy('MockAggregator', [answer]);
 }
 
+async function makeLiquidityMining(opts = {}) {
+  const comptroller = opts.comptroller || await makeComptroller(opts.comptrollerOpts);
+  return await deploy('MockLiquidityMining', [comptroller._address]);
+}
+
 async function preCSLP(underlying) {
   const sushiToken = await deploy('SushiToken');
   const masterChef = await deploy('MasterChef', [sushiToken._address]);
@@ -591,6 +596,7 @@ module.exports = {
   makeFlashloanReceiver,
   makeMockAggregator,
   makeCurveSwap,
+  makeLiquidityMining,
 
   balanceOf,
   collateralTokenBalance,
