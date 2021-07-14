@@ -11,7 +11,6 @@ const {
   totalBorrows,
   fastForward,
   pretendBorrow,
-  setEtherBalance,
   getBalances,
   adjustBalances
 } = require('../Utils/Compound');
@@ -22,13 +21,15 @@ const borrowAmount = etherUnsigned(10e3);
 const repayAmount = etherUnsigned(10e2);
 
 async function preBorrow(cToken, borrower, borrowAmount) {
+  const root = saddle.account;
   await send(cToken.comptroller, 'setBorrowAllowed', [true]);
   await send(cToken.comptroller, 'setBorrowVerify', [true]);
   await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
   await send(cToken, 'harnessSetFailTransferToAddress', [borrower, false]);
   await send(cToken, 'harnessSetAccountBorrows', [borrower, 0, 0]);
   await send(cToken, 'harnessSetTotalBorrows', [0]);
-  await setEtherBalance(cToken, borrowAmount);
+  await send(cToken.underlying, 'deposit', [], { from: root, value: borrowAmount });
+  await send(cToken.underlying, 'harnessSetBalance', [cToken._address, borrowAmount]);
 }
 
 async function borrowFresh(cToken, borrower, borrowAmount) {
@@ -137,7 +138,6 @@ describe('CWrappedNative', function () {
       const afterBalances = await getBalances([cToken], [borrower]);
       expect(result).toSucceed();
       expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, 'eth', -borrowAmount],
         [cToken, 'borrows', borrowAmount],
         [cToken, 'cash', -borrowAmount],
         [cToken, borrower, 'eth', borrowAmount.minus(await etherGasCost(result))],
@@ -182,7 +182,6 @@ describe('CWrappedNative', function () {
       const afterBalances = await getBalances([cToken], [borrower]);
       expect(result).toSucceed();
       expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, 'eth', -borrowAmount],
         [cToken, 'borrows', borrowAmount],
         [cToken, 'cash', -borrowAmount],
         [cToken, borrower, 'eth', borrowAmount.minus(await etherGasCost(result))],
@@ -211,7 +210,6 @@ describe('CWrappedNative', function () {
       const afterBalances = await getBalances([cToken], [borrower]);
       expect(result).toSucceed();
       expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, 'eth', -borrowAmount],
         [cToken, 'borrows', borrowAmount],
         [cToken, 'cash', -borrowAmount],
         [cToken, borrower, 'cash', borrowAmount],
@@ -268,7 +266,6 @@ describe('CWrappedNative', function () {
           expect(result).toSucceed();
           if (borrower == payer) {
             expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-              [cToken, 'eth', repayAmount],
               [cToken, 'borrows', -repayAmount],
               [cToken, 'cash', repayAmount],
               [cToken, borrower, 'borrows', -repayAmount],
@@ -276,7 +273,6 @@ describe('CWrappedNative', function () {
             ]));
           } else {
             expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-              [cToken, 'eth', repayAmount],
               [cToken, 'borrows', -repayAmount],
               [cToken, 'cash', repayAmount],
               [cToken, borrower, 'borrows', -repayAmount],

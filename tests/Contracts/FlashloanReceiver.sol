@@ -21,12 +21,12 @@ contract FlashloanReceiver is IFlashloanReceiver {
     }
 
     function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
-      (address cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
-      require(underlying == CCollateralCapErc20(cToken).underlying(), "Params not match");
-      require(amount == borrowAmount, "Params not match");
-      uint totalBorrowsAfter = CCollateralCapErc20(cToken).totalBorrows();
-      require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
-      require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
+        (address cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
+        require(underlying == CCollateralCapErc20(cToken).underlying(), "Params not match");
+        require(amount == borrowAmount, "Params not match");
+        uint totalBorrowsAfter = CCollateralCapErc20(cToken).totalBorrows();
+        require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
+        require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
     }
 }
 
@@ -78,21 +78,21 @@ contract FlashloanReceiverNative is IFlashloanReceiver {
     uint totalBorrows;
 
     function doFlashloan(address payable cToken, uint borrowAmount, uint repayAmount) external {
-        uint balanceBefore = address(this).balance;
+        uint balanceBefore = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CWrappedNative(cToken).totalBorrows();
         CWrappedNative(cToken).flashLoan(address(this), borrowAmount, data);
-        uint balanceAfter = address(this).balance;
+        uint balanceAfter = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
         require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }
 
     function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
-      (address payable cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
-      require(underlying == address(0), "Params not match");
-      require(amount == borrowAmount, "Params not match");
-      uint totalBorrowsAfter = CWrappedNative(cToken).totalBorrows();
-      require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
-      cToken.transfer(repayAmount);
+        (address payable cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
+        require(underlying == CWrappedNative(cToken).underlying(), "Params not match");
+        require(amount == borrowAmount, "Params not match");
+        uint totalBorrowsAfter = CWrappedNative(cToken).totalBorrows();
+        require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
+        require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
     }
 
     function () external payable {}
