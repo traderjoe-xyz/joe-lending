@@ -296,13 +296,18 @@ async function makePriceOracle(opts = {}) {
   }
 }
 
-async function makeMockAggregator(opts = {}) {
-  const answer = dfn(opts.answer, etherMantissa(1));
-  return await deploy('MockAggregator', [answer]);
-}
-
 async function makeMockReference(opts = {}) {
   return await deploy('MockReference');
+}
+
+async function makeCTokenAdmin(opts = {}) {
+  const {
+    root = saddle.account
+  } = opts || {};
+
+  const admin = opts.admin || root;
+  const reserveManager = opts.reserveManager || root;
+  return await deploy('CTokenAdmin', [admin, reserveManager]);
 }
 
 async function makeToken(opts = {}) {
@@ -349,12 +354,28 @@ async function makeToken(opts = {}) {
     }
   } else if (kind == 'wrapped') {
     return await deploy('WETH9');
+  } else if (kind == 'nonstandard') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'MITH';
+    const name = opts.name || `Erc20 ${symbol}`;
+    return await deploy('FaucetNonStandardToken', [quantity, name, decimals, symbol]);
   }
 }
 
 async function makeCurveSwap(opts = {}) {
   const price = dfn(opts.price, etherMantissa(1));
   return await deploy('CurveSwapHarness', [price]);
+}
+
+async function makeMockAggregator(opts = {}) {
+  const answer = dfn(opts.answer, etherMantissa(1));
+  return await deploy('MockAggregator', [answer]);
+}
+
+async function makeLiquidityMining(opts = {}) {
+  const comptroller = opts.comptroller || await makeComptroller(opts.comptrollerOpts);
+  return await deploy('MockLiquidityMining', [comptroller._address]);
 }
 
 async function preCSLP(underlying) {
@@ -572,6 +593,8 @@ module.exports = {
   makeMockReference,
   makeToken,
   makeCurveSwap,
+  makeLiquidityMining,
+  makeCTokenAdmin,
 
   balanceOf,
   collateralTokenBalance,

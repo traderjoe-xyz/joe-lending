@@ -1,14 +1,13 @@
 const {
   etherUnsigned,
   etherMantissa,
-  etherBalance,
   mergeInterface
 } = require('../Utils/Ethereum');
 
 const {
   makeCToken,
   makeFlashloanReceiver,
-  setEtherBalance,
+  balanceOf,
 } = require('../Utils/Compound');
 
 describe('Flashloan test', function () {
@@ -25,12 +24,12 @@ describe('Flashloan test', function () {
     // so that we can format cToken event logs
     mergeInterface(flashloanReceiver, cToken);
 
-    await setEtherBalance(cToken, cash);
+    await send(cToken.underlying, 'harnessSetBalance', [cToken._address, cash]);
     await send(cToken, 'harnessSetBlockNumber', [etherUnsigned(1e6)]);
     await send(cToken, 'harnessSetAccrualBlockNumber', [etherUnsigned(1e6)]);
     await send(cToken, 'harnessSetReserveFactorFresh', [etherMantissa(reservesFactor)]);
 
-    await setEtherBalance(flashloanReceiver, receiverBalance);
+    await send(cToken.underlying, 'harnessSetBalance', [flashloanReceiver._address, receiverBalance]);
   });
 
   describe('internal cash equal underlying balance', () => {
@@ -47,10 +46,10 @@ describe('Flashloan test', function () {
         reservesFee: reservesFee,
       });
 
-      expect(await etherBalance(cToken._address)).toEqualNumber(cash + totalFee);
+      expect(await balanceOf(cToken.underlying, cToken._address)).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'getCash', [])).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'totalReserves', [])).toEqualNumber(reservesFee);
-      expect(await etherBalance(flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
+      expect(await balanceOf(cToken.underlying, flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
     });
 
     it("repay correctly, total fee is truncated", async () => {
@@ -66,10 +65,10 @@ describe('Flashloan test', function () {
         reservesFee: reservesFee,
       });
 
-      expect(await etherBalance(cToken._address)).toEqualNumber(cash + totalFee);
+      expect(await balanceOf(cToken.underlying, cToken._address)).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'getCash', [])).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'totalReserves', [])).toEqualNumber(reservesFee);
-      expect(await etherBalance(flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
+      expect(await balanceOf(cToken.underlying, flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
     });
 
     it("repay correctly, reserve fee is truncated", async () => {
@@ -85,10 +84,10 @@ describe('Flashloan test', function () {
         reservesFee: reservesFee,
       });
 
-      expect(await etherBalance(cToken._address)).toEqualNumber(cash + totalFee);
+      expect(await balanceOf(cToken.underlying, cToken._address)).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'getCash', [])).toEqualNumber(cash + totalFee);
       expect(await call(cToken, 'totalReserves', [])).toEqualNumber(reservesFee);
-      expect(await etherBalance(flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
+      expect(await balanceOf(cToken.underlying, flashloanReceiver._address)).toEqualNumber(receiverBalance - totalFee);
     });
 
 
@@ -133,7 +132,7 @@ describe('Flashloan re-entry test', () => {
 
   beforeEach(async () => {
     cToken = await makeCToken({kind: 'cwrapped', supportMarket: true});
-    await setEtherBalance(cToken, cash);
+    await send(cToken.underlying, 'harnessSetBalance', [cToken._address, cash]);
     await send(cToken, 'harnessSetBlockNumber', [etherUnsigned(1e6)]);
     await send(cToken, 'harnessSetAccrualBlockNumber', [etherUnsigned(1e6)]);
   });

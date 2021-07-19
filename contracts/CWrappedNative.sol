@@ -203,14 +203,14 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         // 1. calculate fee, 1 bips = 1/10000
         uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
-        // 2. transfer ethers to receiver
-        receiver.transfer(amount);
+        // 2. transfer fund to receiver
+        doTransferOut(address(uint160(receiver)), amount, false);
 
         // 3. update totalBorrows
         totalBorrows = add_(totalBorrows, amount);
 
         // 4. execute receiver's callback function
-        IFlashloanReceiver(receiver).executeOperation(msg.sender, address(0), amount, totalFee, params);
+        IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
 
         // 5. check balance
         uint cashAfter = getCashPrior();
@@ -252,12 +252,13 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
     /*** Safe Token ***/
 
     /**
-     * @notice Gets balance of this contract in terms of Ether, before this message
+     * @notice Gets balance of this contract in terms of the underlying
      * @dev This excludes the value of the current message, if any
-     * @return The quantity of Ether owned by this contract
+     * @return The quantity of underlying tokens owned by this contract
      */
     function getCashPrior() internal view returns (uint) {
-        return sub_(address(this).balance, msg.value);
+        EIP20Interface token = EIP20Interface(underlying);
+        return token.balanceOf(address(this));
     }
 
     /**
@@ -274,6 +275,9 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
             // Sanity checks
             require(msg.sender == from, "sender mismatch");
             require(msg.value == amount, "value mismatch");
+
+            // Convert received native token to wrapped token
+            WrappedNativeInterface(underlying).deposit.value(amount)();
             return amount;
         } else {
             EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
@@ -298,10 +302,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
 
             // Calculate the amount that was *actually* transferred
             uint balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-            uint balanceReceived = sub_(balanceAfter, balanceBefore);
-            // Convert received wrapped token to native token
-            WrappedNativeInterface(underlying).withdraw(balanceReceived);
-            return balanceReceived;
+            return sub_(balanceAfter, balanceBefore);
         }
     }
 
@@ -316,11 +317,11 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      */
     function doTransferOut(address payable to, uint amount, bool isNative) internal {
         if (isNative) {
+            // Convert wrapped token to native token
+            WrappedNativeInterface(underlying).withdraw(amount);
             /* Send the Ether, with minimal gas and revert on failure */
             to.transfer(amount);
         } else {
-            // Convert received native token to wrapped token
-            WrappedNativeInterface(underlying).deposit.value(amount)();
             EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
             token.transfer(to, amount);
 

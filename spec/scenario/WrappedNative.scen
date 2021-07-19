@@ -13,84 +13,99 @@ Test "Mint cWETH"
     -- Mint with WETH
     WETHPrep Geoff 0.005e18 WETH cWETH
     Mint Geoff 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 10e8)
     -- Mint with ETH
     MintNative Geoff 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 20e8)
 
 Test "Redeem cWETH"
     WrappedNative
     -- Mint with ETH
     From Geoff (Trx GasPrice 0 (Trx Value 0.01e18 (CToken cWETH MintNative)))
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 20e8)
     -- Redeem for WETH
     Redeem Geoff 10e8 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 10e8)
     Assert Equal (Erc20 WETH TokenBalance Geoff) (Exactly 0.005e18)
     -- Redeem for ETH
     Expect Changes (EtherBalance Geoff) +0.005e18
     RedeemNative Geoff 10e8 cWETH
     Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 0)
 
 Test "RedeemUnderlying cWETH"
     WrappedNative
     -- Mint with ETH
     From Geoff (Trx GasPrice 0 (Trx Value 0.01e18 (CToken cWETH MintNative)))
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 20e8)
     -- Borrow for WETH
     RedeemUnderlying Geoff 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 10e8)
     Assert Equal (Erc20 WETH TokenBalance Geoff) (Exactly 0.005e18)
     -- RedeemUnderlying for ETH
     Expect Changes (EtherBalance Geoff) +0.005e18
     RedeemUnderlyingNative Geoff 0.005e18 cWETH
     Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 0)
 
 Test "Borrow cWETH"
     WrappedNative
     -- Mint with ETH
     From Geoff (Trx GasPrice 0 (Trx Value 0.01e18 (CToken cWETH MintNative)))
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 20e8)
     -- Borrow for WETH
     Borrow Jared 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     Assert Equal (Erc20 WETH TokenBalance Jared) (Exactly 0.005e18)
     -- Borrow for ETH
     Expect Changes (EtherBalance Jared) +0.005e18
     BorrowNative Jared 0.005e18 cWETH
     Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0)
 
 Test "Repay cWETH"
     WrappedNative
     -- Mint with ETH
     From Geoff (Trx GasPrice 0 (Trx Value 0.01e18 (CToken cWETH MintNative)))
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 cWETH TokenBalance Geoff) (Exactly 20e8)
     -- Borrow for WETH
     Borrow Jared 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     Assert Equal (Erc20 WETH TokenBalance Jared) (Exactly 0.005e18)
     -- Repay for WETH
     From Jared (Erc20 WETH Approve cWETH 0.005e18)
     RepayBorrow Jared 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 WETH TokenBalance Jared) (Exactly 0)
     -- Borrow for ETH
     Expect Changes (EtherBalance Jared) +0.005e18
     BorrowNative Jared 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.005e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.005e18)
     -- Repay for ETH
-    -- Expect Changes (EtherBalance Torrey) -0.005e18
+    Expect Changes (EtherBalance Jared) -0.005e18
     RepayBorrowNative Jared 0.005e18 cWETH
-    -- RepayBorrowBehalfNative Torrey Jared 0.005e18 cWETH
-    Assert Equal (EtherBalance cWETH) (Exactly 0.01e18)
+    Assert Equal (EtherBalance cWETH) (Exactly 0)
+    Assert Equal (Erc20 WETH TokenBalance cWETH) (Exactly 0.01e18)
     Assert Equal (Erc20 WETH TokenBalance Jared) (Exactly 0)
