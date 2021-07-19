@@ -2,7 +2,6 @@ const {
   etherGasCost,
   etherMantissa,
   etherUnsigned,
-  sendFallback,
 } = require('../Utils/Ethereum');
 
 const {
@@ -39,11 +38,13 @@ async function mint(cToken, minter, mintAmount) {
 }
 
 async function preRedeem(cToken, redeemer, redeemTokens, redeemAmount, exchangeRate) {
+  const root = saddle.account;
   await send(cToken.comptroller, 'setRedeemAllowed', [true]);
   await send(cToken.comptroller, 'setRedeemVerify', [true]);
   await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
   await send(cToken, 'harnessSetExchangeRate', [etherMantissa(exchangeRate)]);
-  await setEtherBalance(cToken, redeemAmount);
+  await send(cToken.underlying, 'deposit', [], { from: root, value: redeemAmount });
+  await send(cToken.underlying, 'harnessSetBalance', [cToken._address, redeemAmount]);
   await send(cToken, 'harnessSetTotalSupply', [redeemTokens]);
   await setBalance(cToken, redeemer, redeemTokens);
 }
@@ -99,7 +100,6 @@ describe('CWrappedNative', () => {
       expect(receipt).toSucceed();
       expect(mintTokens).not.toEqualNumber(0);
       expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, 'eth', mintAmount],
         [cToken, 'tokens', mintTokens],
         [cToken, 'cash', mintAmount],
         [cToken, minter, 'cash', -mintAmount],
@@ -115,7 +115,6 @@ describe('CWrappedNative', () => {
       expect(receipt).toSucceed();
       expect(mintTokens).not.toEqualNumber(0);
       expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, 'eth', mintAmount],
         [cToken, 'tokens', mintTokens],
         [cToken, 'cash', mintAmount],
         [cToken, minter, 'eth', -mintAmount.plus(await etherGasCost(receipt))],
@@ -147,7 +146,6 @@ describe('CWrappedNative', () => {
         const afterBalances = await getBalances([cToken], [redeemer]);
         expect(redeemTokens).not.toEqualNumber(0);
         expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-          [cToken, 'eth', -redeemAmount],
           [cToken, 'tokens', -redeemTokens],
           [cToken, 'cash', -redeemAmount],
           [cToken, redeemer, 'eth', redeemAmount.minus(await etherGasCost(receipt))],
@@ -180,7 +178,6 @@ describe('CWrappedNative', () => {
         const afterBalances = await getBalances([cToken], [redeemer]);
         expect(redeemTokens).not.toEqualNumber(0);
         expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-          [cToken, 'eth', -redeemAmount],
           [cToken, 'tokens', -redeemTokens],
           [cToken, 'cash', -redeemAmount],
           [cToken, redeemer, 'cash', redeemAmount],

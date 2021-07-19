@@ -78,6 +78,10 @@ contract WETH9 {
 
         return true;
     }
+
+    function harnessSetBalance(address _account, uint _amount) public {
+        balanceOf[_account] = _amount;
+    }
 }
 
 
