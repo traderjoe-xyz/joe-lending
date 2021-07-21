@@ -219,6 +219,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         return uint(Error.NO_ERROR);
     }
 
+    /**
+     * @notice Return a specific market is listed or not
+     * @param cTokenAddress The address of the asset to be checked
+     * @return Whether or not the market is listed
+     */
+    function isMarketListed(address cTokenAddress) public view returns (bool) {
+        return markets[cTokenAddress].isListed;
+    }
+
     /*** Policy Hooks ***/
 
     /**
@@ -233,7 +242,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         require(!mintGuardianPaused[cToken], "mint is paused");
         require(!isCreditAccount(minter), "credit account cannot mint");
 
-        if (!markets[cToken].isListed) {
+        if (!isMarketListed(cToken)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -303,7 +312,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function redeemAllowedInternal(address cToken, address redeemer, uint redeemTokens) internal view returns (uint) {
-        if (!markets[cToken].isListed) {
+        if (!isMarketListed(cToken)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -353,7 +362,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         // Pausing is a very serious situation - we revert to sound the alarms
         require(!borrowGuardianPaused[cToken], "borrow is paused");
 
-        if (!markets[cToken].isListed) {
+        if (!isMarketListed(cToken)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -435,7 +444,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         payer;
         repayAmount;
 
-        if (!markets[cToken].isListed) {
+        if (!isMarketListed(cToken)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -493,7 +502,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         // Shh - currently unused
         liquidator;
 
-        if (!markets[cTokenBorrowed].isListed || !markets[cTokenCollateral].isListed) {
+        if (!isMarketListed(cTokenBorrowed) || !isMarketListed(cTokenCollateral)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -567,7 +576,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         liquidator;
         seizeTokens;
 
-        if (!markets[cTokenCollateral].isListed || !markets[cTokenBorrowed].isListed) {
+        if (!isMarketListed(cTokenCollateral) || !isMarketListed(cTokenBorrowed)) {
             return uint(Error.MARKET_NOT_LISTED);
         }
 
@@ -689,7 +698,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         // This function will be called when a new CToken implementation becomes active.
         // If a new CToken is newly created, this market is not listed yet. The version of
         // this market will be taken care of when calling `_supportMarket`.
-        if (markets[cToken].isListed) {
+        if (isMarketListed(cToken)) {
             Version oldVersion = markets[cToken].version;
             markets[cToken].version = newVersion;
 
@@ -997,7 +1006,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
       */
     function _supportMarket(CToken cToken, Version version) external returns (uint) {
         require(msg.sender == admin, "only admin may support market");
-        require(!markets[address(cToken)].isListed, "market already listed");
+        require(!isMarketListed(address(cToken)), "market already listed");
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
@@ -1016,7 +1025,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
       */
     function _delistMarket(CToken cToken) external {
         require(msg.sender == admin, "only admin may delist market");
-        require(markets[address(cToken)].isListed, "market not listed");
+        require(isMarketListed(address(cToken)), "market not listed");
         require(cToken.totalSupply() == 0, "market not empty");
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
@@ -1160,7 +1169,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setMintPaused(CToken cToken, bool state) public returns (bool) {
-        require(markets[address(cToken)].isListed, "cannot pause a market that is not listed");
+        require(isMarketListed(address(cToken)), "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
         require(msg.sender == admin || state == true, "only admin can unpause");
 
@@ -1170,7 +1179,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setBorrowPaused(CToken cToken, bool state) public returns (bool) {
-        require(markets[address(cToken)].isListed, "cannot pause a market that is not listed");
+        require(isMarketListed(address(cToken)), "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
         require(msg.sender == admin || state == true, "only admin can unpause");
 
@@ -1180,7 +1189,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     }
 
     function _setFlashloanPaused(CToken cToken, bool state) public returns (bool) {
-        require(markets[address(cToken)].isListed, "cannot pause a market that is not listed");
+        require(isMarketListed(address(cToken)), "cannot pause a market that is not listed");
         require(msg.sender == pauseGuardian || msg.sender == admin, "only pause guardian and admin can pause");
         require(msg.sender == admin || state == true, "only admin can unpause");
 
