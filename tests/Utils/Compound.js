@@ -326,8 +326,7 @@ async function makeCTokenAdmin(opts = {}) {
   } = opts || {};
 
   const admin = opts.admin || root;
-  const reserveManager = opts.reserveManager || root;
-  return await deploy('CTokenAdmin', [admin, reserveManager]);
+  return await deploy('CTokenAdmin', [admin]);
 }
 
 async function makeToken(opts = {}) {
