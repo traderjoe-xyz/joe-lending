@@ -220,23 +220,17 @@ describe('CTokenAdmin', () => {
   });
 
   describe('extractReserves()', () => {
-    let cEth;
-
     const reserves = etherUnsigned(3e12);
     const cash = etherUnsigned(reserves.multipliedBy(2));
     const reduction = etherUnsigned(2e12);
 
     beforeEach(async () => {
       cToken = await makeCToken({admin: cTokenAdmin._address});
-      cEth = await makeCToken({kind: 'cether', admin: cTokenAdmin._address});
       await send(cToken.interestRateModel, 'setFailBorrowRate', [false]);
-      await send(cEth.interestRateModel, 'setFailBorrowRate', [false]);
       expect(await send(cToken, 'harnessSetTotalReserves', [reserves])).toSucceed();
-      expect(await send(cEth, 'harnessSetTotalReserves', [reserves])).toSucceed();
       expect(
         await send(cToken.underlying, 'harnessSetBalance', [cToken._address, cash])
       ).toSucceed();
-      await setEtherBalance(cEth, cash);
       await send(cTokenAdmin, 'setReserveManager', [reserveManager], {from: admin});
     });
 
@@ -250,17 +244,6 @@ describe('CTokenAdmin', () => {
       expect(await send(cTokenAdmin, 'extractReserves', [cToken._address, reduction], {from: reserveManager})).toSucceed();
 
       expect(await call(cToken.underlying, 'balanceOf', [reserveManager])).toEqualNumber(reduction);
-    });
-
-    it('should succeed and extract eth reserves', async () => {
-      const beforeBalances = await getBalances([cToken], [reserveManager]);
-      const receipt = await send(cTokenAdmin, 'extractReserves', [cEth._address, reduction], {from: reserveManager});
-      const afterBalances = await getBalances([cToken], [reserveManager]);
-
-      expect(receipt).toSucceed();
-      expect(afterBalances).toEqual(await adjustBalances(beforeBalances, [
-        [cToken, reserveManager, 'eth', reduction.minus(await etherGasCost(receipt))],
-      ]));
     });
   });
 
