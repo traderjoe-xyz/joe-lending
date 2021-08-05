@@ -260,12 +260,6 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             require(nextTotalSupplies < supplyCap, "market supply cap reached");
         }
 
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](1);
-            accounts[0] = minter;
-            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
-        }
-
         return uint(Error.NO_ERROR);
     }
 
@@ -297,18 +291,7 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      * @return 0 if the redeem is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
     function redeemAllowed(address cToken, address redeemer, uint redeemTokens) external returns (uint) {
-        uint allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
-        if (allowed != uint(Error.NO_ERROR)) {
-            return allowed;
-        }
-
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](1);
-            accounts[0] = redeemer;
-            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
-        }
-
-        return uint(Error.NO_ERROR);
+        return redeemAllowedInternal(cToken, redeemer, redeemTokens);
     }
 
     function redeemAllowedInternal(address cToken, address redeemer, uint redeemTokens) internal view returns (uint) {
@@ -400,12 +383,6 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.INSUFFICIENT_LIQUIDITY);
         }
 
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](1);
-            accounts[0] = borrower;
-            LiquidityMiningInterface(liquidityMining).updateBorrowIndex(cToken, accounts);
-        }
-
         return uint(Error.NO_ERROR);
     }
 
@@ -442,16 +419,11 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         uint repayAmount) external returns (uint) {
         // Shh - currently unused
         payer;
+        borrower;
         repayAmount;
 
         if (!isMarketListed(cToken)) {
             return uint(Error.MARKET_NOT_LISTED);
-        }
-
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](1);
-            accounts[0] = borrower;
-            LiquidityMiningInterface(liquidityMining).updateBorrowIndex(cToken, accounts);
         }
 
         return uint(Error.NO_ERROR);
@@ -584,13 +556,6 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.COMPTROLLER_MISMATCH);
         }
 
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](2);
-            accounts[0] = borrower;
-            accounts[1] = liquidator;
-            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cTokenCollateral, accounts);
-        }
-
         return uint(Error.NO_ERROR);
     }
 
@@ -634,21 +599,12 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         require(!transferGuardianPaused, "transfer is paused");
         require(!isCreditAccount(dst), "cannot transfer to a credit account");
 
+        // Shh - currently unused
+        dst;
+
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
-        uint allowed = redeemAllowedInternal(cToken, src, transferTokens);
-        if (allowed != uint(Error.NO_ERROR)) {
-            return allowed;
-        }
-
-        if (liquidityMining != address(0)) {
-            address[] memory accounts = new address[](2);
-            accounts[0] = src;
-            accounts[1] = dst;
-            LiquidityMiningInterface(liquidityMining).updateSupplyIndex(cToken, accounts);
-        }
-
-        return uint(Error.NO_ERROR);
+        return redeemAllowedInternal(cToken, src, transferTokens);
     }
 
     /**

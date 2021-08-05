@@ -1,4 +1,5 @@
 const {
+  address,
   etherMantissa,
   etherUnsigned,
   etherGasCost
@@ -22,7 +23,7 @@ describe('CTokenAdmin', () => {
     admin = accounts[1];
     reserveManager = accounts[2];
     others = accounts[3];
-    cTokenAdmin = await makeCTokenAdmin({admin: admin, reserveManager: reserveManager});
+    cTokenAdmin = await makeCTokenAdmin({admin: admin});
   });
 
   describe('getCTokenAdmin', () => {
@@ -236,6 +237,7 @@ describe('CTokenAdmin', () => {
         await send(cToken.underlying, 'harnessSetBalance', [cToken._address, cash])
       ).toSucceed();
       await setEtherBalance(cEth, cash);
+      await send(cTokenAdmin, 'setReserveManager', [reserveManager], {from: admin});
     });
 
     it('should only be callable by reserve manager', async () => {
@@ -303,6 +305,12 @@ describe('CTokenAdmin', () => {
       expect(await call(cTokenAdmin, 'admin')).toEqual(admin);
     });
 
+    it('cannot set admin to zero address', async () => {
+      await expect(send(cTokenAdmin, 'setAdmin', [address(0)], {from: admin})).rejects.toRevert('revert new admin cannot be zero address');
+
+      expect(await call(cTokenAdmin, 'admin')).toEqual(admin);
+    });
+
     it('should succeed and set new admin', async () => {
       expect(await send(cTokenAdmin, 'setAdmin', [others], {from: admin})).toSucceed();
 
@@ -312,15 +320,15 @@ describe('CTokenAdmin', () => {
 
   describe('setReserveManager()', () => {
     it('should only be callable by admin', async () => {
-      await expect(send(cTokenAdmin, 'setReserveManager', [others], {from: others})).rejects.toRevert('revert only the admin may call this function');
+      await expect(send(cTokenAdmin, 'setReserveManager', [reserveManager], {from: others})).rejects.toRevert('revert only the admin may call this function');
 
-      expect(await call(cTokenAdmin, 'reserveManager')).toEqual(reserveManager);
+      expect(await call(cTokenAdmin, 'reserveManager')).toEqual(address(0));
     });
 
     it('should succeed and set new reserve manager', async () => {
-      expect(await send(cTokenAdmin, 'setReserveManager', [others], {from: admin})).toSucceed();
+      expect(await send(cTokenAdmin, 'setReserveManager', [reserveManager], {from: admin})).toSucceed();
 
-      expect(await call(cTokenAdmin, 'reserveManager')).toEqual(others);
+      expect(await call(cTokenAdmin, 'reserveManager')).toEqual(reserveManager);
     });
   });
 });

@@ -35,9 +35,8 @@ contract CTokenAdmin {
         _;
     }
 
-    constructor(address payable _admin, address payable _reserveManager) public {
+    constructor(address payable _admin) public {
         _setAdmin(_admin);
-        reserveManager = _reserveManager;
     }
 
     /**
@@ -176,13 +175,14 @@ contract CTokenAdmin {
     /* Internal functions */
 
     function _setAdmin(address payable newAdmin) private {
-        require(newAdmin != address(0));
+        require(newAdmin != address(0), "new admin cannot be zero address");
         address oldAdmin = admin;
         admin = newAdmin;
         emit SetAdmin(oldAdmin, newAdmin);
     }
 
     function _transferToken(address token, address payable to, uint amount) private {
+        require(to != address(0), "receiver cannot be zero address");
         if (token == ethAddress) {
             to.transfer(amount);
         } else {
