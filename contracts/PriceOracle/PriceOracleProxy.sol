@@ -1,169 +1,20 @@
 pragma solidity ^0.5.16;
+pragma experimental ABIEncoderV2;
 
+import "./Denominations.sol";
 import "./PriceOracle.sol";
+import "./interfaces/CurveTokenInterface.sol";
+import "./interfaces/FeedRegistryInterface.sol";
+import "./interfaces/UniswapV2Interface.sol";
+import "./interfaces/V1PriceOracleInterface.sol";
+import "./interfaces/XSushiExchangeRateInterface.sol";
+import "./interfaces/YVaultTokenInterface.sol";
 import "../CErc20.sol";
 import "../CToken.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
 
-interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint256);
-}
-
-interface CurveSwapInterface {
-    function get_virtual_price() external view returns (uint256);
-}
-
-interface CurveTokenV3Interface {
-    function minter() external view returns (address);
-}
-
-interface YVaultV1Interface {
-    function token() external view returns (address);
-
-    function getPricePerFullShare() external view returns (uint256);
-}
-
-interface YVaultV2Interface {
-    function token() external view returns (address);
-
-    function pricePerShare() external view returns (uint256);
-}
-
-interface AggregatorV3Interface {
-    function decimals() external view returns (uint8);
-
-    function description() external view returns (string memory);
-
-    function version() external view returns (uint256);
-
-    // getRoundData and latestRoundData should both raise "No data present"
-    // if they do not have data to report, instead of returning unset values
-    // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId)
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
-
-    function latestRoundData()
-        external
-        view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
-}
-
-// Ref: https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IUniswapV2Pair.sol
-interface IUniswapV2Pair {
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    function name() external pure returns (string memory);
-
-    function symbol() external pure returns (string memory);
-
-    function decimals() external pure returns (uint8);
-
-    function totalSupply() external view returns (uint256);
-
-    function balanceOf(address owner) external view returns (uint256);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function approve(address spender, uint256 value) external returns (bool);
-
-    function transfer(address to, uint256 value) external returns (bool);
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    ) external returns (bool);
-
-    function DOMAIN_SEPARATOR() external view returns (bytes32);
-
-    function PERMIT_TYPEHASH() external pure returns (bytes32);
-
-    function nonces(address owner) external view returns (uint256);
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external;
-
-    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
-    event Burn(address indexed sender, uint256 amount0, uint256 amount1, address indexed to);
-    event Swap(
-        address indexed sender,
-        uint256 amount0In,
-        uint256 amount1In,
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address indexed to
-    );
-    event Sync(uint112 reserve0, uint112 reserve1);
-
-    function MINIMUM_LIQUIDITY() external pure returns (uint256);
-
-    function factory() external view returns (address);
-
-    function token0() external view returns (address);
-
-    function token1() external view returns (address);
-
-    function getReserves()
-        external
-        view
-        returns (
-            uint112 reserve0,
-            uint112 reserve1,
-            uint32 blockTimestampLast
-        );
-
-    function price0CumulativeLast() external view returns (uint256);
-
-    function price1CumulativeLast() external view returns (uint256);
-
-    function kLast() external view returns (uint256);
-
-    function mint(address to) external returns (uint256 liquidity);
-
-    function burn(address to) external returns (uint256 amount0, uint256 amount1);
-
-    function swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address to,
-        bytes calldata data
-    ) external;
-
-    function skim(address to) external;
-
-    function sync() external;
-
-    function initialize(address, address) external;
-}
-
-interface IXSushiExchangeRate {
-    function getExchangeRate() external view returns (uint256);
-}
-
-contract PriceOracleProxy is PriceOracle, Exponential {
+contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     /// @notice Yvault token version, currently support v1 and v2
     enum YvTokenVersion {
         V1,
@@ -179,12 +30,6 @@ contract PriceOracleProxy is PriceOracle, Exponential {
 
     /// @notice Curve pool type, currently support ETH and USD base
     enum CurvePoolType {
-        ETH,
-        USD
-    }
-
-    /// @notice ChainLink aggregator base, currently support ETH and USD
-    enum AggregatorBase {
         ETH,
         USD
     }
@@ -206,10 +51,11 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     }
 
     struct AggregatorInfo {
-        /// @notice The source address of the aggregator
-        AggregatorV3Interface source;
-        /// @notice The aggregator base
-        AggregatorBase base;
+        /// @notice The denomination
+        address denom;
+
+        /// @notice It's being used or not
+        bool isUsed;
     }
 
     /// @notice Admin address
@@ -224,11 +70,14 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     /// @notice The v1 price oracle, which will continue to serve prices for v1 assets
     V1PriceOracleInterface public v1PriceOracle;
 
-    /// @notice ChainLink aggregators
+    /// @notice The ChainLink registry address
+    FeedRegistryInterface public registry;
+
+    /// @notice ChainLink quotes
     mapping(address => AggregatorInfo) public aggregators;
 
     /// @notice Check if the underlying address is Uniswap or SushiSwap LP
-    mapping(address => bool) public areUnderlyingLPs;
+    mapping(address => bool) public isUnderlyingLP;
 
     /// @notice Yvault token data
     mapping(address => YvTokenInfo) public yvTokens;
@@ -237,29 +86,27 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     mapping(address => CrvTokenInfo) public crvTokens;
 
     address public cEthAddress;
-    address public cXSushiAddress;
 
     address public constant usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant wethAddress = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant sushiAddress = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
     address public constant xSushiExRateAddress = 0x851a040fC0Dcbb13a272EBC272F2bC2Ce1e11C4d;
+    address public constant crXSushiAddress = 0x228619CCa194Fbe3Ebeb2f835eC1eA5080DaFbb2;
 
     /**
      * @param admin_ The address of admin to set aggregators, LPs, curve tokens, or Yvault tokens
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
-     * @param cXSushiAddress_ The address of cXSushi
+     * @param registry_ The address of ChainLink registry
      */
-    constructor(
-        address admin_,
-        address v1PriceOracle_,
-        address cEthAddress_,
-        address cXSushiAddress_
-    ) public {
+    constructor(address admin_,
+                address v1PriceOracle_,
+                address cEthAddress_,
+                address registry_) public {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
-        cXSushiAddress = cXSushiAddress_;
+        registry = FeedRegistryInterface(registry_);
     }
 
     /**
@@ -272,18 +119,16 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         if (cTokenAddress == cEthAddress) {
             // ether always worth 1
             return 1e18;
-        }
-
-        // Handle xSUSHI.
-        if (cTokenAddress == cXSushiAddress) {
-            uint256 exchangeRate = IXSushiExchangeRate(xSushiExRateAddress).getExchangeRate();
+        } else if (cTokenAddress == crXSushiAddress) {
+            // Handle xSUSHI.
+            uint exchangeRate = XSushiExchangeRateInterface(xSushiExRateAddress).getExchangeRate();
             return mul_(getTokenPrice(sushiAddress), Exp({mantissa: exchangeRate}));
         }
 
         address underlying = CErc20(cTokenAddress).underlying();
 
         // Handle LP tokens.
-        if (areUnderlyingLPs[cTokenAddress]) {
+        if (isUnderlyingLP[underlying]) {
             return getLPFairPrice(underlying);
         }
 
@@ -314,9 +159,9 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         }
 
         AggregatorInfo memory aggregatorInfo = aggregators[token];
-        if (address(aggregatorInfo.source) != address(0)) {
-            uint256 price = getPriceFromChainlink(aggregatorInfo.source);
-            if (aggregatorInfo.base == AggregatorBase.USD) {
+        if (aggregatorInfo.isUsed) {
+            uint price = getPriceFromChainlink(token, aggregatorInfo.denom);
+            if (aggregatorInfo.denom == Denominations.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = mul_(price, Exp({mantissa: getUsdcEthPrice()}));
             }
@@ -328,15 +173,16 @@ contract PriceOracleProxy is PriceOracle, Exponential {
 
     /**
      * @notice Get price from ChainLink
-     * @param aggregator The ChainLink aggregator to get the price of
-     * @return The price
+     * @param base The base token that ChainLink aggregator gets the price of
+     * @param quote The quote token, currenlty support ETH and USD
+     * @return The price, scaled by 1e18
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
-        (, int256 price, , , ) = aggregator.latestRoundData();
+    function getPriceFromChainlink(address base, address quote) internal view returns (uint) {
+        ( , int price, , , ) = registry.latestRoundData(base, quote);
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return mul_(uint256(price), 10**(18 - uint256(aggregator.decimals())));
+        return mul_(uint(price), 10**(18 - uint(registry.decimals(base, quote))));
     }
 
     /**
@@ -421,9 +267,19 @@ contract PriceOracleProxy is PriceOracle, Exponential {
         return v1PriceOracle.assetPrices(token);
     }
 
+    /**
+     * @notice Compare two strings are the same or not
+     * @param a The first string
+     * @param b The second string
+     * @return The same or not
+     */
+    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
+
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address tokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(address tokenAddress, address denom, bool isUsed);
     event IsLPUpdated(address tokenAddress, bool isLP);
     event SetYVaultToken(address token, YvTokenVersion version);
     event SetCurveToken(address token, CurvePoolType poolType, address swap);
@@ -431,47 +287,58 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     event SetAdmin(address admin);
 
     /**
-     * @notice Set ChainLink aggregators for multiple cTokens
+     * @notice Set ChainLink aggregators for multiple tokens
      * @param tokenAddresses The list of underlying tokens
-     * @param sources The list of ChainLink aggregator sources
-     * @param bases The list of ChainLink aggregator bases
+     * @param quotes The list of ChainLink aggregator quotes, currently support 'ETH' and 'USD'
      */
-    function _setAggregators(
-        address[] calldata tokenAddresses,
-        address[] calldata sources,
-        AggregatorBase[] calldata bases
-    ) external {
+    function _setAggregators(address[] calldata tokenAddresses, string[] calldata quotes) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(tokenAddresses.length == sources.length && tokenAddresses.length == bases.length, "mismatched data");
-        for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            if (sources[i] != address(0)) {
+        require(tokenAddresses.length == quotes.length, "mismatched data");
+        for (uint i = 0; i < tokenAddresses.length; i++) {
+            address denom;
+            bool isUsed;
+            if (bytes(quotes[i]).length != 0) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
+                isUsed = true;
+
+                if (compareStrings(quotes[i], "ETH")) {
+                    denom = Denominations.ETH;
+                } else if (compareStrings(quotes[i], "USD")) {
+                    denom = Denominations.USD;
+                } else {
+                    revert("unsupported denomination");
+                }
+                // Make sure the aggregator exists.
+                address aggregator = registry.getFeed(tokenAddresses[i], denom);
+                require(registry.isFeedEnabled(aggregator), "aggregator not enabled");
             }
-            aggregators[tokenAddresses[i]] = AggregatorInfo({
-                source: AggregatorV3Interface(sources[i]),
-                base: bases[i]
-            });
-            emit AggregatorUpdated(tokenAddresses[i], sources[i], bases[i]);
+            aggregators[tokenAddresses[i]] = AggregatorInfo({denom: denom, isUsed: isUsed});
+            emit AggregatorUpdated(tokenAddresses[i], denom, isUsed);
         }
     }
 
     /**
-     * @notice See assets as LP tokens for multiple cTokens
-     * @param cTokenAddresses The list of cTokens
+     * @notice See assets as LP tokens for multiple tokens
+     * @param tokenAddresses The list of tokens
      * @param isLP The list of cToken properties (it's LP or not)
      */
-    function _setLPs(address[] calldata cTokenAddresses, bool[] calldata isLP) external {
+    function _setLPs(address[] calldata tokenAddresses, bool[] calldata isLP) external {
         require(msg.sender == admin, "only the admin may set LPs");
-        require(cTokenAddresses.length == isLP.length, "mismatched data");
-        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
-            areUnderlyingLPs[cTokenAddresses[i]] = isLP[i];
-            emit IsLPUpdated(cTokenAddresses[i], isLP[i]);
+        require(tokenAddresses.length == isLP.length, "mismatched data");
+        for (uint i = 0; i < tokenAddresses.length; i++) {
+            isUnderlyingLP[tokenAddresses[i]] = isLP[i];
+            if (isLP[i]) {
+                // Sanity check to make sure the token is LP.
+                IUniswapV2Pair(tokenAddresses[i]).token0();
+                IUniswapV2Pair(tokenAddresses[i]).token1();
+            }
+            emit IsLPUpdated(tokenAddresses[i], isLP[i]);
         }
     }
 
     /**
-     * @notice See assets as Yvault tokens for multiple cTokens
-     * @param tokenAddresses The list of underlying tokens
+     * @notice See assets as Yvault tokens for multiple tokens
+     * @param tokenAddresses The list of tokens
      * @param version The list of vault version
      */
     function _setYVaultTokens(address[] calldata tokenAddresses, YvTokenVersion[] calldata version) external {
@@ -491,8 +358,8 @@ contract PriceOracleProxy is PriceOracle, Exponential {
     }
 
     /**
-     * @notice See assets as curve pool tokens for multiple cTokens
-     * @param tokenAddresses The list of underlying tokens
+     * @notice See assets as curve pool tokens for multiple tokens
+     * @param tokenAddresses The list of tokens
      * @param poolType The list of curve pool type (ETH or USD base only)
      * @param swap The list of curve swap address
      */

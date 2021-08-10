@@ -20,4 +20,10 @@ interface FeedRegistryInterface {
         uint256 updatedAt,
         uint80 answeredInRound
     );
+
+    function getFeed(address base, address quote) external view returns (
+        address aggregator
+    );
+
+    function isFeedEnabled(address aggregator) external view returns (bool);
 }
