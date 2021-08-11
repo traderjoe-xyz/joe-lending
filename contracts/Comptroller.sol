@@ -759,6 +759,13 @@ contract Comptroller is ComptrollerV7Storage, ComptrollerInterface, ComptrollerE
             if (oErr != 0) { // semi-opaque error code, we assume NO_ERROR == 0 is invariant between upgrades
                 return (Error.SNAPSHOT_ERROR, 0, 0);
             }
+
+            // Unlike compound protocol, getUnderlyingPrice is relatively expensive because we use ChainLink as our primary price feed.
+            // If user has no supply / borrow balance on this asset, and user is not redeeming / borrowing this asset, skip it.
+            if (vars.cTokenBalance == 0 && vars.borrowBalance == 0 && asset != cTokenModify) {
+                continue;
+            }
+
             vars.collateralFactor = Exp({mantissa: markets[address(asset)].collateralFactorMantissa});
             vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
 
