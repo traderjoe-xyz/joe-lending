@@ -3,10 +3,10 @@ pragma solidity ^0.5.16;
 import "../../contracts/Comptroller.sol";
 
 contract ComptrollerScenario is Comptroller {
-    uint public blockNumber;
+    uint256 public blockNumber;
     address compAddress;
 
-    constructor() Comptroller() public {}
+    constructor() public Comptroller() {}
 
     function setCompAddress(address compAddress_) public {
         compAddress = compAddress_;
@@ -16,20 +16,20 @@ contract ComptrollerScenario is Comptroller {
         return compAddress;
     }
 
-    function fastForward(uint blocks) public returns (uint) {
+    function fastForward(uint256 blocks) public returns (uint256) {
         blockNumber += blocks;
         return blockNumber;
     }
 
-    function setBlockNumber(uint number) public {
+    function setBlockNumber(uint256 number) public {
         blockNumber = number;
     }
 
-    function getBlockNumber() public view returns (uint) {
+    function getBlockNumber() public view returns (uint256) {
         return blockNumber;
     }
 
-    function membershipLength(CToken cToken) public view returns (uint) {
+    function membershipLength(CToken cToken) public view returns (uint256) {
         return accountAssets[address(cToken)].length;
     }
 

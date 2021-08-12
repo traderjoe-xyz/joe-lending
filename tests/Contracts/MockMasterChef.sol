@@ -17,7 +17,7 @@ contract MasterChef {
 
     // Info of each user.
     struct UserInfo {
-        uint256 amount;     // How many LP tokens the user has provided.
+        uint256 amount; // How many LP tokens the user has provided.
         uint256 rewardDebt; // Reward debt. See explanation below.
         //
         // We do some fancy math here. Basically, any point in time, the amount of SUSHIs
@@ -34,9 +34,9 @@ contract MasterChef {
 
     // Info of each pool.
     struct PoolInfo {
-        ERC20 lpToken;            // Address of LP token contract.
-        uint256 allocPoint;       // How many allocation points assigned to this pool. SUSHIs to distribute per block.
-        uint256 lastRewardBlock;  // Last block number that SUSHIs distribution occurs.
+        ERC20 lpToken; // Address of LP token contract.
+        uint256 allocPoint; // How many allocation points assigned to this pool. SUSHIs to distribute per block.
+        uint256 lastRewardBlock; // Last block number that SUSHIs distribution occurs.
         uint256 accSushiPerShare; // Accumulated SUSHIs per share, times 1e12. See below.
     }
 
@@ -45,14 +45,12 @@ contract MasterChef {
     uint256 public constant sushiPerBlock = 1e18;
 
     PoolInfo[] public poolInfo;
-    mapping (uint256 => mapping (address => UserInfo)) public userInfo;
+    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     uint256 public totalAllocPoint = 0;
 
     uint256 blockNumber = 10000;
 
-    constructor(
-        SushiToken _sushi
-    ) public {
+    constructor(SushiToken _sushi) public {
         sushi = _sushi;
     }
 
@@ -61,12 +59,14 @@ contract MasterChef {
     function add(uint256 _allocPoint, ERC20 _lpToken) public {
         uint256 lastRewardBlock = blockNumber;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
-        poolInfo.push(PoolInfo({
-            lpToken: _lpToken,
-            allocPoint: _allocPoint,
-            lastRewardBlock: lastRewardBlock,
-            accSushiPerShare: 0
-        }));
+        poolInfo.push(
+            PoolInfo({
+                lpToken: _lpToken,
+                allocPoint: _allocPoint,
+                lastRewardBlock: lastRewardBlock,
+                accSushiPerShare: 0
+            })
+        );
     }
 
     // View function to see pending SUSHIs on frontend.
@@ -137,12 +137,16 @@ contract MasterChef {
     }
 
     // Set user amount helper function.
-    function harnessSetUserAmount(uint256 _pid, address _user, uint256 _amount) public {
+    function harnessSetUserAmount(
+        uint256 _pid,
+        address _user,
+        uint256 _amount
+    ) public {
         userInfo[_pid][_user].amount = _amount;
     }
 
     // Increase block number helper function.
-    function harnessFastForward(uint blocks) public {
+    function harnessFastForward(uint256 blocks) public {
         blockNumber += blocks;
     }
 }

@@ -7,8 +7,8 @@ import "./SimulationInterface.sol";
 contract UnderlyingModelWithFee is EIP20NonStandardInterface, SimulationInterface {
     uint256 _totalSupply;
     uint256 fee;
-    mapping (address => uint256) balances;
-    mapping (address => mapping (address => uint256)) allowances;
+    mapping(address => uint256) balances;
+    mapping(address => mapping(address => uint256)) allowances;
 
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
@@ -29,9 +29,13 @@ contract UnderlyingModelWithFee is EIP20NonStandardInterface, SimulationInterfac
         balances[dst] += actualAmount;
     }
 
-    function transferFrom(address src, address dst, uint256 amount) external {
+    function transferFrom(
+        address src,
+        address dst,
+        uint256 amount
+    ) external {
         uint256 actualAmount = amount + fee;
-        require(actualAmount > fee)
+        require(actualAmount > fee);
         require(allowances[src][msg.sender] >= actualAmount);
         require(balances[src] >= actualAmount);
         require(balances[dst] + actualAmount >= balances[dst]);

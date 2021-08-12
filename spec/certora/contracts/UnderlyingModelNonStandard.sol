@@ -6,8 +6,8 @@ import "./SimulationInterface.sol";
 
 contract UnderlyingModelNonStandard is EIP20NonStandardInterface, SimulationInterface {
     uint256 _totalSupply;
-    mapping (address => uint256) balances;
-    mapping (address => mapping (address => uint256)) allowances;
+    mapping(address => uint256) balances;
+    mapping(address => mapping(address => uint256)) allowances;
 
     function totalSupply() external view returns (uint256) {
         return _totalSupply;
@@ -26,7 +26,11 @@ contract UnderlyingModelNonStandard is EIP20NonStandardInterface, SimulationInte
         balances[dst] += amount;
     }
 
-    function transferFrom(address src, address dst, uint256 amount) external {
+    function transferFrom(
+        address src,
+        address dst,
+        uint256 amount
+    ) external {
         require(allowances[src][msg.sender] >= amount);
         require(balances[src] >= amount);
         require(balances[dst] + amount >= balances[dst]);

@@ -18,13 +18,15 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param symbol_ ERC-20 symbol of this token
      * @param decimals_ ERC-20 decimal precision of this token
      */
-    function initialize(address underlying_,
-                        ComptrollerInterface comptroller_,
-                        InterestRateModel interestRateModel_,
-                        uint initialExchangeRateMantissa_,
-                        string memory name_,
-                        string memory symbol_,
-                        uint8 decimals_) public {
+    function initialize(
+        address underlying_,
+        ComptrollerInterface comptroller_,
+        InterestRateModel interestRateModel_,
+        uint256 initialExchangeRateMantissa_,
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_
+    ) public {
         // CToken initialize does the bulk of the work
         super.initialize(comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
@@ -41,8 +43,8 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mint(uint mintAmount) external returns (uint) {
-        (uint err,) = mintInternal(mintAmount, false);
+    function mint(uint256 mintAmount) external returns (uint256) {
+        (uint256 err, ) = mintInternal(mintAmount, false);
         return err;
     }
 
@@ -52,7 +54,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeem(uint redeemTokens) external returns (uint) {
+    function redeem(uint256 redeemTokens) external returns (uint256) {
         return redeemInternal(redeemTokens, false);
     }
 
@@ -62,16 +64,16 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlying(uint redeemAmount) external returns (uint) {
+    function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
         return redeemUnderlyingInternal(redeemAmount, false);
     }
 
     /**
-      * @notice Sender borrows assets from the protocol to their own address
-      * @param borrowAmount The amount of the underlying asset to borrow
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function borrow(uint borrowAmount) external returns (uint) {
+     * @notice Sender borrows assets from the protocol to their own address
+     * @param borrowAmount The amount of the underlying asset to borrow
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function borrow(uint256 borrowAmount) external returns (uint256) {
         return borrowInternal(borrowAmount, false);
     }
 
@@ -80,8 +82,8 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrow(uint repayAmount) external returns (uint) {
-        (uint err,) = repayBorrowInternal(repayAmount, false);
+    function repayBorrow(uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowInternal(repayAmount, false);
         return err;
     }
 
@@ -91,8 +93,8 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint) {
-        (uint err,) = repayBorrowBehalfInternal(borrower, repayAmount, false);
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
         return err;
     }
 
@@ -104,8 +106,12 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint) {
-        (uint err,) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
+    function liquidateBorrow(
+        address borrower,
+        uint256 repayAmount,
+        CTokenInterface cTokenCollateral
+    ) external returns (uint256) {
+        (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
         return err;
     }
 
@@ -114,7 +120,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param addAmount The amount fo underlying token to add as reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReserves(uint addAmount) external returns (uint) {
+    function _addReserves(uint256 addAmount) external returns (uint256) {
         return _addReservesInternal(addAmount, false);
     }
 
@@ -125,7 +131,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         uint256 cashOnChain = getCashOnChain();
         uint256 cashPrior = getCashPrior();
 
-        uint excessCash = sub_(cashOnChain, cashPrior);
+        uint256 excessCash = sub_(cashOnChain, cashPrior);
         totalReserves = add_(totalReserves, excessCash);
         internalCash = cashOnChain;
     }
@@ -136,16 +142,20 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param amount The amount of the funds to be loaned
      * @param params The other parameters
      */
-    function flashLoan(address receiver, uint amount, bytes calldata params) external nonReentrant {
+    function flashLoan(
+        address receiver,
+        uint256 amount,
+        bytes calldata params
+    ) external nonReentrant {
         require(amount > 0, "flashLoan amount should be greater than zero");
-        require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
+        require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
 
-        uint cashOnChainBefore = getCashOnChain();
-        uint cashBefore = getCashPrior();
+        uint256 cashOnChainBefore = getCashOnChain();
+        uint256 cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
+        uint256 totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
         // 2. transfer fund to receiver
         doTransferOut(address(uint160(receiver)), amount, false);
@@ -157,11 +167,11 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
 
         // 5. check balance
-        uint cashOnChainAfter = getCashOnChain();
+        uint256 cashOnChainAfter = getCashOnChain();
         require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
 
         // 6. update reserves and internal cash and totalBorrows
-        uint reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
+        uint256 reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
         totalReserves = add_(totalReserves, reservesFee);
         internalCash = add_(cashBefore, totalFee);
         totalBorrows = sub_(totalBorrows, amount);
@@ -177,7 +187,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
-    function getCashPrior() internal view returns (uint) {
+    function getCashPrior() internal view returns (uint256) {
         return internalCash;
     }
 
@@ -186,7 +196,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
-    function getCashOnChain() internal view returns (uint) {
+    function getCashOnChain() internal view returns (uint256) {
         EIP20Interface token = EIP20Interface(underlying);
         return token.balanceOf(address(this));
     }
@@ -200,32 +210,39 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+    function doTransferIn(
+        address from,
+        uint256 amount,
+        bool isNative
+    ) internal returns (uint256) {
         isNative; // unused
 
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-        uint balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
+        uint256 balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
         token.transferFrom(from, address(this), amount);
 
         bool success;
         assembly {
             switch returndatasize()
-                case 0 {                       // This is a non-standard ERC-20
-                    success := not(0)          // set success to true
-                }
-                case 32 {                      // This is a compliant ERC-20
-                    returndatacopy(0, 0, 32)
-                    success := mload(0)        // Set `success = returndata` of external call
-                }
-                default {                      // This is an excessively non-compliant ERC-20, revert.
-                    revert(0, 0)
-                }
+            case 0 {
+                // This is a non-standard ERC-20
+                success := not(0) // set success to true
+            }
+            case 32 {
+                // This is a compliant ERC-20
+                returndatacopy(0, 0, 32)
+                success := mload(0) // Set `success = returndata` of external call
+            }
+            default {
+                // This is an excessively non-compliant ERC-20, revert.
+                revert(0, 0)
+            }
         }
         require(success, "TOKEN_TRANSFER_IN_FAILED");
 
         // Calculate the amount that was *actually* transferred
-        uint balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-        uint transferredIn = sub_(balanceAfter, balanceBefore);
+        uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
+        uint256 transferredIn = sub_(balanceAfter, balanceBefore);
         internalCash = add_(internalCash, transferredIn);
         return transferredIn;
     }
@@ -239,7 +256,11 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+    function doTransferOut(
+        address payable to,
+        uint256 amount,
+        bool isNative
+    ) internal {
         isNative; // unused
 
         EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
@@ -248,16 +269,19 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         bool success;
         assembly {
             switch returndatasize()
-                case 0 {                      // This is a non-standard ERC-20
-                    success := not(0)          // set success to true
-                }
-                case 32 {                     // This is a complaint ERC-20
-                    returndatacopy(0, 0, 32)
-                    success := mload(0)        // Set `success = returndata` of external call
-                }
-                default {                     // This is an excessively non-compliant ERC-20, revert.
-                    revert(0, 0)
-                }
+            case 0 {
+                // This is a non-standard ERC-20
+                success := not(0) // set success to true
+            }
+            case 32 {
+                // This is a complaint ERC-20
+                returndatacopy(0, 0, 32)
+                success := mload(0) // Set `success = returndata` of external call
+            }
+            default {
+                // This is an excessively non-compliant ERC-20, revert.
+                revert(0, 0)
+            }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");
         internalCash = sub_(internalCash, amount);
@@ -272,9 +296,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param tokens The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferTokens(address spender, address src, address dst, uint tokens) internal returns (uint) {
+    function transferTokens(
+        address spender,
+        address src,
+        address dst,
+        uint256 tokens
+    ) internal returns (uint256) {
         /* Fail if transfer not allowed */
-        uint allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
+        uint256 allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.TRANSFER_COMPTROLLER_REJECTION, allowed);
         }
@@ -285,9 +314,9 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         }
 
         /* Get the allowance, infinite for the account owner */
-        uint startingAllowance = 0;
+        uint256 startingAllowance = 0;
         if (spender == src) {
-            startingAllowance = uint(-1);
+            startingAllowance = uint256(-1);
         } else {
             startingAllowance = transferAllowances[src][spender];
         }
@@ -297,7 +326,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         accountTokens[dst] = add_(accountTokens[dst], tokens);
 
         /* Eat some of the allowance (if necessary) */
-        if (startingAllowance != uint(-1)) {
+        if (startingAllowance != uint256(-1)) {
             transferAllowances[src][spender] = sub_(startingAllowance, tokens);
         }
 
@@ -307,21 +336,21 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         // unused function
         // comptroller.transferVerify(address(this), src, dst, tokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 
     /**
      * @notice Get the account's cToken balances
      * @param account The address of the account
      */
-    function getCTokenBalanceInternal(address account) internal view returns (uint) {
+    function getCTokenBalanceInternal(address account) internal view returns (uint256) {
         return accountTokens[account];
     }
 
     struct MintLocalVars {
-        uint exchangeRateMantissa;
-        uint mintTokens;
-        uint actualMintAmount;
+        uint256 exchangeRateMantissa;
+        uint256 mintTokens;
+        uint256 actualMintAmount;
     }
 
     /**
@@ -332,9 +361,13 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param isNative The amount is in native or not
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
      */
-    function mintFresh(address minter, uint mintAmount, bool isNative) internal returns (uint, uint) {
+    function mintFresh(
+        address minter,
+        uint256 mintAmount,
+        bool isNative
+    ) internal returns (uint256, uint256) {
         /* Fail if mint not allowed */
-        uint allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
+        uint256 allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
             return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed), 0);
         }
@@ -344,7 +377,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
          * Put behind `mintAllowed` for accuring potential COMP rewards.
          */
         if (mintAmount == 0) {
-            return (uint(Error.NO_ERROR), 0);
+            return (uint256(Error.NO_ERROR), 0);
         }
 
         /* Verify market's block number equals current block number */
@@ -392,15 +425,15 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         // unused function
         // comptroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
 
-        return (uint(Error.NO_ERROR), vars.actualMintAmount);
+        return (uint256(Error.NO_ERROR), vars.actualMintAmount);
     }
 
     struct RedeemLocalVars {
-        uint exchangeRateMantissa;
-        uint redeemTokens;
-        uint redeemAmount;
-        uint totalSupplyNew;
-        uint accountTokensNew;
+        uint256 exchangeRateMantissa;
+        uint256 redeemTokens;
+        uint256 redeemAmount;
+        uint256 totalSupplyNew;
+        uint256 accountTokensNew;
     }
 
     /**
@@ -412,7 +445,12 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn, bool isNative) internal returns (uint) {
+    function redeemFresh(
+        address payable redeemer,
+        uint256 redeemTokensIn,
+        uint256 redeemAmountIn,
+        bool isNative
+    ) internal returns (uint256) {
         require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
         RedeemLocalVars memory vars;
@@ -440,7 +478,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         }
 
         /* Fail if redeem not allowed */
-        uint allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
+        uint256 allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
         }
@@ -450,7 +488,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
          * Put behind `redeemAllowed` for accuring potential COMP rewards.
          */
         if (redeemTokensIn == 0 && redeemAmountIn == 0) {
-            return uint(Error.NO_ERROR);
+            return uint256(Error.NO_ERROR);
         }
 
         /* Verify market's block number equals current block number */
@@ -494,7 +532,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         /* We call the defense hook */
         comptroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 
     /**
@@ -507,9 +545,14 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
      * @param seizeTokens The number of cTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seizeInternal(address seizerToken, address liquidator, address borrower, uint seizeTokens) internal returns (uint) {
+    function seizeInternal(
+        address seizerToken,
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) internal returns (uint256) {
         /* Fail if seize not allowed */
-        uint allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
+        uint256 allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.LIQUIDATE_SEIZE_COMPTROLLER_REJECTION, allowed);
         }
@@ -519,7 +562,7 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
          * Put behind `seizeAllowed` for accuring potential COMP rewards.
          */
         if (seizeTokens == 0) {
-            return uint(Error.NO_ERROR);
+            return uint256(Error.NO_ERROR);
         }
 
         /* Fail if borrower = liquidator */
@@ -542,6 +585,6 @@ contract CCapableErc20 is CToken, CCapableErc20Interface {
         // unused function
         // comptroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 }

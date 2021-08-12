@@ -1,28 +1,28 @@
 pragma solidity ^0.5.16;
 
 contract Counter {
-  uint public count;
-  uint public count2;
-  
-  function increment(uint amount) public payable {
-    count += amount;
-  }
+    uint256 public count;
+    uint256 public count2;
 
-  function decrement(uint amount) public payable {
-    require(amount <= count, "counter underflow");
-    count -= amount;
-  }
+    function increment(uint256 amount) public payable {
+        count += amount;
+    }
 
-  function increment(uint amount, uint amount2) public payable {
-    count += amount;
-    count2 += amount2;
-  }
+    function decrement(uint256 amount) public payable {
+        require(amount <= count, "counter underflow");
+        count -= amount;
+    }
 
-  function notZero() public view {
-    require(count != 0, "Counter::notZero");
-  }
+    function increment(uint256 amount, uint256 amount2) public payable {
+        count += amount;
+        count2 += amount2;
+    }
 
-  function doRevert() public pure {
-    require(false, "Counter::revert Testing");
-  }
+    function notZero() public view {
+        require(count != 0, "Counter::notZero");
+    }
+
+    function doRevert() public pure {
+        require(false, "Counter::revert Testing");
+    }
 }
