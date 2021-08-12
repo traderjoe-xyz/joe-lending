@@ -51,8 +51,11 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     }
 
     struct AggregatorInfo {
-        /// @notice The denomination
-        address denom;
+        /// @notice The base
+        address base;
+
+        /// @notice The quote denomination
+        address quote;
 
         /// @notice It's being used or not
         bool isUsed;
@@ -84,6 +87,16 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
 
     /// @notice Curve pool token data
     mapping(address => CrvTokenInfo) public crvTokens;
+
+    /// @notice BTC related addresses. All these underlying we use `Denominations.BTC` as the aggregator base.
+    address[6] public btcAddresses = [
+        0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599, // WBTC
+        0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D, // renBTC
+        0x9BE89D2a4cd102D8Fecc6BF9dA793be995C22541, // BBTC
+        0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa, // tBTC
+        0x0316EB71485b0Ab14103307bf65a021042c6d380, // HBTC
+        0xc4E15973E6fF2A35cC804c2CF9D2a1b817a8b40F // ibBTC
+    ];
 
     address public cEthAddress;
 
@@ -160,8 +173,8 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
 
         AggregatorInfo memory aggregatorInfo = aggregators[token];
         if (aggregatorInfo.isUsed) {
-            uint price = getPriceFromChainlink(token, aggregatorInfo.denom);
-            if (aggregatorInfo.denom == Denominations.USD) {
+            uint price = getPriceFromChainlink(aggregatorInfo.base, aggregatorInfo.quote);
+            if (aggregatorInfo.quote == Denominations.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = mul_(price, Exp({mantissa: getUsdcEthPrice()}));
             }
@@ -277,9 +290,23 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
+    /**
+     * @notice Check if the token is one of BTC relared address
+     * @param token The token address
+     * @return It's BTC or not
+     */
+    function isBtcAddress(address token) internal returns (bool) {
+        for (uint i = 0; i < btcAddresses.length; i++) {
+            if (btcAddresses[i] == token) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address tokenAddress, address denom, bool isUsed);
+    event AggregatorUpdated(address tokenAddress, address base, address quote, bool isUsed);
     event IsLPUpdated(address tokenAddress, bool isLP);
     event SetYVaultToken(address token, YvTokenVersion version);
     event SetCurveToken(address token, CurvePoolType poolType, address swap);
@@ -295,25 +322,32 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(tokenAddresses.length == quotes.length, "mismatched data");
         for (uint i = 0; i < tokenAddresses.length; i++) {
-            address denom;
+            address base;
+            address quote;
             bool isUsed;
             if (bytes(quotes[i]).length != 0) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
                 isUsed = true;
 
+                base = tokenAddresses[i];
+                if (isBtcAddress(tokenAddresses[i])) {
+                    base = Denominations.BTC;
+                }
+
                 if (compareStrings(quotes[i], "ETH")) {
-                    denom = Denominations.ETH;
+                    quote = Denominations.ETH;
                 } else if (compareStrings(quotes[i], "USD")) {
-                    denom = Denominations.USD;
+                    quote = Denominations.USD;
                 } else {
                     revert("unsupported denomination");
                 }
+
                 // Make sure the aggregator exists.
-                address aggregator = registry.getFeed(tokenAddresses[i], denom);
+                address aggregator = registry.getFeed(base, quote);
                 require(registry.isFeedEnabled(aggregator), "aggregator not enabled");
             }
-            aggregators[tokenAddresses[i]] = AggregatorInfo({denom: denom, isUsed: isUsed});
-            emit AggregatorUpdated(tokenAddresses[i], denom, isUsed);
+            aggregators[tokenAddresses[i]] = AggregatorInfo({base: base, quote: quote, isUsed: isUsed});
+            emit AggregatorUpdated(tokenAddresses[i], base, quote, isUsed);
         }
     }
 
