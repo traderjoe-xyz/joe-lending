@@ -239,6 +239,11 @@ describe('PriceOracleProxy', () => {
   });
 
   describe("_setAggregators", () => {
+    const ethAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+    const btcAddress = '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB';
+    const usdAddress = '0x0000000000000000000000000000000000000348';
+    const wbtcAddress = '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599';
+
     let token;
 
     beforeEach(async () => {
@@ -246,7 +251,29 @@ describe('PriceOracleProxy', () => {
     });
 
     it("set aggregators successfully", async () => {
+      // token - ETH
       expect(await send(oracle, "_setAggregators", [[token._address], ['ETH']])).toSucceed();
+
+      let aggregator = await call(oracle, "aggregators", [token._address]);
+      expect(aggregator.base).toEqual(token._address);
+      expect(aggregator.quote).toEqual(ethAddress);
+      expect(aggregator.isUsed).toEqual(true);
+
+      // token - USD
+      expect(await send(oracle, "_setAggregators", [[token._address], ['USD']])).toSucceed();
+
+      aggregator = await call(oracle, "aggregators", [token._address]);
+      expect(aggregator.base).toEqual(token._address);
+      expect(aggregator.quote).toEqual(usdAddress);
+      expect(aggregator.isUsed).toEqual(true);
+
+      // BTC - ETH
+      expect(await send(oracle, "_setAggregators", [[wbtcAddress], ['ETH']])).toSucceed();
+
+      aggregator = await call(oracle, "aggregators", [wbtcAddress]);
+      expect(aggregator.base).toEqual(btcAddress);
+      expect(aggregator.quote).toEqual(ethAddress);
+      expect(aggregator.isUsed).toEqual(true);
     });
 
     it("fails to set aggregators for non-admin", async () => {
@@ -272,6 +299,11 @@ describe('PriceOracleProxy', () => {
     it("clear aggregators successfully", async () => {
       expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
       expect(await send(oracle, "_setAggregators", [[token._address], ['']], {from: accounts[0]})).toSucceed();
+
+      const aggregator = await call(oracle, "aggregators", [token._address]);
+      expect(aggregator.base).toEqual(address(0));
+      expect(aggregator.quote).toEqual(address(0));
+      expect(aggregator.isUsed).toEqual(false);
     });
   });
 
