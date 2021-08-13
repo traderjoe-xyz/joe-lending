@@ -53,10 +53,8 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     struct AggregatorInfo {
         /// @notice The base
         address base;
-
         /// @notice The quote denomination
         address quote;
-
         /// @notice It's being used or not
         bool isUsed;
     }
@@ -112,10 +110,12 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
      * @param cEthAddress_ The address of cETH, which will return a constant 1e18, since all prices relative to ether
      * @param registry_ The address of ChainLink registry
      */
-    constructor(address admin_,
-                address v1PriceOracle_,
-                address cEthAddress_,
-                address registry_) public {
+    constructor(
+        address admin_,
+        address v1PriceOracle_,
+        address cEthAddress_,
+        address registry_
+    ) public {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         cEthAddress = cEthAddress_;
@@ -134,7 +134,7 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
             return 1e18;
         } else if (cTokenAddress == crXSushiAddress) {
             // Handle xSUSHI.
-            uint exchangeRate = XSushiExchangeRateInterface(xSushiExRateAddress).getExchangeRate();
+            uint256 exchangeRate = XSushiExchangeRateInterface(xSushiExRateAddress).getExchangeRate();
             return mul_(getTokenPrice(sushiAddress), Exp({mantissa: exchangeRate}));
         }
 
@@ -173,7 +173,7 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
 
         AggregatorInfo memory aggregatorInfo = aggregators[token];
         if (aggregatorInfo.isUsed) {
-            uint price = getPriceFromChainlink(aggregatorInfo.base, aggregatorInfo.quote);
+            uint256 price = getPriceFromChainlink(aggregatorInfo.base, aggregatorInfo.quote);
             if (aggregatorInfo.quote == Denominations.USD) {
                 // Convert the price to ETH based if it's USD based.
                 price = mul_(price, Exp({mantissa: getUsdcEthPrice()}));
@@ -190,12 +190,12 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
      * @param quote The quote token, currenlty support ETH and USD
      * @return The price, scaled by 1e18
      */
-    function getPriceFromChainlink(address base, address quote) internal view returns (uint) {
-        ( , int price, , , ) = registry.latestRoundData(base, quote);
+    function getPriceFromChainlink(address base, address quote) internal view returns (uint256) {
+        (, int256 price, , , ) = registry.latestRoundData(base, quote);
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return mul_(uint(price), 10**(18 - uint(registry.decimals(base, quote))));
+        return mul_(uint256(price), 10**(18 - uint256(registry.decimals(base, quote))));
     }
 
     /**
@@ -296,7 +296,7 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
      * @return It's BTC or not
      */
     function isBtcAddress(address token) internal returns (bool) {
-        for (uint i = 0; i < btcAddresses.length; i++) {
+        for (uint256 i = 0; i < btcAddresses.length; i++) {
             if (btcAddresses[i] == token) {
                 return true;
             }
@@ -321,7 +321,7 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     function _setAggregators(address[] calldata tokenAddresses, string[] calldata quotes) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(tokenAddresses.length == quotes.length, "mismatched data");
-        for (uint i = 0; i < tokenAddresses.length; i++) {
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
             address base;
             address quote;
             bool isUsed;
@@ -359,7 +359,7 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     function _setLPs(address[] calldata tokenAddresses, bool[] calldata isLP) external {
         require(msg.sender == admin, "only the admin may set LPs");
         require(tokenAddresses.length == isLP.length, "mismatched data");
-        for (uint i = 0; i < tokenAddresses.length; i++) {
+        for (uint256 i = 0; i < tokenAddresses.length; i++) {
             isUnderlyingLP[tokenAddresses[i]] = isLP[i];
             if (isLP[i]) {
                 // Sanity check to make sure the token is LP.

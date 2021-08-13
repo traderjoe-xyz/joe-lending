@@ -309,13 +309,17 @@ contract YVaultV2TokenHarness is ERC20Harness, YVaultV2Interface {
 
 interface LPInterface {
     function token0() external view returns (address);
+
     function token1() external view returns (address);
 }
 
 contract LPTokenHarness is ERC20Harness, LPInterface {
-    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol) public
-        ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {
-    }
+    constructor(
+        uint256 _initialAmount,
+        string memory _tokenName,
+        uint8 _decimalUnits,
+        string memory _tokenSymbol
+    ) public ERC20Harness(_initialAmount, _tokenName, _decimalUnits, _tokenSymbol) {}
 
     function token0() external view returns (address) {
         return address(0);

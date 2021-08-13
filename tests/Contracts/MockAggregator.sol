@@ -13,7 +13,21 @@ contract MockAggregator is FeedRegistryInterface {
         answer = _answer;
     }
 
-    function getRoundData(address base, address quote, uint80 _roundId) external view returns (uint80, int256, uint256, uint256, uint80) {
+    function getRoundData(
+        address base,
+        address quote,
+        uint80 _roundId
+    )
+        external
+        view
+        returns (
+            uint80,
+            int256,
+            uint256,
+            uint256,
+            uint80
+        )
+    {
         // Shh
         base;
         quote;
@@ -21,7 +35,17 @@ contract MockAggregator is FeedRegistryInterface {
         return (roundId, answer, block.timestamp, block.timestamp, roundId);
     }
 
-    function latestRoundData(address base, address quote) external view returns (uint80, int256, uint256, uint256, uint80) {
+    function latestRoundData(address base, address quote)
+        external
+        view
+        returns (
+            uint80,
+            int256,
+            uint256,
+            uint256,
+            uint80
+        )
+    {
         // Shh
         base;
         quote;
