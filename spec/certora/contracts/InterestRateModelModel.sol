@@ -4,18 +4,27 @@ import "../../../contracts/Exponential.sol";
 import "../../../contracts/InterestRateModel.sol";
 
 contract InterestRateModelModel is InterestRateModel {
-    uint borrowDummy;
-    uint supplyDummy;
+    uint256 borrowDummy;
+    uint256 supplyDummy;
 
     function isInterestRateModel() external pure returns (bool) {
         return true;
     }
 
-    function getBorrowRate(uint _cash, uint _borrows, uint _reserves) external view returns (uint) {
+    function getBorrowRate(
+        uint256 _cash,
+        uint256 _borrows,
+        uint256 _reserves
+    ) external view returns (uint256) {
         return borrowDummy;
     }
 
-    function getSupplyRate(uint _cash, uint _borrows, uint _reserves, uint _reserveFactorMantissa) external view returns (uint) {
+    function getSupplyRate(
+        uint256 _cash,
+        uint256 _borrows,
+        uint256 _reserves,
+        uint256 _reserveFactorMantissa
+    ) external view returns (uint256) {
         return supplyDummy;
     }
 }

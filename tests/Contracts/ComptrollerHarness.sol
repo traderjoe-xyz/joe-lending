@@ -6,36 +6,36 @@ import "../../contracts/CToken.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
-  function getCompAddress() public view returns (address) {
-    return 0x61460874a7196d6a22D1eE4922473664b3E95270;
-  }
+    function getCompAddress() public view returns (address) {
+        return 0x61460874a7196d6a22D1eE4922473664b3E95270;
+    }
 }
 
 contract ComptrollerRopsten is Comptroller {
-  function getCompAddress() public view returns (address) {
-    return 0x1Fe16De955718CFAb7A44605458AB023838C2793;
-  }
+    function getCompAddress() public view returns (address) {
+        return 0x1Fe16De955718CFAb7A44605458AB023838C2793;
+    }
 }
 
 contract ComptrollerHarness is Comptroller {
-    uint public blockNumber;
+    uint256 public blockNumber;
 
-    constructor() Comptroller() public {}
+    constructor() public Comptroller() {}
 
     function setPauseGuardian(address harnessedPauseGuardian) public {
         pauseGuardian = harnessedPauseGuardian;
     }
 
-    function harnessFastForward(uint blocks) public returns (uint) {
+    function harnessFastForward(uint256 blocks) public returns (uint256) {
         blockNumber += blocks;
         return blockNumber;
     }
 
-    function setBlockNumber(uint number) public {
+    function setBlockNumber(uint256 number) public {
         blockNumber = number;
     }
 
-    function getBlockNumber() public view returns (uint) {
+    function getBlockNumber() public view returns (uint256) {
         return blockNumber;
     }
 }
@@ -44,7 +44,7 @@ contract ComptrollerHarness is Comptroller {
 contract CompoundComptrollerHarness is ComptrollerHarness {
     address compAddress;
 
-    constructor() ComptrollerHarness() public {}
+    constructor() public ComptrollerHarness() {}
 
     function setCompAddress(address compAddress_) public {
         compAddress = compAddress_;
@@ -54,18 +54,32 @@ contract CompoundComptrollerHarness is ComptrollerHarness {
         return compAddress;
     }
 
-    function setCompAccrued(address user, uint userAccrued) public {
+    function setCompAccrued(address user, uint256 userAccrued) public {
         compAccrued[user] = userAccrued;
     }
 
-    function claimComp(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
+    function claimComp(
+        address[] memory holders,
+        CToken[] memory cTokens,
+        bool borrowers,
+        bool suppliers
+    ) public {
         // unused
-        holders; cTokens; borrowers; suppliers;
+        holders;
+        cTokens;
+        borrowers;
+        suppliers;
     }
 }
 
 contract ComptrollerBorked {
-    function _become(Unitroller unitroller, PriceOracle _oracle, uint _closeFactorMantissa, uint _maxAssets, bool _reinitializing) public {
+    function _become(
+        Unitroller unitroller,
+        PriceOracle _oracle,
+        uint256 _closeFactorMantissa,
+        uint256 _maxAssets,
+        bool _reinitializing
+    ) public {
         _oracle;
         _closeFactorMantissa;
         _maxAssets;
@@ -94,20 +108,20 @@ contract BoolComptroller is ComptrollerInterface {
     bool verifyTransfer = true;
 
     bool failCalculateSeizeTokens;
-    uint calculatedSeizeTokens;
+    uint256 calculatedSeizeTokens;
 
-    uint noError = 0;
-    uint opaqueError = noError + 11; // an arbitrary, opaque error code
+    uint256 noError = 0;
+    uint256 opaqueError = noError + 11; // an arbitrary, opaque error code
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata _cTokens) external returns (uint[] memory) {
+    function enterMarkets(address[] calldata _cTokens) external returns (uint256[] memory) {
         _cTokens;
-        uint[] memory ret;
+        uint256[] memory ret;
         return ret;
     }
 
-    function exitMarket(address _cToken) external returns (uint) {
+    function exitMarket(address _cToken) external returns (uint256) {
         _cToken;
         return noError;
     }
@@ -120,14 +134,23 @@ contract BoolComptroller is ComptrollerInterface {
 
     /*** Policy Hooks ***/
 
-    function mintAllowed(address _cToken, address _minter, uint _mintAmount) public returns (uint) {
+    function mintAllowed(
+        address _cToken,
+        address _minter,
+        uint256 _mintAmount
+    ) public returns (uint256) {
         _cToken;
         _minter;
         _mintAmount;
         return allowMint ? noError : opaqueError;
     }
 
-    function mintVerify(address _cToken, address _minter, uint _mintAmount, uint _mintTokens) external {
+    function mintVerify(
+        address _cToken,
+        address _minter,
+        uint256 _mintAmount,
+        uint256 _mintTokens
+    ) external {
         _cToken;
         _minter;
         _mintAmount;
@@ -135,14 +158,23 @@ contract BoolComptroller is ComptrollerInterface {
         require(verifyMint, "mintVerify rejected mint");
     }
 
-    function redeemAllowed(address _cToken, address _redeemer, uint _redeemTokens) public returns (uint) {
+    function redeemAllowed(
+        address _cToken,
+        address _redeemer,
+        uint256 _redeemTokens
+    ) public returns (uint256) {
         _cToken;
         _redeemer;
         _redeemTokens;
         return allowRedeem ? noError : opaqueError;
     }
 
-    function redeemVerify(address _cToken, address _redeemer, uint _redeemAmount, uint _redeemTokens) external {
+    function redeemVerify(
+        address _cToken,
+        address _redeemer,
+        uint256 _redeemAmount,
+        uint256 _redeemTokens
+    ) external {
         _cToken;
         _redeemer;
         _redeemAmount;
@@ -150,14 +182,22 @@ contract BoolComptroller is ComptrollerInterface {
         require(verifyRedeem, "redeemVerify rejected redeem");
     }
 
-    function borrowAllowed(address _cToken, address _borrower, uint _borrowAmount) public returns (uint) {
+    function borrowAllowed(
+        address _cToken,
+        address _borrower,
+        uint256 _borrowAmount
+    ) public returns (uint256) {
         _cToken;
         _borrower;
         _borrowAmount;
         return allowBorrow ? noError : opaqueError;
     }
 
-    function borrowVerify(address _cToken, address _borrower, uint _borrowAmount) external {
+    function borrowVerify(
+        address _cToken,
+        address _borrower,
+        uint256 _borrowAmount
+    ) external {
         _cToken;
         _borrower;
         _borrowAmount;
@@ -168,7 +208,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _payer,
         address _borrower,
-        uint _repayAmount) public returns (uint) {
+        uint256 _repayAmount
+    ) public returns (uint256) {
         _cToken;
         _payer;
         _borrower;
@@ -180,8 +221,9 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _payer,
         address _borrower,
-        uint _repayAmount,
-        uint _borrowerIndex) external {
+        uint256 _repayAmount,
+        uint256 _borrowerIndex
+    ) external {
         _cToken;
         _payer;
         _borrower;
@@ -195,7 +237,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenCollateral,
         address _liquidator,
         address _borrower,
-        uint _repayAmount) public returns (uint) {
+        uint256 _repayAmount
+    ) public returns (uint256) {
         _cTokenBorrowed;
         _cTokenCollateral;
         _liquidator;
@@ -209,8 +252,9 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenCollateral,
         address _liquidator,
         address _borrower,
-        uint _repayAmount,
-        uint _seizeTokens) external {
+        uint256 _repayAmount,
+        uint256 _seizeTokens
+    ) external {
         _cTokenBorrowed;
         _cTokenCollateral;
         _liquidator;
@@ -225,7 +269,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenBorrowed,
         address _borrower,
         address _liquidator,
-        uint _seizeTokens) public returns (uint) {
+        uint256 _seizeTokens
+    ) public returns (uint256) {
         _cTokenCollateral;
         _cTokenBorrowed;
         _liquidator;
@@ -239,7 +284,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cTokenBorrowed,
         address _liquidator,
         address _borrower,
-        uint _seizeTokens) external {
+        uint256 _seizeTokens
+    ) external {
         _cTokenCollateral;
         _cTokenBorrowed;
         _liquidator;
@@ -252,7 +298,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _src,
         address _dst,
-        uint _transferTokens) public returns (uint) {
+        uint256 _transferTokens
+    ) public returns (uint256) {
         _cToken;
         _src;
         _dst;
@@ -264,7 +311,8 @@ contract BoolComptroller is ComptrollerInterface {
         address _cToken,
         address _src,
         address _dst,
-        uint _transferTokens) external {
+        uint256 _transferTokens
+    ) external {
         _cToken;
         _src;
         _dst;
@@ -277,7 +325,8 @@ contract BoolComptroller is ComptrollerInterface {
     function liquidateCalculateSeizeTokens(
         address _cTokenBorrowed,
         address _cTokenCollateral,
-        uint _repayAmount) public view returns (uint, uint) {
+        uint256 _repayAmount
+    ) public view returns (uint256, uint256) {
         _cTokenBorrowed;
         _cTokenCollateral;
         _repayAmount;
@@ -351,7 +400,7 @@ contract BoolComptroller is ComptrollerInterface {
 
     /*** Liquidity/Liquidation Calculations ***/
 
-    function setCalculatedSeizeTokens(uint seizeTokens_) public {
+    function setCalculatedSeizeTokens(uint256 seizeTokens_) public {
         calculatedSeizeTokens = seizeTokens_;
     }
 
@@ -361,19 +410,19 @@ contract BoolComptroller is ComptrollerInterface {
 }
 
 contract EchoTypesComptroller is UnitrollerAdminStorage {
-    function stringy(string memory s) public pure returns(string memory) {
+    function stringy(string memory s) public pure returns (string memory) {
         return s;
     }
 
-    function addresses(address a) public pure returns(address) {
+    function addresses(address a) public pure returns (address) {
         return a;
     }
 
-    function booly(bool b) public pure returns(bool) {
+    function booly(bool b) public pure returns (bool) {
         return b;
     }
 
-    function listOInts(uint[] memory u) public pure returns(uint[] memory) {
+    function listOInts(uint256[] memory u) public pure returns (uint256[] memory) {
         return u;
     }
 

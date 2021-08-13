@@ -153,7 +153,23 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run: yarn run lint
-
+  format:
+    docker:
+      - image: circleci/node:13
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v3-dependencies-{{ checksum "yarn.lock" }}
+      - run: yarn install || (yarn cache clean && yarn install)
+      - save_cache:
+          paths:
+            - node_modules
+          key: v3-dependencies-{{ checksum "yarn.lock" }}
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn run prettier '**/**/*.sol' -c
   docker:
     docker:
       - image: cimg/go:1.13
@@ -187,4 +203,5 @@ workflows:
     jobs:
       - test
       - lint
+      - format
       - verify

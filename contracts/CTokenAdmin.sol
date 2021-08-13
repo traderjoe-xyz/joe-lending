@@ -50,7 +50,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param newPendingAdmin The new pending admin
      */
-    function _setPendingAdmin(address cToken, address payable newPendingAdmin) external onlyAdmin returns (uint) {
+    function _setPendingAdmin(address cToken, address payable newPendingAdmin) external onlyAdmin returns (uint256) {
         return CTokenInterface(cToken)._setPendingAdmin(newPendingAdmin);
     }
 
@@ -58,7 +58,7 @@ contract CTokenAdmin {
      * @notice Accept cToken admin
      * @param cToken The cToken address
      */
-    function _acceptAdmin(address cToken) external onlyAdmin returns (uint) {
+    function _acceptAdmin(address cToken) external onlyAdmin returns (uint256) {
         return CTokenInterface(cToken)._acceptAdmin();
     }
 
@@ -67,7 +67,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param newComptroller The new comptroller address
      */
-    function _setComptroller(address cToken, ComptrollerInterface newComptroller) external onlyAdmin returns (uint) {
+    function _setComptroller(address cToken, ComptrollerInterface newComptroller) external onlyAdmin returns (uint256) {
         return CTokenInterface(cToken)._setComptroller(newComptroller);
     }
 
@@ -76,7 +76,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param newReserveFactorMantissa The new reserve factor
      */
-    function _setReserveFactor(address cToken, uint newReserveFactorMantissa) external onlyAdmin returns (uint) {
+    function _setReserveFactor(address cToken, uint256 newReserveFactorMantissa) external onlyAdmin returns (uint256) {
         return CTokenInterface(cToken)._setReserveFactor(newReserveFactorMantissa);
     }
 
@@ -85,7 +85,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param reduceAmount The amount of reduction
      */
-    function _reduceReserves(address cToken, uint reduceAmount) external onlyAdmin returns (uint) {
+    function _reduceReserves(address cToken, uint256 reduceAmount) external onlyAdmin returns (uint256) {
         return CTokenInterface(cToken)._reduceReserves(reduceAmount);
     }
 
@@ -94,7 +94,11 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param newInterestRateModel The new IRM address
      */
-    function _setInterestRateModel(address cToken, InterestRateModel newInterestRateModel) external onlyAdmin returns (uint) {
+    function _setInterestRateModel(address cToken, InterestRateModel newInterestRateModel)
+        external
+        onlyAdmin
+        returns (uint256)
+    {
         return CTokenInterface(cToken)._setInterestRateModel(newInterestRateModel);
     }
 
@@ -104,7 +108,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param newCollateralCap The new collateral cap
      */
-    function _setCollateralCap(address cToken, uint newCollateralCap) external onlyAdmin {
+    function _setCollateralCap(address cToken, uint256 newCollateralCap) external onlyAdmin {
         CCollateralCapErc20Interface(cToken)._setCollateralCap(newCollateralCap);
     }
 
@@ -114,7 +118,12 @@ contract CTokenAdmin {
      * @param implementation The new implementation
      * @param becomeImplementationData The payload data
      */
-    function _setImplementation(address cToken, address implementation, bool allowResign, bytes calldata becomeImplementationData) external onlyAdmin {
+    function _setImplementation(
+        address cToken,
+        address implementation,
+        bool allowResign,
+        bytes calldata becomeImplementationData
+    ) external onlyAdmin {
         CDelegatorInterface(cToken)._setImplementation(implementation, allowResign, becomeImplementationData);
     }
 
@@ -123,7 +132,7 @@ contract CTokenAdmin {
      * @param cToken The cToken address
      * @param reduceAmount The amount of reduction
      */
-    function extractReserves(address cToken, uint reduceAmount) external onlyReserveManager {
+    function extractReserves(address cToken, uint256 reduceAmount) external onlyReserveManager {
         require(CTokenInterface(cToken)._reduceReserves(reduceAmount) == 0, "failed to reduce reserves");
 
         address underlying = CErc20(cToken).underlying();
@@ -135,7 +144,7 @@ contract CTokenAdmin {
      * @param token The token address
      */
     function seize(address token) external onlyAdmin {
-        uint amount = EIP20NonStandardInterface(token).balanceOf(address(this));
+        uint256 amount = EIP20NonStandardInterface(token).balanceOf(address(this));
         if (amount > 0) {
             _transferToken(token, admin, amount);
         }
@@ -169,7 +178,11 @@ contract CTokenAdmin {
         emit SetAdmin(oldAdmin, newAdmin);
     }
 
-    function _transferToken(address token, address payable to, uint amount) private {
+    function _transferToken(
+        address token,
+        address payable to,
+        uint256 amount
+    ) private {
         require(to != address(0), "receiver cannot be zero address");
 
         EIP20NonStandardInterface(token).transfer(to, amount);
@@ -177,19 +190,21 @@ contract CTokenAdmin {
         bool success;
         assembly {
             switch returndatasize()
-                case 0 {                      // This is a non-standard ERC-20
-                    success := not(0)         // set success to true
-                }
-                case 32 {                     // This is a complaint ERC-20
-                    returndatacopy(0, 0, 32)
-                    success := mload(0)       // Set `success = returndata` of external call
-                }
-                default {
+            case 0 {
+                // This is a non-standard ERC-20
+                success := not(0) // set success to true
+            }
+            case 32 {
+                // This is a complaint ERC-20
+                returndatacopy(0, 0, 32)
+                success := mload(0) // Set `success = returndata` of external call
+            }
+            default {
                 if lt(returndatasize(), 32) {
-                    revert(0, 0)              // This is a non-compliant ERC-20, revert.
+                    revert(0, 0) // This is a non-compliant ERC-20, revert.
                 }
-                returndatacopy(0, 0, 32)      // Vyper compiler before 0.2.8 will not truncate RETURNDATASIZE.
-                success := mload(0)           // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
+                returndatacopy(0, 0, 32) // Vyper compiler before 0.2.8 will not truncate RETURNDATASIZE.
+                success := mload(0) // See here: https://github.com/vyperlang/vyper/security/advisories/GHSA-375m-5fvv-xq23
             }
         }
         require(success, "TOKEN_TRANSFER_OUT_FAILED");

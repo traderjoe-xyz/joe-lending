@@ -1,13 +1,13 @@
 pragma solidity ^0.5.16;
 
 contract ConstBase {
-    uint public constant C = 1;
+    uint256 public constant C = 1;
 
-    function c() public pure returns (uint) {
+    function c() public pure returns (uint256) {
         return 1;
     }
 
-    function ADD(uint a) public view returns (uint) {
+    function ADD(uint256 a) public view returns (uint256) {
         // tells compiler to accept view instead of pure
         if (false) {
             C + now;
@@ -15,7 +15,7 @@ contract ConstBase {
         return a + C;
     }
 
-    function add(uint a) public view returns (uint) {
+    function add(uint256 a) public view returns (uint256) {
         // tells compiler to accept view instead of pure
         if (false) {
             C + now;
@@ -25,7 +25,7 @@ contract ConstBase {
 }
 
 contract ConstSub is ConstBase {
-    function c() public pure returns (uint) {
+    function c() public pure returns (uint256) {
         return 2;
     }
 }

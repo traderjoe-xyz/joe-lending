@@ -8,7 +8,13 @@ import "./EIP20Interface.sol";
  */
 interface IComptroller {
     function getCompAddress() external view returns (address);
-    function claimComp(address[] calldata holders, CToken[] calldata cTokens, bool borrowers, bool suppliers) external;
+
+    function claimComp(
+        address[] calldata holders,
+        CToken[] calldata cTokens,
+        bool borrowers,
+        bool suppliers
+    ) external;
 }
 
 /**
@@ -33,8 +39,8 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @member index The last updated index
      */
     struct RewardState {
-        uint balance;
-        uint index;
+        uint256 balance;
+        uint256 index;
     }
 
     /**
@@ -45,12 +51,12 @@ contract CCTokenDelegate is CCapableErc20Delegate {
     /**
      * @notice The index of every Compound's CToken supplier
      */
-    mapping(address => uint) public supplierState;
+    mapping(address => uint256) public supplierState;
 
     /**
      * @notice The comp amount of every user
      */
-    mapping(address => uint) public compUserAccrued;
+    mapping(address => uint256) public compUserAccrued;
 
     /**
      * @notice Delegate interface to become the implementation
@@ -67,13 +73,13 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @notice Manually claim comp rewards by user
      * @return The amount of comp rewards user claims
      */
-    function claimComp(address account) public returns (uint) {
+    function claimComp(address account) public returns (uint256) {
         harvestComp();
 
         updateSupplyIndex();
         updateSupplierIndex(account);
 
-        uint compBalance = compUserAccrued[account];
+        uint256 compBalance = compUserAccrued[account];
         if (compBalance > 0) {
             // Transfer user comp and subtract the balance in supplyState
             EIP20Interface(comp).transfer(account, compBalance);
@@ -97,7 +103,12 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @param tokens The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferTokens(address spender, address src, address dst, uint tokens) internal returns (uint) {
+    function transferTokens(
+        address spender,
+        address src,
+        address dst,
+        uint256 tokens
+    ) internal returns (uint256) {
         harvestComp();
 
         updateSupplyIndex();
@@ -116,8 +127,12 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @param isNative The amount is in native or not
      * @return The actual amount that is transferred
      */
-    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
-        uint transferredIn = super.doTransferIn(from, amount, isNative);
+    function doTransferIn(
+        address from,
+        uint256 amount,
+        bool isNative
+    ) internal returns (uint256) {
+        uint256 transferredIn = super.doTransferIn(from, amount, isNative);
 
         harvestComp();
         updateSupplyIndex();
@@ -132,7 +147,11 @@ contract CCTokenDelegate is CCapableErc20Delegate {
      * @param amount Amount of underlying to transfer
      * @param isNative The amount is in native or not
      */
-    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+    function doTransferOut(
+        address payable to,
+        uint256 amount,
+        bool isNative
+    ) internal {
         harvestComp();
         updateSupplyIndex();
         updateSupplierIndex(to);
@@ -153,8 +172,8 @@ contract CCTokenDelegate is CCapableErc20Delegate {
     }
 
     function updateSupplyIndex() internal {
-        uint compAccrued = sub_(compBalance(), supplyState.balance);
-        uint supplyTokens = CToken(address(this)).totalSupply();
+        uint256 compAccrued = sub_(compBalance(), supplyState.balance);
+        uint256 supplyTokens = CToken(address(this)).totalSupply();
         Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
         Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
 
@@ -168,14 +187,14 @@ contract CCTokenDelegate is CCapableErc20Delegate {
         Double memory supplierIndex = Double({mantissa: supplierState[supplier]});
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
         if (deltaIndex.mantissa > 0) {
-            uint supplierTokens = CToken(address(this)).balanceOf(supplier);
-            uint supplierDelta = mul_(supplierTokens, deltaIndex);
+            uint256 supplierTokens = CToken(address(this)).balanceOf(supplier);
+            uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
             compUserAccrued[supplier] = add_(compUserAccrued[supplier], supplierDelta);
             supplierState[supplier] = supplyIndex.mantissa;
         }
     }
 
-    function compBalance() internal view returns (uint) {
+    function compBalance() internal view returns (uint256) {
         return EIP20Interface(comp).balanceOf(address(this));
     }
 }

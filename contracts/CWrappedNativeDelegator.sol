@@ -21,28 +21,35 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param implementation_ The address of the implementation the contract delegates to
      * @param becomeImplementationData The encoded args for becomeImplementation
      */
-    constructor(address underlying_,
-                ComptrollerInterface comptroller_,
-                InterestRateModel interestRateModel_,
-                uint initialExchangeRateMantissa_,
-                string memory name_,
-                string memory symbol_,
-                uint8 decimals_,
-                address payable admin_,
-                address implementation_,
-                bytes memory becomeImplementationData) public {
+    constructor(
+        address underlying_,
+        ComptrollerInterface comptroller_,
+        InterestRateModel interestRateModel_,
+        uint256 initialExchangeRateMantissa_,
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_,
+        address payable admin_,
+        address implementation_,
+        bytes memory becomeImplementationData
+    ) public {
         // Creator of the contract is admin during initialization
         admin = msg.sender;
 
         // First delegate gets to initialize the delegator (i.e. storage contract)
-        delegateTo(implementation_, abi.encodeWithSignature("initialize(address,address,address,uint256,string,string,uint8)",
-                                                            underlying_,
-                                                            comptroller_,
-                                                            interestRateModel_,
-                                                            initialExchangeRateMantissa_,
-                                                            name_,
-                                                            symbol_,
-                                                            decimals_));
+        delegateTo(
+            implementation_,
+            abi.encodeWithSignature(
+                "initialize(address,address,address,uint256,string,string,uint8)",
+                underlying_,
+                comptroller_,
+                interestRateModel_,
+                initialExchangeRateMantissa_,
+                name_,
+                symbol_,
+                decimals_
+            )
+        );
 
         // New implementations always get set via the settor (post-initialize)
         _setImplementation(implementation_, false, becomeImplementationData);
@@ -57,7 +64,11 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param allowResign Flag to indicate whether to call _resignImplementation on the old implementation
      * @param becomeImplementationData The encoded bytes data to be passed to _becomeImplementation
      */
-    function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public {
+    function _setImplementation(
+        address implementation_,
+        bool allowResign,
+        bytes memory becomeImplementationData
+    ) public {
         require(msg.sender == admin, "CWrappedNativeDelegator::_setImplementation: Caller must be admin");
 
         if (allowResign) {
@@ -78,7 +89,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mint(uint mintAmount) external returns (uint) {
+    function mint(uint256 mintAmount) external returns (uint256) {
         mintAmount; // Shh
         delegateAndReturn();
     }
@@ -88,7 +99,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mintNative() external payable returns (uint) {
+    function mintNative() external payable returns (uint256) {
         delegateAndReturn();
     }
 
@@ -98,7 +109,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeem(uint redeemTokens) external returns (uint) {
+    function redeem(uint256 redeemTokens) external returns (uint256) {
         redeemTokens; // Shh
         delegateAndReturn();
     }
@@ -109,7 +120,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemNative(uint redeemTokens) external returns (uint) {
+    function redeemNative(uint256 redeemTokens) external returns (uint256) {
         redeemTokens; // Shh
         delegateAndReturn();
     }
@@ -120,7 +131,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlying(uint redeemAmount) external returns (uint) {
+    function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
         redeemAmount; // Shh
         delegateAndReturn();
     }
@@ -131,27 +142,27 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlyingNative(uint redeemAmount) external returns (uint) {
+    function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256) {
         redeemAmount; // Shh
         delegateAndReturn();
     }
 
     /**
-      * @notice Sender borrows assets from the protocol to their own address
-      * @param borrowAmount The amount of the underlying asset to borrow
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function borrow(uint borrowAmount) external returns (uint) {
+     * @notice Sender borrows assets from the protocol to their own address
+     * @param borrowAmount The amount of the underlying asset to borrow
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function borrow(uint256 borrowAmount) external returns (uint256) {
         borrowAmount; // Shh
         delegateAndReturn();
     }
 
     /**
-      * @notice Sender borrows assets from the protocol to their own address
-      * @param borrowAmount The amount of the underlying asset to borrow
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function borrowNative(uint borrowAmount) external returns (uint) {
+     * @notice Sender borrows assets from the protocol to their own address
+     * @param borrowAmount The amount of the underlying asset to borrow
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function borrowNative(uint256 borrowAmount) external returns (uint256) {
         borrowAmount; // Shh
         delegateAndReturn();
     }
@@ -161,7 +172,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrow(uint repayAmount) external returns (uint) {
+    function repayBorrow(uint256 repayAmount) external returns (uint256) {
         repayAmount; // Shh
         delegateAndReturn();
     }
@@ -170,7 +181,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Sender repays their own borrow
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowNative() external payable returns (uint) {
+    function repayBorrowNative() external payable returns (uint256) {
         delegateAndReturn();
     }
 
@@ -182,8 +193,14 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint) {
-        borrower; repayAmount; cTokenCollateral; // Shh
+    function liquidateBorrow(
+        address borrower,
+        uint256 repayAmount,
+        CTokenInterface cTokenCollateral
+    ) external returns (uint256) {
+        borrower;
+        repayAmount;
+        cTokenCollateral; // Shh
         delegateAndReturn();
     }
 
@@ -194,8 +211,13 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral) external payable returns (uint) {
-        borrower; cTokenCollateral; // Shh
+    function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral)
+        external
+        payable
+        returns (uint256)
+    {
+        borrower;
+        cTokenCollateral; // Shh
         delegateAndReturn();
     }
 
@@ -206,8 +228,14 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param params The other parameters
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function flashLoan(address payable receiver, uint amount, bytes calldata params) external {
-        receiver; amount; params; // Shh
+    function flashLoan(
+        address payable receiver,
+        uint256 amount,
+        bytes calldata params
+    ) external {
+        receiver;
+        amount;
+        params; // Shh
         delegateAndReturn();
     }
 
@@ -217,8 +245,9 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint amount) external returns (bool) {
-        dst; amount; // Shh
+    function transfer(address dst, uint256 amount) external returns (bool) {
+        dst;
+        amount; // Shh
         delegateAndReturn();
     }
 
@@ -229,8 +258,14 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param amount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferFrom(address src, address dst, uint256 amount) external returns (bool) {
-        src; dst; amount; // Shh
+    function transferFrom(
+        address src,
+        address dst,
+        uint256 amount
+    ) external returns (bool) {
+        src;
+        dst;
+        amount; // Shh
         delegateAndReturn();
     }
 
@@ -243,7 +278,8 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @return Whether or not the approval succeeded
      */
     function approve(address spender, uint256 amount) external returns (bool) {
-        spender; amount; // Shh
+        spender;
+        amount; // Shh
         delegateAndReturn();
     }
 
@@ -253,8 +289,9 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param spender The address of the account which may transfer tokens
      * @return The number of tokens allowed to be spent (-1 means infinite)
      */
-    function allowance(address owner, address spender) external view returns (uint) {
-        owner; spender; // Shh
+    function allowance(address owner, address spender) external view returns (uint256) {
+        owner;
+        spender; // Shh
         delegateToViewAndReturn();
     }
 
@@ -263,7 +300,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param owner The address of the account to query
      * @return The number of tokens owned by `owner`
      */
-    function balanceOf(address owner) external view returns (uint) {
+    function balanceOf(address owner) external view returns (uint256) {
         owner; // Shh
         delegateToViewAndReturn();
     }
@@ -274,7 +311,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param owner The address of the account to query
      * @return The amount of underlying owned by `owner`
      */
-    function balanceOfUnderlying(address owner) external returns (uint) {
+    function balanceOfUnderlying(address owner) external returns (uint256) {
         owner; // Shh
         delegateAndReturn();
     }
@@ -285,7 +322,16 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param account Address of the account to snapshot
      * @return (possible error, token balance, borrow balance, exchange rate mantissa)
      */
-    function getAccountSnapshot(address account) external view returns (uint, uint, uint, uint) {
+    function getAccountSnapshot(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         account; // Shh
         delegateToViewAndReturn();
     }
@@ -294,7 +340,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Returns the current per-block borrow interest rate for this cToken
      * @return The borrow interest rate per block, scaled by 1e18
      */
-    function borrowRatePerBlock() external view returns (uint) {
+    function borrowRatePerBlock() external view returns (uint256) {
         delegateToViewAndReturn();
     }
 
@@ -302,7 +348,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Returns the current per-block supply interest rate for this cToken
      * @return The supply interest rate per block, scaled by 1e18
      */
-    function supplyRatePerBlock() external view returns (uint) {
+    function supplyRatePerBlock() external view returns (uint256) {
         delegateToViewAndReturn();
     }
 
@@ -310,7 +356,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Returns the current total borrows plus accrued interest
      * @return The total borrows with interest
      */
-    function totalBorrowsCurrent() external returns (uint) {
+    function totalBorrowsCurrent() external returns (uint256) {
         delegateAndReturn();
     }
 
@@ -319,7 +365,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param account The address whose balance should be calculated after updating borrowIndex
      * @return The calculated balance
      */
-    function borrowBalanceCurrent(address account) external returns (uint) {
+    function borrowBalanceCurrent(address account) external returns (uint256) {
         account; // Shh
         delegateAndReturn();
     }
@@ -329,16 +375,16 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param account The address whose balance should be calculated
      * @return The calculated balance
      */
-    function borrowBalanceStored(address account) public view returns (uint) {
+    function borrowBalanceStored(address account) public view returns (uint256) {
         account; // Shh
         delegateToViewAndReturn();
     }
 
-   /**
+    /**
      * @notice Accrue interest then return the up-to-date exchange rate
      * @return Calculated exchange rate scaled by 1e18
      */
-    function exchangeRateCurrent() public returns (uint) {
+    function exchangeRateCurrent() public returns (uint256) {
         delegateAndReturn();
     }
 
@@ -347,7 +393,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @dev This function does not accrue interest before calculating the exchange rate
      * @return Calculated exchange rate scaled by 1e18
      */
-    function exchangeRateStored() public view returns (uint) {
+    function exchangeRateStored() public view returns (uint256) {
         delegateToViewAndReturn();
     }
 
@@ -355,16 +401,16 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Get cash balance of this cToken in the underlying asset
      * @return The quantity of underlying asset owned by this contract
      */
-    function getCash() external view returns (uint) {
+    function getCash() external view returns (uint256) {
         delegateToViewAndReturn();
     }
 
     /**
-      * @notice Applies accrued interest to total borrows and reserves.
-      * @dev This calculates interest accrued from the last checkpointed block
-      *      up to the current block and writes new checkpoint to storage.
-      */
-    function accrueInterest() public returns (uint) {
+     * @notice Applies accrued interest to total borrows and reserves.
+     * @dev This calculates interest accrued from the last checkpointed block
+     *      up to the current block and writes new checkpoint to storage.
+     */
+    function accrueInterest() public returns (uint256) {
         delegateAndReturn();
     }
 
@@ -377,50 +423,56 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param seizeTokens The number of cTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seize(address liquidator, address borrower, uint seizeTokens) external returns (uint) {
-        liquidator; borrower; seizeTokens; // Shh
+    function seize(
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) external returns (uint256) {
+        liquidator;
+        borrower;
+        seizeTokens; // Shh
         delegateAndReturn();
     }
 
     /*** Admin Functions ***/
 
     /**
-      * @notice Begins transfer of admin rights. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
-      * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
-      * @param newPendingAdmin New pending admin.
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint) {
+     * @notice Begins transfer of admin rights. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
+     * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
+     * @param newPendingAdmin New pending admin.
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint256) {
         newPendingAdmin; // Shh
         delegateAndReturn();
     }
 
     /**
-      * @notice Sets a new comptroller for the market
-      * @dev Admin function to set a new comptroller
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint) {
+     * @notice Sets a new comptroller for the market
+     * @dev Admin function to set a new comptroller
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint256) {
         newComptroller; // Shh
         delegateAndReturn();
     }
 
     /**
-      * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
-      * @dev Admin function to accrue interest and set a new reserve factor
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _setReserveFactor(uint newReserveFactorMantissa) external returns (uint) {
+     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @dev Admin function to accrue interest and set a new reserve factor
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256) {
         newReserveFactorMantissa; // Shh
         delegateAndReturn();
     }
 
     /**
-      * @notice Accepts transfer of admin rights. msg.sender must be pendingAdmin
-      * @dev Admin function for pending admin to accept role and update admin
-      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-      */
-    function _acceptAdmin() external returns (uint) {
+     * @notice Accepts transfer of admin rights. msg.sender must be pendingAdmin
+     * @dev Admin function for pending admin to accept role and update admin
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _acceptAdmin() external returns (uint256) {
         delegateAndReturn();
     }
 
@@ -429,7 +481,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param addAmount Amount of reserves to add
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReserves(uint addAmount) external returns (uint) {
+    function _addReserves(uint256 addAmount) external returns (uint256) {
         addAmount; // Shh
         delegateAndReturn();
     }
@@ -438,7 +490,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Accrues interest and adds reserves by transferring from admin
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReservesNative() external payable returns (uint) {
+    function _addReservesNative() external payable returns (uint256) {
         delegateAndReturn();
     }
 
@@ -447,7 +499,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param reduceAmount Amount of reduction to reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _reduceReserves(uint reduceAmount) external returns (uint) {
+    function _reduceReserves(uint256 reduceAmount) external returns (uint256) {
         reduceAmount; // Shh
         delegateAndReturn();
     }
@@ -458,7 +510,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @param newInterestRateModel the new interest rate model to use
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint) {
+    function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256) {
         newInterestRateModel; // Shh
         delegateAndReturn();
     }
@@ -498,7 +550,9 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @return The returned bytes from the delegatecall
      */
     function delegateToViewImplementation(bytes memory data) public view returns (bytes memory) {
-        (bool success, bytes memory returnData) = address(this).staticcall(abi.encodeWithSignature("delegateToImplementation(bytes)", data));
+        (bool success, bytes memory returnData) = address(this).staticcall(
+            abi.encodeWithSignature("delegateToImplementation(bytes)", data)
+        );
         assembly {
             if eq(success, 0) {
                 revert(add(returnData, 0x20), returndatasize)
@@ -508,15 +562,21 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
     }
 
     function delegateToViewAndReturn() private view returns (bytes memory) {
-        (bool success, ) = address(this).staticcall(abi.encodeWithSignature("delegateToImplementation(bytes)", msg.data));
+        (bool success, ) = address(this).staticcall(
+            abi.encodeWithSignature("delegateToImplementation(bytes)", msg.data)
+        );
 
         assembly {
             let free_mem_ptr := mload(0x40)
             returndatacopy(free_mem_ptr, 0, returndatasize)
 
             switch success
-            case 0 { revert(free_mem_ptr, returndatasize) }
-            default { return(add(free_mem_ptr, 0x40), returndatasize) }
+            case 0 {
+                revert(free_mem_ptr, returndatasize)
+            }
+            default {
+                return(add(free_mem_ptr, 0x40), returndatasize)
+            }
         }
     }
 
@@ -528,8 +588,12 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
             returndatacopy(free_mem_ptr, 0, returndatasize)
 
             switch success
-            case 0 { revert(free_mem_ptr, returndatasize) }
-            default { return(free_mem_ptr, returndatasize) }
+            case 0 {
+                revert(free_mem_ptr, returndatasize)
+            }
+            default {
+                return(free_mem_ptr, returndatasize)
+            }
         }
     }
 
@@ -537,7 +601,7 @@ contract CWrappedNativeDelegator is CTokenInterface, CWrappedNativeInterface, CD
      * @notice Delegates execution to an implementation contract
      * @dev It returns to the external caller whatever the implementation returns or forwards reverts
      */
-    function () external payable {
+    function() external payable {
         // delegate all other functions to current implementation
         delegateAndReturn();
     }
