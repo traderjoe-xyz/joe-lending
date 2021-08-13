@@ -223,16 +223,19 @@ contract CCollateralCapErc20Delegator is CTokenInterface, CCollateralCapErc20Int
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
      * @param amount The amount of the funds to be loaned
-     * @param params The other parameters
+     * @param data The other data
      */
+
     function flashLoan(
-        address receiver,
+        ERC3156FlashBorrowerInterface receiver,
+        address initiator,
         uint256 amount,
-        bytes calldata params
-    ) external {
+        bytes calldata data
+    ) external returns (bool) {
         receiver;
+        initiator;
         amount;
-        params; // Shh
+        data; // Shh
         delegateAndReturn();
     }
 
