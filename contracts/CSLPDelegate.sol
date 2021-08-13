@@ -15,16 +15,22 @@ interface IMasterChef {
     }
 
     function deposit(uint256, uint256) external;
+
     function withdraw(uint256, uint256) external;
-    function sushi() view external returns (address);
-    function poolInfo(uint256) view external returns (PoolInfo memory);
-    function userInfo(uint256, address) view external returns (UserInfo memory);
+
+    function sushi() external view returns (address);
+
+    function poolInfo(uint256) external view returns (PoolInfo memory);
+
+    function userInfo(uint256, address) external view returns (UserInfo memory);
+
     function pendingSushi(uint256, address) external view returns (uint256);
 }
 
 // Ref: https://etherscan.io/address/0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272#code
 interface ISushiBar {
     function enter(uint256 _amount) external;
+
     function leave(uint256 _share) external;
 }
 
@@ -52,7 +58,7 @@ contract CSLPDelegate is CCapableErc20Delegate {
     /**
      * @notice Pool ID of this LP in MasterChef
      */
-    uint public pid;
+    uint256 public pid;
 
     /**
      * @notice Container for sushi rewards state
@@ -60,8 +66,8 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @member index The last updated index
      */
     struct SushiRewardState {
-        uint balance;
-        uint index;
+        uint256 balance;
+        uint256 index;
     }
 
     /**
@@ -72,12 +78,12 @@ contract CSLPDelegate is CCapableErc20Delegate {
     /**
      * @notice The index of every SLP supplier
      */
-    mapping(address => uint) public slpSupplierIndex;
+    mapping(address => uint256) public slpSupplierIndex;
 
     /**
      * @notice The xSushi amount of every user
      */
-    mapping(address => uint) public xSushiUserAccrued;
+    mapping(address => uint256) public xSushiUserAccrued;
 
     /**
      * @notice Delegate interface to become the implementation
@@ -86,7 +92,10 @@ contract CSLPDelegate is CCapableErc20Delegate {
     function _becomeImplementation(bytes memory data) public {
         super._becomeImplementation(data);
 
-        (address masterChefAddress_, address sushiBarAddress_, uint pid_) = abi.decode(data, (address, address, uint));
+        (address masterChefAddress_, address sushiBarAddress_, uint256 pid_) = abi.decode(
+            data,
+            (address, address, uint256)
+        );
         masterChef = masterChefAddress_;
         sushiBar = sushiBarAddress_;
         sushi = IMasterChef(masterChef).sushi();
@@ -96,30 +105,30 @@ contract CSLPDelegate is CCapableErc20Delegate {
         pid = pid_;
 
         // Approve moving our SLP into the master chef contract.
-        EIP20Interface(underlying).approve(masterChefAddress_, uint(-1));
+        EIP20Interface(underlying).approve(masterChefAddress_, uint256(-1));
 
         // Approve moving sushi rewards into the sushi bar contract.
-        EIP20Interface(sushi).approve(sushiBarAddress_, uint(-1));
+        EIP20Interface(sushi).approve(sushiBarAddress_, uint256(-1));
     }
 
     /**
      * @notice Manually claim sushi rewards by user
      * @return The amount of sushi rewards user claims
      */
-    function claimSushi(address account) public returns (uint) {
+    function claimSushi(address account) public returns (uint256) {
         claimAndStakeSushi();
 
         updateSLPSupplyIndex();
         updateSupplierIndex(account);
 
         // Get user's xSushi accrued.
-        uint xSushiBalance = xSushiUserAccrued[account];
+        uint256 xSushiBalance = xSushiUserAccrued[account];
         if (xSushiBalance > 0) {
             // Withdraw user xSushi balance and subtract the amount in slpSupplyState
             ISushiBar(sushiBar).leave(xSushiBalance);
             slpSupplyState.balance = sub_(slpSupplyState.balance, xSushiBalance);
 
-            uint balance = sushiBalance();
+            uint256 balance = sushiBalance();
             EIP20Interface(sushi).transfer(account, balance);
 
             // Clear user's xSushi accrued.
@@ -140,7 +149,12 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @param tokens The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferTokens(address spender, address src, address dst, uint tokens) internal returns (uint) {
+    function transferTokens(
+        address spender,
+        address src,
+        address dst,
+        uint256 tokens
+    ) internal returns (uint256) {
         claimAndStakeSushi();
 
         updateSLPSupplyIndex();
@@ -156,7 +170,7 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @notice Gets balance of this contract in terms of the underlying
      * @return The quantity of underlying tokens owned by this contract
      */
-    function getCashPrior() internal view returns (uint) {
+    function getCashPrior() internal view returns (uint256) {
         IMasterChef.UserInfo memory userInfo = IMasterChef(masterChef).userInfo(pid, address(this));
         return userInfo.amount;
     }
@@ -168,7 +182,11 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @param isNative The amount is in native or not
      * @return The actual amount that is transferred
      */
-    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+    function doTransferIn(
+        address from,
+        uint256 amount,
+        bool isNative
+    ) internal returns (uint256) {
         isNative; // unused
 
         // Perform the EIP-20 transfer in
@@ -195,7 +213,11 @@ contract CSLPDelegate is CCapableErc20Delegate {
      * @param amount Amount of underlying to transfer
      * @param isNative The amount is in native or not
      */
-    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+    function doTransferOut(
+        address payable to,
+        uint256 amount,
+        bool isNative
+    ) internal {
         isNative; // unused
 
         // Withdraw the underlying tokens from masterChef.
@@ -226,9 +248,9 @@ contract CSLPDelegate is CCapableErc20Delegate {
     }
 
     function updateSLPSupplyIndex() internal {
-        uint xSushiBalance = xSushiBalance();
-        uint xSushiAccrued = sub_(xSushiBalance, slpSupplyState.balance);
-        uint supplyTokens = CToken(address(this)).totalSupply();
+        uint256 xSushiBalance = xSushiBalance();
+        uint256 xSushiAccrued = sub_(xSushiBalance, slpSupplyState.balance);
+        uint256 supplyTokens = CToken(address(this)).totalSupply();
         Double memory ratio = supplyTokens > 0 ? fraction(xSushiAccrued, supplyTokens) : Double({mantissa: 0});
         Double memory index = add_(Double({mantissa: slpSupplyState.index}), ratio);
 
@@ -242,18 +264,18 @@ contract CSLPDelegate is CCapableErc20Delegate {
         Double memory supplierIndex = Double({mantissa: slpSupplierIndex[supplier]});
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
         if (deltaIndex.mantissa > 0) {
-            uint supplierTokens = CToken(address(this)).balanceOf(supplier);
-            uint supplierDelta = mul_(supplierTokens, deltaIndex);
+            uint256 supplierTokens = CToken(address(this)).balanceOf(supplier);
+            uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
             xSushiUserAccrued[supplier] = add_(xSushiUserAccrued[supplier], supplierDelta);
             slpSupplierIndex[supplier] = supplyIndex.mantissa;
         }
     }
 
-    function sushiBalance() internal view returns (uint) {
+    function sushiBalance() internal view returns (uint256) {
         return EIP20Interface(sushi).balanceOf(address(this));
     }
 
-    function xSushiBalance() internal view returns (uint) {
+    function xSushiBalance() internal view returns (uint256) {
         return EIP20Interface(sushiBar).balanceOf(address(this));
     }
 }

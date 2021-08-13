@@ -7,41 +7,55 @@ import "../../contracts/PriceOracle.sol";
 //  requires fork/deploy bytecode tests
 
 contract ComptrollerScenarioG1 is ComptrollerG1 {
-    uint public blockNumber;
+    uint256 public blockNumber;
 
-    constructor() ComptrollerG1() public {}
+    constructor() public ComptrollerG1() {}
 
-    function membershipLength(CToken cToken) public view returns (uint) {
+    function membershipLength(CToken cToken) public view returns (uint256) {
         return accountAssets[address(cToken)].length;
     }
 
-    function fastForward(uint blocks) public returns (uint) {
+    function fastForward(uint256 blocks) public returns (uint256) {
         blockNumber += blocks;
 
         return blockNumber;
     }
 
-    function setBlockNumber(uint number) public {
+    function setBlockNumber(uint256 number) public {
         blockNumber = number;
     }
 
     function _become(
         Unitroller unitroller,
         PriceOracle _oracle,
-        uint _closeFactorMantissa,
-        uint _maxAssets,
-        bool reinitializing) public {
+        uint256 _closeFactorMantissa,
+        uint256 _maxAssets,
+        bool reinitializing
+    ) public {
         super._become(unitroller, _oracle, _closeFactorMantissa, _maxAssets, reinitializing);
     }
 
     function getHypotheticalAccountLiquidity(
         address account,
         address cTokenModify,
-        uint redeemTokens,
-        uint borrowAmount) public view returns (uint, uint, uint) {
-        (Error err, uint liquidity, uint shortfall) =
-            super.getHypotheticalAccountLiquidityInternal(account, CToken(cTokenModify), redeemTokens, borrowAmount);
-        return (uint(err), liquidity, shortfall);
+        uint256 redeemTokens,
+        uint256 borrowAmount
+    )
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        (Error err, uint256 liquidity, uint256 shortfall) = super.getHypotheticalAccountLiquidityInternal(
+            account,
+            CToken(cTokenModify),
+            redeemTokens,
+            borrowAmount
+        );
+        return (uint256(err), liquidity, shortfall);
     }
 
     function unlist(CToken cToken) public {

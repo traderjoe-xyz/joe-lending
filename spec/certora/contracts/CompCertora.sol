@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "../../../contracts/Governance/Comp.sol";
 
 contract CompCertora is Comp {
-    constructor(address grantor) Comp(grantor) public {}
+    constructor(address grantor) public Comp(grantor) {}
 
     function certoraOrdered(address account) external view returns (bool) {
         uint32 nCheckpoints = numCheckpoints[account];
@@ -21,10 +21,10 @@ contract CompCertora is Comp {
         return true;
     }
 
-    function certoraScan(address account, uint blockNumber) external view returns (uint) {
+    function certoraScan(address account, uint256 blockNumber) external view returns (uint256) {
         // find most recent checkpoint from before blockNumber
         for (uint32 i = numCheckpoints[account]; i != 0; i--) {
-            Checkpoint memory cp = checkpoints[account][i-1];
+            Checkpoint memory cp = checkpoints[account][i - 1];
             if (cp.fromBlock <= blockNumber) {
                 return cp.votes;
             }
