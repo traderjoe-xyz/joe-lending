@@ -9,22 +9,32 @@ import "../../contracts/SafeMath.sol";
 contract FlashloanReceiver is IFlashloanReceiver {
     using SafeMath for uint256;
 
-    uint totalBorrows;
+    uint256 totalBorrows;
 
-    function doFlashloan(address cToken, uint borrowAmount, uint repayAmount) external {
-        uint balanceBefore = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
+    function doFlashloan(
+        address cToken,
+        uint256 borrowAmount,
+        uint256 repayAmount
+    ) external {
+        uint256 balanceBefore = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CCollateralCapErc20(cToken).totalBorrows();
         CCollateralCapErc20(cToken).flashLoan(address(this), borrowAmount, data);
-        uint balanceAfter = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
+        uint256 balanceAfter = ERC20(CCollateralCapErc20(cToken).underlying()).balanceOf(address(this));
         require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
-        (address cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
+        (address cToken, uint256 borrowAmount, uint256 repayAmount) = abi.decode(params, (address, uint256, uint256));
         require(underlying == CCollateralCapErc20(cToken).underlying(), "Params not match");
         require(amount == borrowAmount, "Params not match");
-        uint totalBorrowsAfter = CCollateralCapErc20(cToken).totalBorrows();
+        uint256 totalBorrowsAfter = CCollateralCapErc20(cToken).totalBorrows();
         require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
         require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
     }
@@ -33,12 +43,18 @@ contract FlashloanReceiver is IFlashloanReceiver {
 contract FlashloanAndMint is IFlashloanReceiver {
     using SafeMath for uint256;
 
-    function doFlashloan(address cToken, uint borrowAmount) external {
+    function doFlashloan(address cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CCollateralCapErc20(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address cToken = abi.decode(params, (address));
         CCollateralCapErc20(cToken).mint(amount.add(fee));
     }
@@ -47,12 +63,18 @@ contract FlashloanAndMint is IFlashloanReceiver {
 contract FlashloanAndRepayBorrow is IFlashloanReceiver {
     using SafeMath for uint256;
 
-    function doFlashloan(address cToken, uint borrowAmount) external {
+    function doFlashloan(address cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CCollateralCapErc20(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address cToken = abi.decode(params, (address));
         CCollateralCapErc20(cToken).repayBorrow(amount.add(fee));
     }
@@ -61,12 +83,18 @@ contract FlashloanAndRepayBorrow is IFlashloanReceiver {
 contract FlashloanTwice is IFlashloanReceiver {
     using SafeMath for uint256;
 
-    function doFlashloan(address cToken, uint borrowAmount) external {
+    function doFlashloan(address cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CCollateralCapErc20(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address cToken = abi.decode(params, (address));
         CCollateralCapErc20(cToken).flashLoan(address(this), amount, params);
     }
@@ -75,38 +103,57 @@ contract FlashloanTwice is IFlashloanReceiver {
 contract FlashloanReceiverNative is IFlashloanReceiver {
     using SafeMath for uint256;
 
-    uint totalBorrows;
+    uint256 totalBorrows;
 
-    function doFlashloan(address payable cToken, uint borrowAmount, uint repayAmount) external {
-        uint balanceBefore = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
+    function doFlashloan(
+        address payable cToken,
+        uint256 borrowAmount,
+        uint256 repayAmount
+    ) external {
+        uint256 balanceBefore = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
         bytes memory data = abi.encode(cToken, borrowAmount, repayAmount);
         totalBorrows = CWrappedNative(cToken).totalBorrows();
         CWrappedNative(cToken).flashLoan(address(this), borrowAmount, data);
-        uint balanceAfter = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
+        uint256 balanceAfter = ERC20(CWrappedNative(cToken).underlying()).balanceOf(address(this));
         require(balanceAfter == balanceBefore.add(borrowAmount).sub(repayAmount), "Balance inconsistent");
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
-        (address payable cToken, uint borrowAmount, uint repayAmount) = abi.decode(params, (address, uint, uint));
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
+        (address payable cToken, uint256 borrowAmount, uint256 repayAmount) = abi.decode(
+            params,
+            (address, uint256, uint256)
+        );
         require(underlying == CWrappedNative(cToken).underlying(), "Params not match");
         require(amount == borrowAmount, "Params not match");
-        uint totalBorrowsAfter = CWrappedNative(cToken).totalBorrows();
+        uint256 totalBorrowsAfter = CWrappedNative(cToken).totalBorrows();
         require(totalBorrows.add(borrowAmount) == totalBorrowsAfter, "totalBorrow mismatch");
         require(ERC20(underlying).transfer(cToken, repayAmount), "Transfer fund back failed");
     }
 
-    function () external payable {}
+    function() external payable {}
 }
 
 contract FlashloanAndMintNative is FlashloanReceiverNative {
     using SafeMath for uint256;
 
-    function doFlashloan(address payable cToken, uint borrowAmount) external {
+    function doFlashloan(address payable cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CWrappedNative(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address payable cToken = abi.decode(params, (address));
         CWrappedNative(cToken).mint(amount.add(fee));
     }
@@ -115,12 +162,18 @@ contract FlashloanAndMintNative is FlashloanReceiverNative {
 contract FlashloanAndRepayBorrowNative is FlashloanReceiverNative {
     using SafeMath for uint256;
 
-    function doFlashloan(address payable cToken, uint borrowAmount) external {
+    function doFlashloan(address payable cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CWrappedNative(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address payable cToken = abi.decode(params, (address));
         CWrappedNative(cToken).repayBorrow(amount.add(fee));
     }
@@ -129,12 +182,18 @@ contract FlashloanAndRepayBorrowNative is FlashloanReceiverNative {
 contract FlashloanTwiceNative is FlashloanReceiverNative {
     using SafeMath for uint256;
 
-    function doFlashloan(address payable cToken, uint borrowAmount) external {
+    function doFlashloan(address payable cToken, uint256 borrowAmount) external {
         bytes memory data = abi.encode(cToken);
         CWrappedNative(cToken).flashLoan(address(this), borrowAmount, data);
     }
 
-    function executeOperation(address sender, address underlying, uint amount, uint fee, bytes calldata params) external {
+    function executeOperation(
+        address sender,
+        address underlying,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata params
+    ) external {
         address payable cToken = abi.decode(params, (address));
         CWrappedNative(cToken).flashLoan(address(this), amount, params);
     }

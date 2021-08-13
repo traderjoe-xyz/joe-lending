@@ -5,28 +5,27 @@ import "./PriceOracle.sol";
 
 contract UnitrollerAdminStorage {
     /**
-    * @notice Administrator for this contract
-    */
+     * @notice Administrator for this contract
+     */
     address public admin;
 
     /**
-    * @notice Pending administrator for this contract
-    */
+     * @notice Pending administrator for this contract
+     */
     address public pendingAdmin;
 
     /**
-    * @notice Active brains of Unitroller
-    */
+     * @notice Active brains of Unitroller
+     */
     address public comptrollerImplementation;
 
     /**
-    * @notice Pending brains of Unitroller
-    */
+     * @notice Pending brains of Unitroller
+     */
     address public pendingComptrollerImplementation;
 }
 
 contract ComptrollerV1Storage is UnitrollerAdminStorage {
-
     /**
      * @notice Oracle which gives the price of any given asset
      */
@@ -35,12 +34,12 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     /**
      * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
      */
-    uint public closeFactorMantissa;
+    uint256 public closeFactorMantissa;
 
     /**
      * @notice Multiplier representing the discount on collateral that a liquidator receives
      */
-    uint public liquidationIncentiveMantissa;
+    uint256 public liquidationIncentiveMantissa;
 
     /**
      * @notice Per-account mapping of "assets you are in"
@@ -56,17 +55,14 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     struct Market {
         /// @notice Whether or not this market is listed
         bool isListed;
-
         /**
          * @notice Multiplier representing the most one can borrow against their collateral in this market.
          *  For instance, 0.9 to allow borrowing 90% of collateral value.
          *  Must be between 0 and 1, and stored as a mantissa.
          */
-        uint collateralFactorMantissa;
-
+        uint256 collateralFactorMantissa;
         /// @notice Per-market mapping of "accounts in this asset"
         mapping(address => bool) accountMembership;
-
         /// @notice CToken version
         Version version;
     }
@@ -93,7 +89,6 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     struct CompMarketState {
         /// @notice The market's last updated compBorrowIndex or compSupplyIndex
         uint224 index;
-
         /// @notice The block number the index was last updated at
         uint32 block;
     }
@@ -102,7 +97,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     CToken[] public allMarkets;
 
     /// @notice The portion of compRate that each market currently receives
-    mapping(address => uint) public compSpeeds;
+    mapping(address => uint256) public compSpeeds;
 
     /// @notice The COMP market supply state for each market
     mapping(address => CompMarketState) public compSupplyState;
@@ -111,28 +106,28 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     mapping(address => CompMarketState) public compBorrowState;
 
     /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compSupplierIndex;
+    mapping(address => mapping(address => uint256)) public compSupplierIndex;
 
     /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compBorrowerIndex;
+    mapping(address => mapping(address => uint256)) public compBorrowerIndex;
 
     /// @notice The COMP accrued but not yet transferred to each user
-    mapping(address => uint) public compAccrued;
+    mapping(address => uint256) public compAccrued;
 
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
     // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
-    mapping(address => uint) public borrowCaps;
+    mapping(address => uint256) public borrowCaps;
 
     // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
     address public supplyCapGuardian;
 
     // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
-    mapping(address => uint) public supplyCaps;
+    mapping(address => uint256) public supplyCaps;
 
     // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
-    mapping(address => uint) public creditLimits;
+    mapping(address => uint256) public creditLimits;
 
     // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
     mapping(address => bool) public flashloanGuardianPaused;

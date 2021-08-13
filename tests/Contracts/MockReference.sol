@@ -12,22 +12,35 @@ contract MockReference {
     }
 
     /// Returns the price data for the given base/quote pair. Revert if not available.
-    function getReferenceData(string calldata _base, string calldata _quote) external view returns (ReferenceData memory) {
+    function getReferenceData(string calldata _base, string calldata _quote)
+        external
+        view
+        returns (ReferenceData memory)
+    {
         _quote; // Do nothing.
         return prices[_base];
     }
 
     /// Similar to getReferenceData, but with multiple base/quote pairs at once.
-    function getRefenceDataBulk(string[] calldata _bases, string[] calldata _quotes) external view returns (ReferenceData[] memory) {
+    function getRefenceDataBulk(string[] calldata _bases, string[] calldata _quotes)
+        external
+        view
+        returns (ReferenceData[] memory)
+    {
         _quotes; // Do nothing.
         ReferenceData[] memory data = new ReferenceData[](_bases.length);
-        for (uint i = 0; i < _bases.length; i++) {
+        for (uint256 i = 0; i < _bases.length; i++) {
             data[i] = prices[_bases[i]];
         }
         return data;
     }
 
-    function setReferenceData(string calldata _base, uint256 rate, uint256 lastUpdatedBase, uint256 lastUpdatedQuote) external {
+    function setReferenceData(
+        string calldata _base,
+        uint256 rate,
+        uint256 lastUpdatedBase,
+        uint256 lastUpdatedQuote
+    ) external {
         prices[_base] = ReferenceData(rate, lastUpdatedBase, lastUpdatedQuote);
     }
 }

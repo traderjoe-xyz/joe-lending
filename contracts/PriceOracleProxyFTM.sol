@@ -8,32 +8,40 @@ import "./Exponential.sol";
 import "./EIP20Interface.sol";
 
 interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint);
+    function assetPrices(address asset) external view returns (uint256);
 }
 
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
+
     function description() external view returns (string memory);
+
     function version() external view returns (uint256);
 
     // getRoundData and latestRoundData should both raise "No data present"
     // if they do not have data to report, instead of returning unset values
     // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId) external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 
-    function latestRoundData() external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 }
 
 interface IStdReference {
@@ -75,7 +83,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
     mapping(address => string) public underlyingSymbols;
 
     /// @notice The max price diff that we could tolerant
-    uint public maxPriceDiff = 0.1e18;
+    uint256 public maxPriceDiff = 0.1e18;
 
     /// @notice Quote symbol we used for BAND reference contract
     string public constant QUOTE_SYMBOL = "USD";
@@ -85,7 +93,11 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param v1PriceOracle_ The address of the v1 price oracle, which will continue to operate and hold prices for collateral assets
      * @param reference_ The price reference contract, which will be served for one of our primary price source on Fantom
      */
-    constructor(address admin_, address v1PriceOracle_, address reference_) public {
+    constructor(
+        address admin_,
+        address v1PriceOracle_,
+        address reference_
+    ) public {
         admin = admin_;
         v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
         ref = IStdReference(reference_);
@@ -96,11 +108,11 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param cToken The cToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint) {
+    function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
         address cTokenAddress = address(cToken);
 
-        uint chainLinkPrice = getPriceFromChainlink(cTokenAddress);
-        uint bandPrice = getPriceFromBAND(cTokenAddress);
+        uint256 chainLinkPrice = getPriceFromChainlink(cTokenAddress);
+        uint256 bandPrice = getPriceFromBAND(cTokenAddress);
         if (chainLinkPrice != 0 && bandPrice != 0) {
             checkPriceDiff(chainLinkPrice, bandPrice);
 
@@ -124,13 +136,13 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param price1 Price 1
      * @param price1 Price 2
      */
-    function checkPriceDiff(uint price1, uint price2) internal view {
-        uint min = price1 < price2 ? price1 : price2;
-        uint max = price1 < price2 ? price2 : price1;
+    function checkPriceDiff(uint256 price1, uint256 price2) internal view {
+        uint256 min = price1 < price2 ? price1 : price2;
+        uint256 max = price1 < price2 ? price2 : price1;
 
         // priceCap = min * (1 + maxPriceDiff)
-        uint onePlusMaxDiffMantissa = add_(1e18, maxPriceDiff);
-        uint priceCap = mul_(min, Exp({mantissa : onePlusMaxDiffMantissa}));
+        uint256 onePlusMaxDiffMantissa = add_(1e18, maxPriceDiff);
+        uint256 priceCap = mul_(min, Exp({mantissa: onePlusMaxDiffMantissa}));
         require(priceCap > max, "too much diff between price feeds");
     }
 
@@ -139,10 +151,10 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param cTokenAddress The token to get the underlying price of
      * @return The price. Return 0 if the aggregator is not set.
      */
-    function getPriceFromChainlink(address cTokenAddress) internal view returns (uint) {
+    function getPriceFromChainlink(address cTokenAddress) internal view returns (uint256) {
         AggregatorV3Interface aggregator = aggregators[cTokenAddress];
         if (address(aggregator) != address(0)) {
-            ( , int answer, , , ) = aggregator.latestRoundData();
+            (, int256 answer, , , ) = aggregator.latestRoundData();
 
             // It's fine for price to be 0. We have two price feeds.
             if (answer == 0) {
@@ -150,7 +162,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
             }
 
             // Extend the decimals to 1e18.
-            uint price = mul_(uint(answer), 10**(18 - uint(aggregator.decimals())));
+            uint256 price = mul_(uint256(answer), 10**(18 - uint256(aggregator.decimals())));
             return getNormalizedPrice(price, cTokenAddress);
         }
         return 0;
@@ -161,7 +173,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param cTokenAddress The token to get the underlying price of
      * @return The price. Return 0 if the undelrying sumbol is not set.
      */
-    function getPriceFromBAND(address cTokenAddress) internal view returns (uint) {
+    function getPriceFromBAND(address cTokenAddress) internal view returns (uint256) {
         bytes memory symbol = bytes(underlyingSymbols[cTokenAddress]);
         if (symbol.length != 0) {
             IStdReference.ReferenceData memory data = ref.getReferenceData(string(symbol), QUOTE_SYMBOL);
@@ -177,8 +189,8 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param cTokenAddress The cToken address
      * @return The normalized price.
      */
-    function getNormalizedPrice(uint price, address cTokenAddress) internal view returns (uint) {
-        uint underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+    function getNormalizedPrice(uint256 price, address cTokenAddress) internal view returns (uint256) {
+        uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
         return mul_(price, 10**(18 - underlyingDecimals));
     }
 
@@ -187,7 +199,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
      * @param cTokenAddress The token to get the underlying price of
      * @return The underlying price.
      */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
+    function getPriceFromV1(address cTokenAddress) internal view returns (uint256) {
         address underlying = CErc20(cTokenAddress).underlying();
         return v1PriceOracle.assetPrices(underlying);
     }
@@ -195,7 +207,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
     /*** Admin fucntions ***/
 
     event AdminUpdated(address admin);
-    event MaxPriceDiffUpdated(uint maxDiff);
+    event MaxPriceDiffUpdated(uint256 maxDiff);
     event AggregatorUpdated(address cTokenAddress, address source);
     event UnderlyingSymbolUpdated(address cTokenAddress, string symbol);
 
@@ -205,7 +217,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
         emit AdminUpdated(_admin);
     }
 
-    function _setMaxPriceDiff(uint _maxPriceDiff) external {
+    function _setMaxPriceDiff(uint256 _maxPriceDiff) external {
         require(msg.sender == admin, "only the admin may set the max price diff");
         maxPriceDiff = _maxPriceDiff;
         emit MaxPriceDiffUpdated(_maxPriceDiff);
@@ -213,7 +225,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
 
     function _setAggregators(address[] calldata cTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin, "only the admin may set the aggregators");
-        for (uint i = 0; i < cTokenAddresses.length; i++) {
+        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             aggregators[cTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
             emit AggregatorUpdated(cTokenAddresses[i], sources[i]);
         }
@@ -221,7 +233,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
 
     function _setUnderlyingSymbols(address[] calldata cTokenAddresses, string[] calldata symbols) external {
         require(msg.sender == admin, "only the admin may set the undelrying symbols");
-        for (uint i = 0; i < cTokenAddresses.length; i++) {
+        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
             underlyingSymbols[cTokenAddresses[i]] = symbols[i];
             emit UnderlyingSymbolUpdated(cTokenAddresses[i], symbols[i]);
         }

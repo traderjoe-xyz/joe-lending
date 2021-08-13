@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -eo pipefail
+
+DIR=`dirname $0`
+PROJ_ROOT="$DIR/.."
+
+"$PROJ_ROOT/node_modules/.bin/prettier" "$PROJ_ROOT/**/**/*.sol" -w

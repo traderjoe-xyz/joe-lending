@@ -8,7 +8,7 @@ import "./CToken.sol";
 interface WrappedNativeInterface {
     function deposit() external payable;
 
-    function withdraw(uint wad) external;
+    function withdraw(uint256 wad) external;
 }
 
 /**
@@ -27,13 +27,15 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param symbol_ ERC-20 symbol of this token
      * @param decimals_ ERC-20 decimal precision of this token
      */
-    function initialize(address underlying_,
-                        ComptrollerInterface comptroller_,
-                        InterestRateModel interestRateModel_,
-                        uint initialExchangeRateMantissa_,
-                        string memory name_,
-                        string memory symbol_,
-                        uint8 decimals_) public {
+    function initialize(
+        address underlying_,
+        ComptrollerInterface comptroller_,
+        InterestRateModel interestRateModel_,
+        uint256 initialExchangeRateMantissa_,
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_
+    ) public {
         // CToken initialize does the bulk of the work
         super.initialize(comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
@@ -52,8 +54,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mint(uint mintAmount) external returns (uint) {
-        (uint err,) = mintInternal(mintAmount, false);
+    function mint(uint256 mintAmount) external returns (uint256) {
+        (uint256 err, ) = mintInternal(mintAmount, false);
         require(err == 0, "mint failed");
     }
 
@@ -63,8 +65,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      *  Keep return in the function signature for consistency
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function mintNative() external payable returns (uint) {
-        (uint err,) = mintInternal(msg.value, true);
+    function mintNative() external payable returns (uint256) {
+        (uint256 err, ) = mintInternal(msg.value, true);
         require(err == 0, "mint native failed");
     }
 
@@ -75,7 +77,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeem(uint redeemTokens) external returns (uint) {
+    function redeem(uint256 redeemTokens) external returns (uint256) {
         require(redeemInternal(redeemTokens, false) == 0, "redeem failed");
     }
 
@@ -86,7 +88,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param redeemTokens The number of cTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemNative(uint redeemTokens) external returns (uint) {
+    function redeemNative(uint256 redeemTokens) external returns (uint256) {
         require(redeemInternal(redeemTokens, true) == 0, "redeem native failed");
     }
 
@@ -97,7 +99,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlying(uint redeemAmount) external returns (uint) {
+    function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
         require(redeemUnderlyingInternal(redeemAmount, false) == 0, "redeem underlying failed");
     }
 
@@ -108,7 +110,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemUnderlyingNative(uint redeemAmount) external returns (uint) {
+    function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256) {
         require(redeemUnderlyingInternal(redeemAmount, true) == 0, "redeem underlying native failed");
     }
 
@@ -119,7 +121,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param borrowAmount The amount of the underlying asset to borrow
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function borrow(uint borrowAmount) external returns (uint) {
+    function borrow(uint256 borrowAmount) external returns (uint256) {
         require(borrowInternal(borrowAmount, false) == 0, "borrow failed");
     }
 
@@ -130,7 +132,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param borrowAmount The amount of the underlying asset to borrow
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function borrowNative(uint borrowAmount) external returns (uint) {
+    function borrowNative(uint256 borrowAmount) external returns (uint256) {
         require(borrowInternal(borrowAmount, true) == 0, "borrow native failed");
     }
 
@@ -141,8 +143,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrow(uint repayAmount) external returns (uint) {
-        (uint err,) = repayBorrowInternal(repayAmount, false);
+    function repayBorrow(uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowInternal(repayAmount, false);
         require(err == 0, "repay failed");
     }
 
@@ -152,8 +154,8 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      *  Keep return in the function signature for consistency
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function repayBorrowNative() external payable returns (uint) {
-        (uint err,) = repayBorrowInternal(msg.value, true);
+    function repayBorrowNative() external payable returns (uint256) {
+        (uint256 err, ) = repayBorrowInternal(msg.value, true);
         require(err == 0, "repay native failed");
     }
 
@@ -167,8 +169,12 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint) {
-        (uint err,) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
+    function liquidateBorrow(
+        address borrower,
+        uint256 repayAmount,
+        CTokenInterface cTokenCollateral
+    ) external returns (uint256) {
+        (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
         require(err == 0, "liquidate borrow failed");
     }
 
@@ -181,8 +187,12 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param cTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral) external payable returns (uint) {
-        (uint err,) = liquidateBorrowInternal(borrower, msg.value, cTokenCollateral, true);
+    function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral)
+        external
+        payable
+        returns (uint256)
+    {
+        (uint256 err, ) = liquidateBorrowInternal(borrower, msg.value, cTokenCollateral, true);
         require(err == 0, "liquidate borrow native failed");
     }
 
@@ -192,16 +202,20 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param amount The amount of the funds to be loaned
      * @param params The other parameters
      */
-    function flashLoan(address payable receiver, uint amount, bytes calldata params) external nonReentrant {
+    function flashLoan(
+        address payable receiver,
+        uint256 amount,
+        bytes calldata params
+    ) external nonReentrant {
         require(amount > 0, "flashLoan amount should be greater than zero");
-        require(accrueInterest() == uint(Error.NO_ERROR), "accrue interest failed");
+        require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
         ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), receiver, amount, params);
 
-        uint cashBefore = getCashPrior();
+        uint256 cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint totalFee = div_(mul_(amount, flashFeeBips), 10000);
+        uint256 totalFee = div_(mul_(amount, flashFeeBips), 10000);
 
         // 2. transfer fund to receiver
         doTransferOut(address(uint160(receiver)), amount, false);
@@ -213,18 +227,18 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
 
         // 5. check balance
-        uint cashAfter = getCashPrior();
+        uint256 cashAfter = getCashPrior();
         require(cashAfter == add_(cashBefore, totalFee), "BALANCE_INCONSISTENT");
 
         // 6. update totalReserves and totalBorrows
-        uint reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
+        uint256 reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
         totalReserves = add_(totalReserves, reservesFee);
         totalBorrows = sub_(totalBorrows, amount);
 
         emit Flashloan(receiver, amount, totalFee, reservesFee);
     }
 
-    function () external payable {
+    function() external payable {
         require(msg.sender == underlying, "only wrapped native contract could send native token");
     }
 
@@ -235,7 +249,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param addAmount The amount fo underlying token to add as reserves
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReserves(uint addAmount) external returns (uint) {
+    function _addReserves(uint256 addAmount) external returns (uint256) {
         require(_addReservesInternal(addAmount, false) == 0, "add reserves failed");
     }
 
@@ -245,7 +259,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      *  Keep return in the function signature for consistency
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReservesNative() external payable returns (uint) {
+    function _addReservesNative() external payable returns (uint256) {
         require(_addReservesInternal(msg.value, true) == 0, "add reserves failed");
     }
 
@@ -256,7 +270,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
-    function getCashPrior() internal view returns (uint) {
+    function getCashPrior() internal view returns (uint256) {
         EIP20Interface token = EIP20Interface(underlying);
         return token.balanceOf(address(this));
     }
@@ -270,7 +284,11 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferIn(address from, uint amount, bool isNative) internal returns (uint) {
+    function doTransferIn(
+        address from,
+        uint256 amount,
+        bool isNative
+    ) internal returns (uint256) {
         if (isNative) {
             // Sanity checks
             require(msg.sender == from, "sender mismatch");
@@ -281,27 +299,30 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
             return amount;
         } else {
             EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-            uint balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
+            uint256 balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
             token.transferFrom(from, address(this), amount);
 
             bool success;
             assembly {
                 switch returndatasize()
-                    case 0 {                       // This is a non-standard ERC-20
-                        success := not(0)          // set success to true
-                    }
-                    case 32 {                      // This is a compliant ERC-20
-                        returndatacopy(0, 0, 32)
-                        success := mload(0)        // Set `success = returndata` of external call
-                    }
-                    default {                      // This is an excessively non-compliant ERC-20, revert.
-                        revert(0, 0)
-                    }
+                case 0 {
+                    // This is a non-standard ERC-20
+                    success := not(0) // set success to true
+                }
+                case 32 {
+                    // This is a compliant ERC-20
+                    returndatacopy(0, 0, 32)
+                    success := mload(0) // Set `success = returndata` of external call
+                }
+                default {
+                    // This is an excessively non-compliant ERC-20, revert.
+                    revert(0, 0)
+                }
             }
             require(success, "TOKEN_TRANSFER_IN_FAILED");
 
             // Calculate the amount that was *actually* transferred
-            uint balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
+            uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
             return sub_(balanceAfter, balanceBefore);
         }
     }
@@ -315,7 +336,11 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      *      Note: This wrapper safely handles non-standard ERC-20 tokens that do not return a value.
      *            See here: https://medium.com/coinmonks/missing-return-value-bug-at-least-130-tokens-affected-d67bf08521ca
      */
-    function doTransferOut(address payable to, uint amount, bool isNative) internal {
+    function doTransferOut(
+        address payable to,
+        uint256 amount,
+        bool isNative
+    ) internal {
         if (isNative) {
             // Convert wrapped token to native token
             WrappedNativeInterface(underlying).withdraw(amount);
@@ -328,16 +353,19 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
             bool success;
             assembly {
                 switch returndatasize()
-                    case 0 {                      // This is a non-standard ERC-20
-                        success := not(0)          // set success to true
-                    }
-                    case 32 {                     // This is a complaint ERC-20
-                        returndatacopy(0, 0, 32)
-                        success := mload(0)        // Set `success = returndata` of external call
-                    }
-                    default {                     // This is an excessively non-compliant ERC-20, revert.
-                        revert(0, 0)
-                    }
+                case 0 {
+                    // This is a non-standard ERC-20
+                    success := not(0) // set success to true
+                }
+                case 32 {
+                    // This is a complaint ERC-20
+                    returndatacopy(0, 0, 32)
+                    success := mload(0) // Set `success = returndata` of external call
+                }
+                default {
+                    // This is an excessively non-compliant ERC-20, revert.
+                    revert(0, 0)
+                }
             }
             require(success, "TOKEN_TRANSFER_OUT_FAILED");
         }
@@ -352,9 +380,14 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param tokens The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transferTokens(address spender, address src, address dst, uint tokens) internal returns (uint) {
+    function transferTokens(
+        address spender,
+        address src,
+        address dst,
+        uint256 tokens
+    ) internal returns (uint256) {
         /* Fail if transfer not allowed */
-        uint allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
+        uint256 allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.TRANSFER_COMPTROLLER_REJECTION, allowed);
         }
@@ -365,9 +398,9 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         }
 
         /* Get the allowance, infinite for the account owner */
-        uint startingAllowance = 0;
+        uint256 startingAllowance = 0;
         if (spender == src) {
-            startingAllowance = uint(-1);
+            startingAllowance = uint256(-1);
         } else {
             startingAllowance = transferAllowances[src][spender];
         }
@@ -377,28 +410,28 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         accountTokens[dst] = add_(accountTokens[dst], tokens);
 
         /* Eat some of the allowance (if necessary) */
-        if (startingAllowance != uint(-1)) {
+        if (startingAllowance != uint256(-1)) {
             transferAllowances[src][spender] = sub_(startingAllowance, tokens);
         }
 
         /* We emit a Transfer event */
         emit Transfer(src, dst, tokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 
     /**
      * @notice Get the account's cToken balances
      * @param account The address of the account
      */
-    function getCTokenBalanceInternal(address account) internal view returns (uint) {
+    function getCTokenBalanceInternal(address account) internal view returns (uint256) {
         return accountTokens[account];
     }
 
     struct MintLocalVars {
-        uint exchangeRateMantissa;
-        uint mintTokens;
-        uint actualMintAmount;
+        uint256 exchangeRateMantissa;
+        uint256 mintTokens;
+        uint256 actualMintAmount;
     }
 
     /**
@@ -409,9 +442,13 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param isNative The amount is in native or not
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual mint amount.
      */
-    function mintFresh(address minter, uint mintAmount, bool isNative) internal returns (uint, uint) {
+    function mintFresh(
+        address minter,
+        uint256 mintAmount,
+        bool isNative
+    ) internal returns (uint256, uint256) {
         /* Fail if mint not allowed */
-        uint allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
+        uint256 allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
             return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed), 0);
         }
@@ -421,7 +458,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
          * Put behind `mintAllowed` for accuring potential COMP rewards.
          */
         if (mintAmount == 0) {
-            return (uint(Error.NO_ERROR), 0);
+            return (uint256(Error.NO_ERROR), 0);
         }
 
         /* Verify market's block number equals current block number */
@@ -465,15 +502,15 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
         emit Transfer(address(this), minter, vars.mintTokens);
 
-        return (uint(Error.NO_ERROR), vars.actualMintAmount);
+        return (uint256(Error.NO_ERROR), vars.actualMintAmount);
     }
 
     struct RedeemLocalVars {
-        uint exchangeRateMantissa;
-        uint redeemTokens;
-        uint redeemAmount;
-        uint totalSupplyNew;
-        uint accountTokensNew;
+        uint256 exchangeRateMantissa;
+        uint256 redeemTokens;
+        uint256 redeemAmount;
+        uint256 totalSupplyNew;
+        uint256 accountTokensNew;
     }
 
     /**
@@ -485,7 +522,12 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function redeemFresh(address payable redeemer, uint redeemTokensIn, uint redeemAmountIn, bool isNative) internal returns (uint) {
+    function redeemFresh(
+        address payable redeemer,
+        uint256 redeemTokensIn,
+        uint256 redeemAmountIn,
+        bool isNative
+    ) internal returns (uint256) {
         require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
         RedeemLocalVars memory vars;
@@ -513,7 +555,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         }
 
         /* Fail if redeem not allowed */
-        uint allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
+        uint256 allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
         }
@@ -523,7 +565,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
          * Put behind `redeemAllowed` for accuring potential COMP rewards.
          */
         if (redeemTokensIn == 0 && redeemAmountIn == 0) {
-            return uint(Error.NO_ERROR);
+            return uint256(Error.NO_ERROR);
         }
 
         /* Verify market's block number equals current block number */
@@ -567,7 +609,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         /* We call the defense hook */
         comptroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 
     /**
@@ -580,9 +622,14 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
      * @param seizeTokens The number of cTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function seizeInternal(address seizerToken, address liquidator, address borrower, uint seizeTokens) internal returns (uint) {
+    function seizeInternal(
+        address seizerToken,
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) internal returns (uint256) {
         /* Fail if seize not allowed */
-        uint allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
+        uint256 allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
             return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.LIQUIDATE_SEIZE_COMPTROLLER_REJECTION, allowed);
         }
@@ -592,7 +639,7 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
          * Put behind `seizeAllowed` for accuring potential COMP rewards.
          */
         if (seizeTokens == 0) {
-            return uint(Error.NO_ERROR);
+            return uint256(Error.NO_ERROR);
         }
 
         /* Fail if borrower = liquidator */
@@ -611,6 +658,6 @@ contract CWrappedNative is CToken, CWrappedNativeInterface {
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
 
-        return uint(Error.NO_ERROR);
+        return uint256(Error.NO_ERROR);
     }
 }

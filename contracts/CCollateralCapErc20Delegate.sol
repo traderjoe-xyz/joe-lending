@@ -32,7 +32,10 @@ contract CCollateralCapErc20Delegate is CCollateralCapErc20 {
         internalCash = getCashOnChain();
 
         // Set CToken version in comptroller
-        ComptrollerInterfaceExtension(address(comptroller)).updateCTokenVersion(address(this), ComptrollerV1Storage.Version.COLLATERALCAP);
+        ComptrollerInterfaceExtension(address(comptroller)).updateCTokenVersion(
+            address(this),
+            ComptrollerV1Storage.Version.COLLATERALCAP
+        );
     }
 
     /**
