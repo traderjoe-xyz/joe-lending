@@ -46,6 +46,10 @@ describe('Flashloan test', function () {
     beforeEach(async () => {
       unsupportedCToken = await makeCToken({kind: 'ccollateralcap', supportMarket: true});
     })
+    it("test deployment of flashLoanLender with a comptroller containging crEther market", async () => {
+      let crEth = await makeCToken({kind: 'cether'});
+      await deploy('FlashloanLender', [crEth.comptroller._address, admin]);
+    });
     it("test maxFlashLoan return 0 for unsupported token", async () => {
       expect(await call(flashloanLender, 'maxFlashLoan', [unsupportedCToken.underlying._address])).toEqualNumber(0);
       expect(await call(flashloanLender, 'maxFlashLoan', [cToken.underlying._address])).toEqualNumber(cashOnChain);

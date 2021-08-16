@@ -81,11 +81,19 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
     }
 
     /*** Internal Functions ***/
+
+    function compareStrings(string memory a, string memory b) private pure returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
+
     function initialiseUnderlyingMapping() internal {
         CToken[] memory cTokens = Comptroller(comptroller).getAllMarkets();
         uint256 cTokenLength = cTokens.length;
         for (uint256 i = 0; i < cTokenLength; i++) {
             CToken cToken = cTokens[i];
+            if (compareStrings(cToken.symbol(), "crETH")) {
+                continue;
+            }
             address underlying = CErc20(address(cToken)).underlying();
             underlyingToCToken[underlying] = address(cToken);
         }
