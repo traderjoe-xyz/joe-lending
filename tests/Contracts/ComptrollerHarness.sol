@@ -2,7 +2,7 @@ pragma solidity ^0.5.16;
 
 import "../../contracts/Comptroller.sol";
 import "../../contracts/CToken.sol";
-import "../../contracts/PriceOracle.sol";
+import "../../contracts/PriceOracle/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
     function getCompAddress() public view returns (address) {

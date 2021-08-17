@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "../../contracts/PriceOracle.sol";
+import "../../contracts/PriceOracle/PriceOracle.sol";
 
 contract FixedPriceOracle is PriceOracle {
     uint256 public price;
