@@ -1,6 +1,8 @@
 pragma solidity ^0.5.16;
 
 import "./CToken.sol";
+import "./ERC3156FlashLenderInterface.sol";
+import "./ERC3156FlashBorrowerInterface.sol";
 
 /**
  * @title Cream's CCollateralCapErc20 Contract
@@ -137,38 +139,82 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
     }
 
     /**
+     * @notice Get the max flash loan amount
+     */
+    function maxFlashLoan() external view returns (uint256) {
+        uint256 amount = 0;
+        if (
+            ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, "")
+        ) {
+            amount = getCashPrior();
+        }
+        return amount;
+    }
+
+    /**
+     * @notice Get the flash loan fees
+     * @param amount amount of token to borrow
+     */
+    function flashFee(uint256 amount) external view returns (uint256) {
+        require(
+            ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), address(0), amount, ""),
+            "flashloan is paused"
+        );
+        return div_(mul_(amount, flashFeeBips), 10000);
+    }
+
+    /**
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
+     * @param initiator flash loan initiator
      * @param amount The amount of the funds to be loaned
-     * @param params The other parameters
+     * @param data The other data
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function flashLoan(
-        address receiver,
+        ERC3156FlashBorrowerInterface receiver,
+        address initiator,
         uint256 amount,
-        bytes calldata params
-    ) external nonReentrant {
+        bytes calldata data
+    ) external nonReentrant returns (bool) {
         require(amount > 0, "flashLoan amount should be greater than zero");
         require(accrueInterest() == uint256(Error.NO_ERROR), "accrue interest failed");
-        ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(address(this), receiver, amount, params);
-
+        require(
+            ComptrollerInterfaceExtension(address(comptroller)).flashloanAllowed(
+                address(this),
+                address(receiver),
+                amount,
+                data
+            ),
+            "flashloan is paused"
+        );
         uint256 cashOnChainBefore = getCashOnChain();
         uint256 cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
         // 1. calculate fee, 1 bips = 1/10000
-        uint256 totalFee = div_(mul_(amount, flashFeeBips), 10000);
+        uint256 totalFee = this.flashFee(amount);
 
         // 2. transfer fund to receiver
-        doTransferOut(address(uint160(receiver)), amount, false);
+        doTransferOut(address(uint160(address(receiver))), amount, false);
 
         // 3. update totalBorrows
         totalBorrows = add_(totalBorrows, amount);
 
         // 4. execute receiver's callback function
-        IFlashloanReceiver(receiver).executeOperation(msg.sender, underlying, amount, totalFee, params);
 
-        // 5. check balance
+        require(
+            receiver.onFlashLoan(initiator, underlying, amount, totalFee, data) ==
+                keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
+            "IERC3156: Callback failed"
+        );
+
+        // 5. take amount + fee from receiver, then check balance
+        uint256 repaymentAmount = add_(amount, totalFee);
+        doTransferIn(address(receiver), repaymentAmount, false);
+
         uint256 cashOnChainAfter = getCashOnChain();
+
         require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
 
         // 6. update reserves and internal cash and totalBorrows
@@ -177,7 +223,8 @@ contract CCollateralCapErc20 is CToken, CCollateralCapErc20Interface {
         internalCash = add_(cashBefore, totalFee);
         totalBorrows = sub_(totalBorrows, amount);
 
-        emit Flashloan(receiver, amount, totalFee, reservesFee);
+        emit Flashloan(address(receiver), amount, totalFee, reservesFee);
+        return true;
     }
 
     /**

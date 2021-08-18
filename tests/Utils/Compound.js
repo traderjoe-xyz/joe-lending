@@ -355,6 +355,12 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'MITH';
     const name = opts.name || `Erc20 ${symbol}`;
     return await deploy('FaucetNonStandardToken', [quantity, name, decimals, symbol]);
+  } else if (kind == 'lp') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'UNI-V2-LP';
+    const name = opts.name || `Uniswap v2 LP`;
+    return await deploy('LPTokenHarness', [quantity, name, decimals, symbol]);
   }
 }
 

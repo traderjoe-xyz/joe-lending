@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "./CToken.sol";
 import "./ErrorReporter.sol";
 import "./Exponential.sol";
-import "./PriceOracle.sol";
+import "./PriceOracle/PriceOracle.sol";
 import "./ComptrollerInterface.sol";
 import "./ComptrollerStorage.sol";
 import "./LiquidityMiningInterface.sol";
@@ -690,18 +690,14 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
      * @param amount The amount of the tokens
      * @param params The other parameters
      */
+
     function flashloanAllowed(
         address cToken,
         address receiver,
         uint256 amount,
         bytes calldata params
-    ) external {
-        require(!flashloanGuardianPaused[cToken], "flashloan is paused");
-
-        // Shh - currently unused
-        receiver;
-        amount;
-        params;
+    ) external view returns (bool) {
+        return !flashloanGuardianPaused[cToken];
     }
 
     /**
