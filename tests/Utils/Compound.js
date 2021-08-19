@@ -374,6 +374,11 @@ async function makeMockAggregator(opts = {}) {
   return await deploy('MockAggregator', [answer]);
 }
 
+async function makeMockRegistry(opts = {}) {
+  const answer = dfn(opts.answer, etherMantissa(1));
+  return await deploy('MockRegistry', [answer]);
+}
+
 async function makeLiquidityMining(opts = {}) {
   const comptroller = opts.comptroller || await makeComptroller(opts.comptrollerOpts);
   return await deploy('MockLiquidityMining', [comptroller._address]);
@@ -590,6 +595,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeMockAggregator,
+  makeMockRegistry,
   makeFlashloanReceiver,
   makeToken,
   makeCurveSwap,

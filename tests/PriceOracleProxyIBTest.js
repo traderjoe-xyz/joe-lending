@@ -65,7 +65,7 @@ describe('PriceOracleProxyIB', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    it.skip("returns correctly for other tokens", async () => {
+    it("returns correctly for other tokens", async () => {
       const price = 1;
       const base = 0; // 0: USD
 
