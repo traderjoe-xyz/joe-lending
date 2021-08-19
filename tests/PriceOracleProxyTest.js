@@ -8,7 +8,7 @@ const {
   makeCToken,
   makeCurveSwap,
   makePriceOracle,
-  makeMockAggregator
+  makeMockRegistry
 } = require('./Utils/Compound');
 
 describe('PriceOracleProxy', () => {
@@ -27,7 +27,7 @@ describe('PriceOracleProxy', () => {
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
-    mockAggregator = await makeMockAggregator({answer: price});
+    mockAggregator = await makeMockRegistry({answer: price});
 
     crvSwap = await makeCurveSwap({price: crvLPPrice});
     crvLP = await makeToken({kind: 'curveToken', symbol: 'ethCrv', name: 'Curve pool ethCrv', crvOpts: {minter: crvSwap._address}}); // ETH base
