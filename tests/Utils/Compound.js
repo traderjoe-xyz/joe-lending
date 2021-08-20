@@ -296,6 +296,10 @@ async function makePriceOracle(opts = {}) {
   }
 }
 
+async function makeMockReference(opts = {}) {
+  return await deploy('MockReference');
+}
+
 async function makeCTokenAdmin(opts = {}) {
   const {
     root = saddle.account
@@ -595,6 +599,7 @@ module.exports = {
   makeInterestRateModel,
   makePriceOracle,
   makeMockAggregator,
+  makeMockReference,
   makeMockRegistry,
   makeFlashloanReceiver,
   makeToken,

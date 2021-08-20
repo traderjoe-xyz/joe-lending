@@ -21,7 +21,6 @@ describe('PriceOracleProxy', () => {
   let cCrvLP, cCrvLP2, cYv1, cYv1CrvLP, cYv2, cYv2CrvLP;
   let mockAggregator;
 
-  const price = etherMantissa(1);
   const crvLPPrice = etherMantissa(1.01);
   const yvPrice = etherMantissa(1.01);
 
@@ -30,7 +29,7 @@ describe('PriceOracleProxy', () => {
     cEth = await makeCToken({kind: "cether", comptrollerOpts: {kind: "v1-no-proxy"}, supportMarket: true});
     cDai = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
     cOther = await makeCToken({comptroller: cEth.comptroller, supportMarket: true});
-    mockAggregator = await makeMockRegistry({answer: price});
+    mockAggregator = await makeMockRegistry();
 
     crvSwap = await makeCurveSwap({price: crvLPPrice});
     crvLP = await makeToken({kind: 'curveToken', symbol: 'ethCrv', name: 'Curve pool ethCrv', crvOpts: {minter: crvSwap._address}}); // ETH base
@@ -156,6 +155,8 @@ describe('PriceOracleProxy', () => {
     });
 
     it("proxies for whitelisted tokens", async () => {
+      const price = '100000000'; // 1e8
+
       await setAndVerifyBackingPrice(cOther, 11);
       await readAndVerifyProxyPrice(cOther, 11);
 
@@ -179,7 +180,7 @@ describe('PriceOracleProxy', () => {
     it("gets price from chainlink", async () => {
       await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
-      expect(proxyPrice).toEqual(price.toFixed());
+      expect(proxyPrice).toEqual(etherMantissa(1).toFixed());
     });
 
     it("gets price from chainlink (USD based)", async () => {
