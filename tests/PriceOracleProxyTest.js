@@ -99,7 +99,8 @@ describe('PriceOracleProxy', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    let setPrice = async (token, base, quote) => {
+    let setPrice = async (token, base, quote, price) => {
+      await send(mockAggregator, "setAnswer", [base, quote, price]);
       await send(
         oracle,
         "_setAggregators",
@@ -164,9 +165,9 @@ describe('PriceOracleProxy', () => {
       await readAndVerifyProxyPrice(cOther, 37);
 
       // Set denomination.
-      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress);
+      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress, price);
       // Clear denomination.
-      await setPrice(cOther.underlying._address, address(0), address(0));
+      await setPrice(cOther.underlying._address, address(0), address(0), price);
 
       await readAndVerifyProxyPrice(cOther, 37);
     });
@@ -178,16 +179,20 @@ describe('PriceOracleProxy', () => {
     });
 
     it("gets price from chainlink", async () => {
-      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress);
+      const price = '100000000'; // 1e8
+
+      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress, price);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(proxyPrice).toEqual(etherMantissa(1).toFixed());
     });
 
     it("gets price from chainlink (USD based)", async () => {
+      const price = '100000000'; // 1e8
+
       // Set USDC price to 5e26 (equal to ETH price 2000 USD).
       await send(backingOracle, "setDirectPrice", [await call(oracle, "usdcAddress"), etherMantissa(5, 1e26)]);
 
-      await setPrice(cOther.underlying._address, cOther.underlying._address, usdAddress);
+      await setPrice(cOther.underlying._address, cOther.underlying._address, usdAddress, price);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(Number(proxyPrice)).toEqual(0.0005 * 1e18);
     });

@@ -75,12 +75,12 @@ describe('PriceOracleProxyIB', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    let setChainLinkPrice = async (token, base, baseAddress, price) => {
-      await send(registry, "setAnswer", [token, baseAddress, price]);
+    let setChainLinkPrice = async (token, base, quote, price) => {
+      await send(registry, "setAnswer", [base, quote, price]);
       await send(
         oracle,
         "_setAggregators",
-        [[token], [base]]);
+        [[token], [base], [quote]]);
     }
 
     let setBandPrice = async (token, price) => {
@@ -92,7 +92,7 @@ describe('PriceOracleProxyIB', () => {
     it("gets price from chainlink", async () => {
       const price = '100000000'; // 1e8
 
-      await setChainLinkPrice(cOther.underlying._address, 'USD', usdAddress, price);
+      await setChainLinkPrice(cOther.underlying._address, cOther.underlying._address, usdAddress, price);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(proxyPrice).toEqual(etherMantissa(1).toFixed());
     });
@@ -101,8 +101,8 @@ describe('PriceOracleProxyIB', () => {
       const price = '100000000'; // 1e8
       const ethPrice = '300000000000'; // 3000 * 1e8
 
-      await setChainLinkPrice(cOther.underlying._address, 'ETH', ethAddress, price);
-      await setChainLinkPrice(ethAddress, 'USD', usdAddress, ethPrice);
+      await setChainLinkPrice(cOther.underlying._address, cOther.underlying._address, ethAddress, price);
+      await setChainLinkPrice(ethAddress, ethAddress, usdAddress, ethPrice);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(proxyPrice).toEqual(etherMantissa(3000).toFixed());
     });
@@ -164,7 +164,7 @@ describe('PriceOracleProxyIB', () => {
 
     it("set aggregators successfully", async () => {
       // token - ETH
-      expect(await send(oracle, "_setAggregators", [[token._address], ['ETH']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]])).toSucceed();
 
       let aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(token._address);
@@ -172,7 +172,7 @@ describe('PriceOracleProxyIB', () => {
       expect(aggregator.isUsed).toEqual(true);
 
       // token - USD
-      expect(await send(oracle, "_setAggregators", [[token._address], ['USD']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [token._address], [usdAddress]])).toSucceed();
 
       aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(token._address);
@@ -180,7 +180,7 @@ describe('PriceOracleProxyIB', () => {
       expect(aggregator.isUsed).toEqual(true);
 
       // BTC - ETH
-      expect(await send(oracle, "_setAggregators", [[wbtcAddress], ['ETH']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[wbtcAddress], [btcAddress], [ethAddress]])).toSucceed();
 
       aggregator = await call(oracle, "aggregators", [wbtcAddress]);
       expect(aggregator.base).toEqual(btcAddress);
@@ -189,28 +189,29 @@ describe('PriceOracleProxyIB', () => {
     });
 
     it("fails to set aggregators for non-admin", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators");
       expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator");
     });
 
     it("fails to set aggregators for mismatched data", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], []])).rejects.toRevert("revert mismatched data");
-      await expect(send(oracle, "_setAggregators", [[], ['ETH']])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], []])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[token._address], [], [ethAddress]])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[], [token._address], [ethAddress]])).rejects.toRevert("revert mismatched data");
     });
 
     it("fails to set aggregators for unsupported denomination", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ABC']])).rejects.toRevert("revert unsupported denomination");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [address(1)]])).rejects.toRevert("revert unsupported denomination");
     });
 
     it("fails to set aggregators for aggregator not enabled", async () => {
       await send(registry, 'setFeedDisabled', [true]);
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']])).rejects.toRevert("revert aggregator not enabled");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]])).rejects.toRevert("revert aggregator not enabled");
     });
 
     it("clear aggregators successfully", async () => {
       expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
-      expect(await send(oracle, "_setAggregators", [[token._address], ['']], {from: accounts[0]})).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [address(0)], [address(0)]], {from: accounts[0]})).toSucceed();
 
       const aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(address(0));
