@@ -12,6 +12,9 @@ const {
 } = require('./Utils/Compound');
 
 describe('PriceOracleProxy', () => {
+  const usdAddress = '0x0000000000000000000000000000000000000348';
+  const ethAddress = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
   let root, accounts;
   let oracle, backingOracle, cEth, cDai, cOther;
   let crvLP, crvLP2, crvSwap, crvSwap2, yv1, yv1CrvLP, yv2, yv2CrvLP;
@@ -97,11 +100,11 @@ describe('PriceOracleProxy', () => {
       expect(Number(proxyPrice)).toEqual(price * 1e18);
     };
 
-    let setPrice = async (token, base) => {
+    let setPrice = async (token, base, quote) => {
       await send(
         oracle,
         "_setAggregators",
-        [[token._address], [base]]);
+        [[token], [base], [quote]]);
     }
 
     it("always returns 1e18 for cEth", async () => {
@@ -160,9 +163,9 @@ describe('PriceOracleProxy', () => {
       await readAndVerifyProxyPrice(cOther, 37);
 
       // Set denomination.
-      await setPrice(cOther.underlying, 'ETH');
+      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress);
       // Clear denomination.
-      await setPrice(cOther.underlying, '');
+      await setPrice(cOther.underlying._address, address(0), address(0));
 
       await readAndVerifyProxyPrice(cOther, 37);
     });
@@ -174,20 +177,16 @@ describe('PriceOracleProxy', () => {
     });
 
     it("gets price from chainlink", async () => {
-      const base = 'ETH';
-
-      await setPrice(cOther.underlying, base);
+      await setPrice(cOther.underlying._address, cOther.underlying._address, ethAddress);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(proxyPrice).toEqual(price.toFixed());
     });
 
     it("gets price from chainlink (USD based)", async () => {
-      const base = 'USD';
-
       // Set USDC price to 5e26 (equal to ETH price 2000 USD).
       await send(backingOracle, "setDirectPrice", [await call(oracle, "usdcAddress"), etherMantissa(5, 1e26)]);
 
-      await setPrice(cOther.underlying, base);
+      await setPrice(cOther.underlying._address, cOther.underlying._address, usdAddress);
       let proxyPrice = await call(oracle, "getUnderlyingPrice", [cOther._address]);
       expect(Number(proxyPrice)).toEqual(0.0005 * 1e18);
     });
@@ -252,7 +251,7 @@ describe('PriceOracleProxy', () => {
 
     it("set aggregators successfully", async () => {
       // token - ETH
-      expect(await send(oracle, "_setAggregators", [[token._address], ['ETH']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]])).toSucceed();
 
       let aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(token._address);
@@ -260,7 +259,7 @@ describe('PriceOracleProxy', () => {
       expect(aggregator.isUsed).toEqual(true);
 
       // token - USD
-      expect(await send(oracle, "_setAggregators", [[token._address], ['USD']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [token._address], [usdAddress]])).toSucceed();
 
       aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(token._address);
@@ -268,7 +267,7 @@ describe('PriceOracleProxy', () => {
       expect(aggregator.isUsed).toEqual(true);
 
       // BTC - ETH
-      expect(await send(oracle, "_setAggregators", [[wbtcAddress], ['ETH']])).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[wbtcAddress], [btcAddress], [ethAddress]])).toSucceed();
 
       aggregator = await call(oracle, "aggregators", [wbtcAddress]);
       expect(aggregator.base).toEqual(btcAddress);
@@ -277,28 +276,29 @@ describe('PriceOracleProxy', () => {
     });
 
     it("fails to set aggregators for non-admin", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]], {from: accounts[0]})).rejects.toRevert("revert only the admin or guardian may set the aggregators");
       expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]], {from: accounts[0]})).rejects.toRevert("revert guardian may only clear the aggregator");
     });
 
     it("fails to set aggregators for mismatched data", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], []])).rejects.toRevert("revert mismatched data");
-      await expect(send(oracle, "_setAggregators", [[], ['ETH']])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], []])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[token._address], [], [ethAddress]])).rejects.toRevert("revert mismatched data");
+      await expect(send(oracle, "_setAggregators", [[], [token._address], [ethAddress]])).rejects.toRevert("revert mismatched data");
     });
 
     it("fails to set aggregators for unsupported denomination", async () => {
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ABC']])).rejects.toRevert("revert unsupported denomination");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [address(1)]])).rejects.toRevert("revert unsupported denomination");
     });
 
     it("fails to set aggregators for aggregator not enabled", async () => {
       await send(mockAggregator, 'setFeedDisabled', [true]);
-      await expect(send(oracle, "_setAggregators", [[token._address], ['ETH']])).rejects.toRevert("revert aggregator not enabled");
+      await expect(send(oracle, "_setAggregators", [[token._address], [token._address], [ethAddress]])).rejects.toRevert("revert aggregator not enabled");
     });
 
     it("clear aggregators successfully", async () => {
       expect(await send(oracle, "_setGuardian", [accounts[0]])).toSucceed();
-      expect(await send(oracle, "_setAggregators", [[token._address], ['']], {from: accounts[0]})).toSucceed();
+      expect(await send(oracle, "_setAggregators", [[token._address], [address(0)], [address(0)]], {from: accounts[0]})).toSucceed();
 
       const aggregator = await call(oracle, "aggregators", [token._address]);
       expect(aggregator.base).toEqual(address(0));
