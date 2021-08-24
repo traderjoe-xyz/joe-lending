@@ -280,30 +280,6 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
         return v1PriceOracle.assetPrices(token);
     }
 
-    /**
-     * @notice Compare two strings are the same or not
-     * @param a The first string
-     * @param b The second string
-     * @return The same or not
-     */
-    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-    }
-
-    /**
-     * @notice Check if the token is one of BTC relared address
-     * @param token The token address
-     * @return It's BTC or not
-     */
-    function isBtcAddress(address token) internal returns (bool) {
-        for (uint256 i = 0; i < btcAddresses.length; i++) {
-            if (btcAddresses[i] == token) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /*** Admin or guardian functions ***/
 
     event AggregatorUpdated(address tokenAddress, address base, address quote, bool isUsed);
@@ -316,38 +292,29 @@ contract PriceOracleProxy is PriceOracle, Exponential, Denominations {
     /**
      * @notice Set ChainLink aggregators for multiple tokens
      * @param tokenAddresses The list of underlying tokens
+     * @param bases The list of ChainLink aggregator bases
      * @param quotes The list of ChainLink aggregator quotes, currently support 'ETH' and 'USD'
      */
-    function _setAggregators(address[] calldata tokenAddresses, string[] calldata quotes) external {
+    function _setAggregators(
+        address[] calldata tokenAddresses,
+        address[] calldata bases,
+        address[] calldata quotes
+    ) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(tokenAddresses.length == quotes.length, "mismatched data");
+        require(tokenAddresses.length == bases.length && tokenAddresses.length == quotes.length, "mismatched data");
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
-            address base;
-            address quote;
             bool isUsed;
-            if (bytes(quotes[i]).length != 0) {
+            if (bases[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
+                require(quotes[i] == Denominations.ETH || quotes[i] == Denominations.USD, "unsupported denomination");
                 isUsed = true;
 
-                base = tokenAddresses[i];
-                if (isBtcAddress(tokenAddresses[i])) {
-                    base = Denominations.BTC;
-                }
-
-                if (compareStrings(quotes[i], "ETH")) {
-                    quote = Denominations.ETH;
-                } else if (compareStrings(quotes[i], "USD")) {
-                    quote = Denominations.USD;
-                } else {
-                    revert("unsupported denomination");
-                }
-
                 // Make sure the aggregator exists.
-                address aggregator = registry.getFeed(base, quote);
+                address aggregator = registry.getFeed(bases[i], quotes[i]);
                 require(registry.isFeedEnabled(aggregator), "aggregator not enabled");
             }
-            aggregators[tokenAddresses[i]] = AggregatorInfo({base: base, quote: quote, isUsed: isUsed});
-            emit AggregatorUpdated(tokenAddresses[i], base, quote, isUsed);
+            aggregators[tokenAddresses[i]] = AggregatorInfo({base: bases[i], quote: quotes[i], isUsed: isUsed});
+            emit AggregatorUpdated(tokenAddresses[i], bases[i], quotes[i], isUsed);
         }
     }
 
