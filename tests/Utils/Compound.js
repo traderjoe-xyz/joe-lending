@@ -359,6 +359,12 @@ async function makeToken(opts = {}) {
     const symbol = opts.symbol || 'MITH';
     const name = opts.name || `Erc20 ${symbol}`;
     return await deploy('FaucetNonStandardToken', [quantity, name, decimals, symbol]);
+  } else if (kind == 'lp') {
+    const quantity = etherUnsigned(dfn(opts.quantity, 1e25));
+    const decimals = etherUnsigned(dfn(opts.decimals, 18));
+    const symbol = opts.symbol || 'UNI-V2-LP';
+    const name = opts.name || `Uniswap v2 LP`;
+    return await deploy('LPTokenHarness', [quantity, name, decimals, symbol]);
   }
 }
 
@@ -370,6 +376,11 @@ async function makeCurveSwap(opts = {}) {
 async function makeMockAggregator(opts = {}) {
   const answer = dfn(opts.answer, etherMantissa(1));
   return await deploy('MockAggregator', [answer]);
+}
+
+async function makeMockRegistry(opts = {}) {
+  const answer = dfn(opts.answer, etherMantissa(1));
+  return await deploy('MockRegistry', [answer]);
 }
 
 async function makeLiquidityMining(opts = {}) {
@@ -587,9 +598,10 @@ module.exports = {
   makeCToken,
   makeInterestRateModel,
   makePriceOracle,
-  makeFlashloanReceiver,
   makeMockAggregator,
   makeMockReference,
+  makeMockRegistry,
+  makeFlashloanReceiver,
   makeToken,
   makeCurveSwap,
   makeLiquidityMining,

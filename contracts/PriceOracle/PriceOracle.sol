@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "./CToken.sol";
+import "../CToken.sol";
 
 contract PriceOracle {
     /**

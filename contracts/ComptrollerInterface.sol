@@ -134,5 +134,5 @@ interface ComptrollerInterfaceExtension {
         address receiver,
         uint256 amount,
         bytes calldata params
-    ) external;
+    ) external view returns (bool);
 }
