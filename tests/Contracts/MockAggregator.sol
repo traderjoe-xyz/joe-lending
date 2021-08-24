@@ -90,13 +90,9 @@ contract MockAggregator {
 contract MockRegistry is FeedRegistryInterface {
     uint80 public constant roundId = 1;
 
-    int256 public answer;
+    mapping(address => mapping(address => int256)) private answer;
     bool public getFeedFailed;
     bool public feedDisabled;
-
-    constructor(int256 _answer) public {
-        answer = _answer;
-    }
 
     function getRoundData(
         address base,
@@ -113,11 +109,7 @@ contract MockRegistry is FeedRegistryInterface {
             uint80
         )
     {
-        // Shh
-        base;
-        quote;
-        _roundId;
-        return (roundId, answer, block.timestamp, block.timestamp, roundId);
+        return (roundId, answer[base][quote], block.timestamp, block.timestamp, _roundId);
     }
 
     function latestRoundData(address base, address quote)
@@ -131,17 +123,14 @@ contract MockRegistry is FeedRegistryInterface {
             uint80
         )
     {
-        // Shh
-        base;
-        quote;
-        return (roundId, answer, block.timestamp, block.timestamp, roundId);
+        return (roundId, answer[base][quote], block.timestamp, block.timestamp, roundId);
     }
 
     function decimals(address base, address quote) external view returns (uint8) {
         // Shh
         base;
         quote;
-        return 18;
+        return 8;
     }
 
     function description(address base, address quote) external view returns (string memory) {
@@ -187,7 +176,11 @@ contract MockRegistry is FeedRegistryInterface {
         feedDisabled = disabled;
     }
 
-    function setAnswer(int256 _answer) external {
-        answer = _answer;
+    function setAnswer(
+        address base,
+        address quote,
+        int256 _answer
+    ) external {
+        answer[base][quote] = _answer;
     }
 }
