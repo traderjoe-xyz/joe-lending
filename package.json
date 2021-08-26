@@ -13,7 +13,8 @@
     "test": "./script/test",
     "test:prepare": "NO_RUN=true ./script/test",
     "checksize": "npx run ./script/saddle/contractSizer.js",
-    "format": "./script/format"
+    "rinkeby:deploy": "hardhat --network rinkeby deploy",
+    "avalanche:deploy": "hardhat --network avalanche deploy"
   },
   "repository": "git@github.com:compound-finance/compound-protocol.git",
   "author": "Compound Finance",
@@ -26,9 +27,22 @@
     "solparse": "^2.2.8"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "dotenv": "^10.0.0",
     "eth-saddle": "^0.1.21",
-    "prettier": "^2.3.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.17"
+    "ethereum-waffle": "^3.4.0",
+    "ethereumjs-abi": "^0.6.8",
+    "ethers": "^5.4.4",
+    "hardhat": "^2.6.0",
+    "hardhat-abi-exporter": "^2.2.1",
+    "hardhat-deploy": "^0.8.11",
+    "hardhat-deploy-ethers": "^0.3.0-beta.10",
+    "hardhat-preprocessor": "^0.1.4",
+    "hardhat-spdx-license-identifier": "^2.0.3",
+    "hardhat-typechain": "^0.3.5",
+    "hardhat-watcher": "^2.1.1"
   },
   "resolutions": {
     "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
