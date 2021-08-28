@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.5.16;
 
 contract ErrorReporter {
@@ -380,7 +382,7 @@ contract Exponential is ErrorReporter, CarefulMath {
     }
 }
 
-contract PriceOracle is Exponential {
+contract V1PriceOracle is Exponential {
     /**
      * @dev flag for whether or not contract is paused
      *
