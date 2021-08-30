@@ -1,0 +1,833 @@
+{
+  "address": "0x8aE07Ea4E63c9419d49760De8163A92d2D574432",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_poster",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "requestedPriceMantissa",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "anchorPriceMantissa",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "cappedPriceMantissa",
+          "type": "uint256"
+        }
+      ],
+      "name": "CappedPricePosted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "error",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "info",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "detail",
+          "type": "uint256"
+        }
+      ],
+      "name": "Failure",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldAnchorAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newAnchorAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "NewAnchorAdmin",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "anchorAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "oldScaledPrice",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newScaledPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewPendingAnchor",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldPendingAnchorAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newPendingAnchorAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "NewPendingAnchorAdmin",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "msgSender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "error",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "info",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "detail",
+          "type": "uint256"
+        }
+      ],
+      "name": "OracleFailure",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "previousPriceMantissa",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "requestedPriceMantissa",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newPriceMantissa",
+          "type": "uint256"
+        }
+      ],
+      "name": "PricePosted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "newState",
+          "type": "bool"
+        }
+      ],
+      "name": "SetPaused",
+      "type": "event"
+    },
+    {
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "_acceptAnchorAdmin",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "_assetPrices",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "mantissa",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "requestedState",
+          "type": "bool"
+        }
+      ],
+      "name": "_setPaused",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "newScaledPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "_setPendingAnchor",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newPendingAnchorAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "_setPendingAnchorAdmin",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "anchorAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "anchors",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "period",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "priceMantissa",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "assetPrices",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "getPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "maxSwing",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "mantissa",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "maxSwingMantissa",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "numBlocksPerPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "pendingAnchorAdmin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "pendingAnchors",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "poster",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "requestedPriceMantissa",
+          "type": "uint256"
+        }
+      ],
+      "name": "setPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "assets",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "requestedPriceMantissas",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "setPrices",
+      "outputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "",
+          "type": "uint256[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x22ce921e5cf30e7ae29670838a92fa97dfc2568d442a5cae39c6c1f7be748e1c",
+  "receipt": {
+    "to": null,
+    "from": "0x5D3e4C0FE11e0aE4c32F0FF74B4544C49538AC61",
+    "contractAddress": "0x8aE07Ea4E63c9419d49760De8163A92d2D574432",
+    "transactionIndex": 1,
+    "gasUsed": "1235504",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x36ee3aba7722bbec81c64d482a1a14dcf4f0244e255836f2f6025800061d452c",
+    "transactionHash": "0x22ce921e5cf30e7ae29670838a92fa97dfc2568d442a5cae39c6c1f7be748e1c",
+    "logs": [],
+    "blockNumber": 9192548,
+    "cumulativeGasUsed": "1281987",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x5D3e4C0FE11e0aE4c32F0FF74B4544C49538AC61"
+  ],
+  "solcInputHash": "c9ccfe5fdb5639c87724d99eb44537d0",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_poster\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"requestedPriceMantissa\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"anchorPriceMantissa\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"cappedPriceMantissa\",\"type\":\"uint256\"}],\"name\":\"CappedPricePosted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"error\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"info\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"detail\",\"type\":\"uint256\"}],\"name\":\"Failure\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"oldAnchorAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAnchorAdmin\",\"type\":\"address\"}],\"name\":\"NewAnchorAdmin\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"anchorAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldScaledPrice\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newScaledPrice\",\"type\":\"uint256\"}],\"name\":\"NewPendingAnchor\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"oldPendingAnchorAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newPendingAnchorAdmin\",\"type\":\"address\"}],\"name\":\"NewPendingAnchorAdmin\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"msgSender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"error\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"info\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"detail\",\"type\":\"uint256\"}],\"name\":\"OracleFailure\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"previousPriceMantissa\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"requestedPriceMantissa\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPriceMantissa\",\"type\":\"uint256\"}],\"name\":\"PricePosted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"newState\",\"type\":\"bool\"}],\"name\":\"SetPaused\",\"type\":\"event\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"constant\":false,\"inputs\":[],\"name\":\"_acceptAnchorAdmin\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"_assetPrices\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"mantissa\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"bool\",\"name\":\"requestedState\",\"type\":\"bool\"}],\"name\":\"_setPaused\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"newScaledPrice\",\"type\":\"uint256\"}],\"name\":\"_setPendingAnchor\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"newPendingAnchorAdmin\",\"type\":\"address\"}],\"name\":\"_setPendingAnchorAdmin\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"anchorAdmin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"anchors\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"period\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"priceMantissa\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"}],\"name\":\"assetPrices\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"}],\"name\":\"getPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"maxSwing\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"mantissa\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"maxSwingMantissa\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"numBlocksPerPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"pendingAnchorAdmin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"pendingAnchors\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"poster\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"asset\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"requestedPriceMantissa\",\"type\":\"uint256\"}],\"name\":\"setPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"assets\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"requestedPriceMantissas\",\"type\":\"uint256[]\"}],\"name\":\"setPrices\",\"outputs\":[{\"internalType\":\"uint256[]\",\"name\":\"\",\"type\":\"uint256[]\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{\"_acceptAnchorAdmin()\":{\"details\":\"Admin function for pending anchor admin to accept role and update anchor admin\",\"return\":\"uint 0=success, otherwise a failure\"},\"_setPaused(bool)\":{\"details\":\"Admin function to pause or resume the market\",\"params\":{\"requestedState\":\"value to assign to `paused`\"},\"return\":\"uint 0=success, otherwise a failure\"},\"_setPendingAnchor(address,uint256)\":{\"details\":\"Admin function to set the anchor price for an asset\",\"params\":{\"asset\":\"Asset for which to override the anchor price\",\"newScaledPrice\":\"New anchor price\"},\"return\":\"uint 0=success, otherwise a failure (see enum OracleError for details)\"},\"_setPendingAnchorAdmin(address)\":{\"details\":\"Admin function to begin change of anchor admin. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer.\",\"params\":{\"newPendingAnchorAdmin\":\"New pending anchor admin.\"},\"return\":\"uint 0=success, otherwise a failure     * TODO: Should we add a second arg to verify, like a checksum of `newAnchorAdmin` address?\"},\"assetPrices(address)\":{\"details\":\"function to get price for an asset\",\"params\":{\"asset\":\"Asset for which to get the price\"},\"return\":\"uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused\"},\"getPrice(address)\":{\"details\":\"function to get price for an asset\",\"params\":{\"asset\":\"Asset for which to get the price\"},\"return\":\"uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused\"},\"setPrice(address,uint256)\":{\"details\":\"function to set price for an asset\",\"params\":{\"asset\":\"Asset for which to set the price\",\"requestedPriceMantissa\":\"requested new price, scaled by 10**18\"},\"return\":\"uint 0=success, otherwise a failure (see enum OracleError for details)\"},\"setPrices(address[],uint256[])\":{\"details\":\"function to set prices for a variable number of assets.\",\"params\":{\"assets\":\"a list of up to assets for which to set a price. required: 0 < assets.length == requestedPriceMantissas.length\",\"requestedPriceMantissas\":\"requested new prices for the assets, scaled by 10**18. required: 0 < assets.length == requestedPriceMantissas.length\"},\"return\":\"uint values in same order as inputs. For each: 0=success, otherwise a failure (see enum OracleError for details)\"}}},\"userdoc\":{\"methods\":{\"_acceptAnchorAdmin()\":{\"notice\":\"Accepts transfer of anchor admin rights. msg.sender must be pendingAnchorAdmin\"},\"_setPaused(bool)\":{\"notice\":\"set `paused` to the specified state\"},\"_setPendingAnchor(address,uint256)\":{\"notice\":\"provides ability to override the anchor price for an asset\"},\"_setPendingAnchorAdmin(address)\":{\"notice\":\"Begins transfer of anchor admin rights. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer.\"},\"assetPrices(address)\":{\"notice\":\"retrieves price of an asset\"},\"getPrice(address)\":{\"notice\":\"retrieves price of an asset\"},\"setPrice(address,uint256)\":{\"notice\":\"entry point for updating prices\"},\"setPrices(address[],uint256[])\":{\"notice\":\"entry point for updating multiple prices\"}}}},\"settings\":{\"compilationTarget\":{\"contracts/PriceOracle/v1PriceOracle.sol\":\"V1PriceOracle\"},\"evmVersion\":\"istanbul\",\"libraries\":{\"__CACHE_BREAKER__\":\"0x00000000d41867734bbee4c6863d9255b2b06ac1\"},\"metadata\":{\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/PriceOracle/v1PriceOracle.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\ncontract ErrorReporter {\\n    /**\\n     * @dev `error` corresponds to enum Error; `info` corresponds to enum FailureInfo, and `detail` is an arbitrary\\n     * contract-specific code that enables us to report opaque error codes from upgradeable contracts.\\n     **/\\n    event Failure(uint256 error, uint256 info, uint256 detail);\\n\\n    enum Error {\\n        NO_ERROR,\\n        OPAQUE_ERROR, // To be used when reporting errors from upgradeable contracts; the opaque code should be given as `detail` in the `Failure` event\\n        UNAUTHORIZED,\\n        INTEGER_OVERFLOW,\\n        INTEGER_UNDERFLOW,\\n        DIVISION_BY_ZERO,\\n        BAD_INPUT,\\n        TOKEN_INSUFFICIENT_ALLOWANCE,\\n        TOKEN_INSUFFICIENT_BALANCE,\\n        TOKEN_TRANSFER_FAILED,\\n        MARKET_NOT_SUPPORTED,\\n        SUPPLY_RATE_CALCULATION_FAILED,\\n        BORROW_RATE_CALCULATION_FAILED,\\n        TOKEN_INSUFFICIENT_CASH,\\n        TOKEN_TRANSFER_OUT_FAILED,\\n        INSUFFICIENT_LIQUIDITY,\\n        INSUFFICIENT_BALANCE,\\n        INVALID_COLLATERAL_RATIO,\\n        MISSING_ASSET_PRICE,\\n        EQUITY_INSUFFICIENT_BALANCE,\\n        INVALID_CLOSE_AMOUNT_REQUESTED,\\n        ASSET_NOT_PRICED,\\n        INVALID_LIQUIDATION_DISCOUNT,\\n        INVALID_COMBINED_RISK_PARAMETERS\\n    }\\n\\n    /*\\n     * Note: FailureInfo (but not Error) is kept in alphabetical order\\n     *       This is because FailureInfo grows significantly faster, and\\n     *       the order of Error has some meaning, while the order of FailureInfo\\n     *       is entirely arbitrary.\\n     */\\n    enum FailureInfo {\\n        BORROW_ACCOUNT_LIQUIDITY_CALCULATION_FAILED,\\n        BORROW_ACCOUNT_SHORTFALL_PRESENT,\\n        BORROW_AMOUNT_LIQUIDITY_SHORTFALL,\\n        BORROW_AMOUNT_VALUE_CALCULATION_FAILED,\\n        BORROW_MARKET_NOT_SUPPORTED,\\n        BORROW_NEW_BORROW_INDEX_CALCULATION_FAILED,\\n        BORROW_NEW_BORROW_RATE_CALCULATION_FAILED,\\n        BORROW_NEW_SUPPLY_INDEX_CALCULATION_FAILED,\\n        BORROW_NEW_SUPPLY_RATE_CALCULATION_FAILED,\\n        BORROW_NEW_TOTAL_BORROW_CALCULATION_FAILED,\\n        BORROW_NEW_TOTAL_CASH_CALCULATION_FAILED,\\n        BORROW_ORIGINATION_FEE_CALCULATION_FAILED,\\n        BORROW_TRANSFER_OUT_FAILED,\\n        EQUITY_WITHDRAWAL_AMOUNT_VALIDATION,\\n        EQUITY_WITHDRAWAL_CALCULATE_EQUITY,\\n        EQUITY_WITHDRAWAL_MODEL_OWNER_CHECK,\\n        EQUITY_WITHDRAWAL_TRANSFER_OUT_FAILED,\\n        LIQUIDATE_ACCUMULATED_BORROW_BALANCE_CALCULATION_FAILED,\\n        LIQUIDATE_ACCUMULATED_SUPPLY_BALANCE_CALCULATION_FAILED_BORROWER_COLLATERAL_ASSET,\\n        LIQUIDATE_ACCUMULATED_SUPPLY_BALANCE_CALCULATION_FAILED_LIQUIDATOR_COLLATERAL_ASSET,\\n        LIQUIDATE_AMOUNT_SEIZE_CALCULATION_FAILED,\\n        LIQUIDATE_BORROW_DENOMINATED_COLLATERAL_CALCULATION_FAILED,\\n        LIQUIDATE_CLOSE_AMOUNT_TOO_HIGH,\\n        LIQUIDATE_DISCOUNTED_REPAY_TO_EVEN_AMOUNT_CALCULATION_FAILED,\\n        LIQUIDATE_NEW_BORROW_INDEX_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_BORROW_INDEX_CALCULATION_FAILED_COLLATERAL_ASSET,\\n        LIQUIDATE_NEW_BORROW_RATE_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_SUPPLY_INDEX_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_SUPPLY_INDEX_CALCULATION_FAILED_COLLATERAL_ASSET,\\n        LIQUIDATE_NEW_SUPPLY_RATE_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_TOTAL_BORROW_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_TOTAL_CASH_CALCULATION_FAILED_BORROWED_ASSET,\\n        LIQUIDATE_NEW_TOTAL_SUPPLY_BALANCE_CALCULATION_FAILED_BORROWER_COLLATERAL_ASSET,\\n        LIQUIDATE_NEW_TOTAL_SUPPLY_BALANCE_CALCULATION_FAILED_LIQUIDATOR_COLLATERAL_ASSET,\\n        LIQUIDATE_TRANSFER_IN_FAILED,\\n        LIQUIDATE_TRANSFER_IN_NOT_POSSIBLE,\\n        REPAY_BORROW_NEW_BORROW_INDEX_CALCULATION_FAILED,\\n        REPAY_BORROW_NEW_BORROW_RATE_CALCULATION_FAILED,\\n        REPAY_BORROW_NEW_SUPPLY_INDEX_CALCULATION_FAILED,\\n        REPAY_BORROW_NEW_SUPPLY_RATE_CALCULATION_FAILED,\\n        REPAY_BORROW_NEW_TOTAL_BORROW_CALCULATION_FAILED,\\n        REPAY_BORROW_NEW_TOTAL_CASH_CALCULATION_FAILED,\\n        REPAY_BORROW_TRANSFER_IN_FAILED,\\n        REPAY_BORROW_TRANSFER_IN_NOT_POSSIBLE,\\n        SET_ADMIN_OWNER_CHECK,\\n        SET_ASSET_PRICE_CHECK_ORACLE,\\n        SET_MARKET_INTEREST_RATE_MODEL_OWNER_CHECK,\\n        SET_ORACLE_OWNER_CHECK,\\n        SET_ORIGINATION_FEE_OWNER_CHECK,\\n        SET_RISK_PARAMETERS_OWNER_CHECK,\\n        SET_RISK_PARAMETERS_VALIDATION,\\n        SUPPLY_ACCUMULATED_BALANCE_CALCULATION_FAILED,\\n        SUPPLY_MARKET_NOT_SUPPORTED,\\n        SUPPLY_NEW_BORROW_INDEX_CALCULATION_FAILED,\\n        SUPPLY_NEW_BORROW_RATE_CALCULATION_FAILED,\\n        SUPPLY_NEW_SUPPLY_INDEX_CALCULATION_FAILED,\\n        SUPPLY_NEW_SUPPLY_RATE_CALCULATION_FAILED,\\n        SUPPLY_NEW_TOTAL_BALANCE_CALCULATION_FAILED,\\n        SUPPLY_NEW_TOTAL_CASH_CALCULATION_FAILED,\\n        SUPPLY_NEW_TOTAL_SUPPLY_CALCULATION_FAILED,\\n        SUPPLY_TRANSFER_IN_FAILED,\\n        SUPPLY_TRANSFER_IN_NOT_POSSIBLE,\\n        SUPPORT_MARKET_OWNER_CHECK,\\n        SUPPORT_MARKET_PRICE_CHECK,\\n        SUSPEND_MARKET_OWNER_CHECK,\\n        WITHDRAW_ACCOUNT_LIQUIDITY_CALCULATION_FAILED,\\n        WITHDRAW_ACCOUNT_SHORTFALL_PRESENT,\\n        WITHDRAW_ACCUMULATED_BALANCE_CALCULATION_FAILED,\\n        WITHDRAW_AMOUNT_LIQUIDITY_SHORTFALL,\\n        WITHDRAW_AMOUNT_VALUE_CALCULATION_FAILED,\\n        WITHDRAW_CAPACITY_CALCULATION_FAILED,\\n        WITHDRAW_NEW_BORROW_INDEX_CALCULATION_FAILED,\\n        WITHDRAW_NEW_BORROW_RATE_CALCULATION_FAILED,\\n        WITHDRAW_NEW_SUPPLY_INDEX_CALCULATION_FAILED,\\n        WITHDRAW_NEW_SUPPLY_RATE_CALCULATION_FAILED,\\n        WITHDRAW_NEW_TOTAL_BALANCE_CALCULATION_FAILED,\\n        WITHDRAW_NEW_TOTAL_SUPPLY_CALCULATION_FAILED,\\n        WITHDRAW_TRANSFER_OUT_FAILED,\\n        WITHDRAW_TRANSFER_OUT_NOT_POSSIBLE\\n    }\\n\\n    /**\\n     * @dev use this when reporting a known error from the money market or a non-upgradeable collaborator\\n     */\\n    function fail(Error err, FailureInfo info) internal returns (uint256) {\\n        emit Failure(uint256(err), uint256(info), 0);\\n\\n        return uint256(err);\\n    }\\n\\n    /**\\n     * @dev use this when reporting an opaque error from an upgradeable collaborator contract\\n     */\\n    function failOpaque(FailureInfo info, uint256 opaqueError) internal returns (uint256) {\\n        emit Failure(uint256(Error.OPAQUE_ERROR), uint256(info), opaqueError);\\n\\n        return uint256(Error.OPAQUE_ERROR);\\n    }\\n}\\n\\ncontract CarefulMath is ErrorReporter {\\n    /**\\n     * @dev Multiplies two numbers, returns an error on overflow.\\n     */\\n    function mul(uint256 a, uint256 b) internal pure returns (Error, uint256) {\\n        if (a == 0) {\\n            return (Error.NO_ERROR, 0);\\n        }\\n\\n        uint256 c = a * b;\\n\\n        if (c / a != b) {\\n            return (Error.INTEGER_OVERFLOW, 0);\\n        } else {\\n            return (Error.NO_ERROR, c);\\n        }\\n    }\\n\\n    /**\\n     * @dev Integer division of two numbers, truncating the quotient.\\n     */\\n    function div(uint256 a, uint256 b) internal pure returns (Error, uint256) {\\n        if (b == 0) {\\n            return (Error.DIVISION_BY_ZERO, 0);\\n        }\\n\\n        return (Error.NO_ERROR, a / b);\\n    }\\n\\n    /**\\n     * @dev Subtracts two numbers, returns an error on overflow (i.e. if subtrahend is greater than minuend).\\n     */\\n    function sub(uint256 a, uint256 b) internal pure returns (Error, uint256) {\\n        if (b <= a) {\\n            return (Error.NO_ERROR, a - b);\\n        } else {\\n            return (Error.INTEGER_UNDERFLOW, 0);\\n        }\\n    }\\n\\n    /**\\n     * @dev Adds two numbers, returns an error on overflow.\\n     */\\n    function add(uint256 a, uint256 b) internal pure returns (Error, uint256) {\\n        uint256 c = a + b;\\n\\n        if (c >= a) {\\n            return (Error.NO_ERROR, c);\\n        } else {\\n            return (Error.INTEGER_OVERFLOW, 0);\\n        }\\n    }\\n\\n    /**\\n     * @dev add a and b and then subtract c\\n     */\\n    function addThenSub(\\n        uint256 a,\\n        uint256 b,\\n        uint256 c\\n    ) internal pure returns (Error, uint256) {\\n        (Error err0, uint256 sum) = add(a, b);\\n\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, 0);\\n        }\\n\\n        return sub(sum, c);\\n    }\\n}\\n\\ncontract Exponential is ErrorReporter, CarefulMath {\\n    // TODO: We may wish to put the result of 10**18 here instead of the expression.\\n    // Per https://solidity.readthedocs.io/en/latest/contracts.html#constant-state-variables\\n    // the optimizer MAY replace the expression 10**18 with its calculated value.\\n    uint256 constant expScale = 10**18;\\n\\n    // See TODO on expScale\\n    uint256 constant halfExpScale = expScale / 2;\\n\\n    struct Exp {\\n        uint256 mantissa;\\n    }\\n\\n    uint256 constant mantissaOne = 10**18;\\n    uint256 constant mantissaOneTenth = 10**17;\\n\\n    /**\\n     * @dev Creates an exponential from numerator and denominator values.\\n     *      Note: Returns an error if (`num` * 10e18) > MAX_INT,\\n     *            or if `denom` is zero.\\n     */\\n    function getExp(uint256 num, uint256 denom) internal pure returns (Error, Exp memory) {\\n        (Error err0, uint256 scaledNumerator) = mul(num, expScale);\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        (Error err1, uint256 rational) = div(scaledNumerator, denom);\\n        if (err1 != Error.NO_ERROR) {\\n            return (err1, Exp({mantissa: 0}));\\n        }\\n\\n        return (Error.NO_ERROR, Exp({mantissa: rational}));\\n    }\\n\\n    /**\\n     * @dev Adds two exponentials, returning a new exponential.\\n     */\\n    function addExp(Exp memory a, Exp memory b) internal pure returns (Error, Exp memory) {\\n        (Error error, uint256 result) = add(a.mantissa, b.mantissa);\\n\\n        return (error, Exp({mantissa: result}));\\n    }\\n\\n    /**\\n     * @dev Subtracts two exponentials, returning a new exponential.\\n     */\\n    function subExp(Exp memory a, Exp memory b) internal pure returns (Error, Exp memory) {\\n        (Error error, uint256 result) = sub(a.mantissa, b.mantissa);\\n\\n        return (error, Exp({mantissa: result}));\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, returning a new Exp.\\n     */\\n    function mulScalar(Exp memory a, uint256 scalar) internal pure returns (Error, Exp memory) {\\n        (Error err0, uint256 scaledMantissa) = mul(a.mantissa, scalar);\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        return (Error.NO_ERROR, Exp({mantissa: scaledMantissa}));\\n    }\\n\\n    /**\\n     * @dev Divide an Exp by a scalar, returning a new Exp.\\n     */\\n    function divScalar(Exp memory a, uint256 scalar) internal pure returns (Error, Exp memory) {\\n        (Error err0, uint256 descaledMantissa) = div(a.mantissa, scalar);\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        return (Error.NO_ERROR, Exp({mantissa: descaledMantissa}));\\n    }\\n\\n    /**\\n     * @dev Divide a scalar by an Exp, returning a new Exp.\\n     */\\n    function divScalarByExp(uint256 scalar, Exp memory divisor) internal pure returns (Error, Exp memory) {\\n        /*\\n            We are doing this as:\\n            getExp(mul(expScale, scalar), divisor.mantissa)\\n\\n            How it works:\\n            Exp = a / b;\\n            Scalar = s;\\n            `s / (a / b)` = `b * s / a` and since for an Exp `a = mantissa, b = expScale`\\n        */\\n        (Error err0, uint256 numerator) = mul(expScale, scalar);\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n        return getExp(numerator, divisor.mantissa);\\n    }\\n\\n    /**\\n     * @dev Multiplies two exponentials, returning a new exponential.\\n     */\\n    function mulExp(Exp memory a, Exp memory b) internal pure returns (Error, Exp memory) {\\n        (Error err0, uint256 doubleScaledProduct) = mul(a.mantissa, b.mantissa);\\n        if (err0 != Error.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        // We add half the scale before dividing so that we get rounding instead of truncation.\\n        //  See \\\"Listing 6\\\" and text above it at https://accu.org/index.php/journals/1717\\n        // Without this change, a result like 6.6...e-19 will be truncated to 0 instead of being rounded to 1e-18.\\n        (Error err1, uint256 doubleScaledProductWithHalfScale) = add(halfExpScale, doubleScaledProduct);\\n        if (err1 != Error.NO_ERROR) {\\n            return (err1, Exp({mantissa: 0}));\\n        }\\n\\n        (Error err2, uint256 product) = div(doubleScaledProductWithHalfScale, expScale);\\n        // The only error `div` can return is Error.DIVISION_BY_ZERO but we control `expScale` and it is not zero.\\n        assert(err2 == Error.NO_ERROR);\\n\\n        return (Error.NO_ERROR, Exp({mantissa: product}));\\n    }\\n\\n    /**\\n     * @dev Divides two exponentials, returning a new exponential.\\n     *     (a/scale) / (b/scale) = (a/scale) * (scale/b) = a/b,\\n     *  which we can scale as an Exp by calling getExp(a.mantissa, b.mantissa)\\n     */\\n    function divExp(Exp memory a, Exp memory b) internal pure returns (Error, Exp memory) {\\n        return getExp(a.mantissa, b.mantissa);\\n    }\\n\\n    /**\\n     * @dev Truncates the given exp to a whole number value.\\n     *      For example, truncate(Exp{mantissa: 15 * (10**18)}) = 15\\n     */\\n    function truncate(Exp memory exp) internal pure returns (uint256) {\\n        // Note: We are not using careful math here as we're performing a division that cannot fail\\n        return exp.mantissa / 10**18;\\n    }\\n\\n    /**\\n     * @dev Checks if first Exp is less than second Exp.\\n     */\\n    function lessThanExp(Exp memory left, Exp memory right) internal pure returns (bool) {\\n        return left.mantissa < right.mantissa; //TODO: Add some simple tests and this in another PR yo.\\n    }\\n\\n    /**\\n     * @dev Checks if left Exp <= right Exp.\\n     */\\n    function lessThanOrEqualExp(Exp memory left, Exp memory right) internal pure returns (bool) {\\n        return left.mantissa <= right.mantissa;\\n    }\\n\\n    /**\\n     * @dev Checks if first Exp is greater than second Exp.\\n     */\\n    function greaterThanExp(Exp memory left, Exp memory right) internal pure returns (bool) {\\n        return left.mantissa > right.mantissa;\\n    }\\n\\n    /**\\n     * @dev returns true if Exp is exactly zero\\n     */\\n    function isZeroExp(Exp memory value) internal pure returns (bool) {\\n        return value.mantissa == 0;\\n    }\\n}\\n\\ncontract V1PriceOracle is Exponential {\\n    /**\\n     * @dev flag for whether or not contract is paused\\n     *\\n     */\\n    bool public paused;\\n\\n    uint256 public constant numBlocksPerPeriod = 240; // approximately 1 hour: 60 seconds/minute * 60 minutes/hour * 1 block/15 seconds\\n\\n    uint256 public constant maxSwingMantissa = (10**17); // 0.1\\n\\n    /**\\n     * @dev Mapping of asset addresses and their corresponding price in terms of Eth-Wei\\n     *      which is simply equal to AssetWeiPrice * 10e18. For instance, if OMG token was\\n     *      worth 5x Eth then the price for OMG would be 5*10e18 or Exp({mantissa: 5000000000000000000}).\\n     * map: assetAddress -> Exp\\n     */\\n    mapping(address => Exp) public _assetPrices;\\n\\n    constructor(address _poster) public {\\n        anchorAdmin = msg.sender;\\n        poster = _poster;\\n        maxSwing = Exp({mantissa: maxSwingMantissa});\\n    }\\n\\n    /**\\n     * @notice Do not pay into PriceOracle\\n     */\\n    function() external payable {\\n        revert();\\n    }\\n\\n    enum OracleError {\\n        NO_ERROR,\\n        UNAUTHORIZED,\\n        FAILED_TO_SET_PRICE\\n    }\\n\\n    enum OracleFailureInfo {\\n        ACCEPT_ANCHOR_ADMIN_PENDING_ANCHOR_ADMIN_CHECK,\\n        SET_PAUSED_OWNER_CHECK,\\n        SET_PENDING_ANCHOR_ADMIN_OWNER_CHECK,\\n        SET_PENDING_ANCHOR_PERMISSION_CHECK,\\n        SET_PRICE_CALCULATE_SWING,\\n        SET_PRICE_CAP_TO_MAX,\\n        SET_PRICE_MAX_SWING_CHECK,\\n        SET_PRICE_NO_ANCHOR_PRICE_OR_INITIAL_PRICE_ZERO,\\n        SET_PRICE_PERMISSION_CHECK,\\n        SET_PRICE_ZERO_PRICE,\\n        SET_PRICES_PARAM_VALIDATION\\n    }\\n\\n    /**\\n     * @dev `msgSender` is msg.sender; `error` corresponds to enum OracleError; `info` corresponds to enum OracleFailureInfo, and `detail` is an arbitrary\\n     * contract-specific code that enables us to report opaque error codes from upgradeable contracts.\\n     **/\\n    event OracleFailure(address msgSender, address asset, uint256 error, uint256 info, uint256 detail);\\n\\n    /**\\n     * @dev use this when reporting a known error from the price oracle or a non-upgradeable collaborator\\n     *      Using Oracle in name because we already inherit a `fail` function from ErrorReporter.sol via Exponential.sol\\n     */\\n    function failOracle(\\n        address asset,\\n        OracleError err,\\n        OracleFailureInfo info\\n    ) internal returns (uint256) {\\n        emit OracleFailure(msg.sender, asset, uint256(err), uint256(info), 0);\\n\\n        return uint256(err);\\n    }\\n\\n    /**\\n     * @dev Use this when reporting an error from the money market. Give the money market result as `details`\\n     */\\n    function failOracleWithDetails(\\n        address asset,\\n        OracleError err,\\n        OracleFailureInfo info,\\n        uint256 details\\n    ) internal returns (uint256) {\\n        emit OracleFailure(msg.sender, asset, uint256(err), uint256(info), details);\\n\\n        return uint256(err);\\n    }\\n\\n    /**\\n     * @dev An administrator who can set the pending anchor value for assets.\\n     *      Set in the constructor.\\n     */\\n    address public anchorAdmin;\\n\\n    /**\\n     * @dev pending anchor administrator for this contract.\\n     */\\n    address public pendingAnchorAdmin;\\n\\n    /**\\n     * @dev Address of the price poster.\\n     *      Set in the constructor.\\n     */\\n    address public poster;\\n\\n    /**\\n     * @dev maxSwing the maximum allowed percentage difference between a new price and the anchor's price\\n     *      Set only in the constructor\\n     */\\n    Exp public maxSwing;\\n\\n    struct Anchor {\\n        // floor(block.number / numBlocksPerPeriod) + 1\\n        uint256 period;\\n        // Price in ETH, scaled by 10**18\\n        uint256 priceMantissa;\\n    }\\n\\n    /**\\n     * @dev anchors by asset\\n     */\\n    mapping(address => Anchor) public anchors;\\n\\n    /**\\n     * @dev pending anchor prices by asset\\n     */\\n    mapping(address => uint256) public pendingAnchors;\\n\\n    /**\\n     * @dev emitted when a pending anchor is set\\n     * @param asset Asset for which to set a pending anchor\\n     * @param oldScaledPrice if an unused pending anchor was present, its value; otherwise 0.\\n     * @param newScaledPrice the new scaled pending anchor price\\n     */\\n    event NewPendingAnchor(address anchorAdmin, address asset, uint256 oldScaledPrice, uint256 newScaledPrice);\\n\\n    /**\\n     * @notice provides ability to override the anchor price for an asset\\n     * @dev Admin function to set the anchor price for an asset\\n     * @param asset Asset for which to override the anchor price\\n     * @param newScaledPrice New anchor price\\n     * @return uint 0=success, otherwise a failure (see enum OracleError for details)\\n     */\\n    function _setPendingAnchor(address asset, uint256 newScaledPrice) public returns (uint256) {\\n        // Check caller = anchorAdmin. Note: Deliberately not allowing admin. They can just change anchorAdmin if desired.\\n        if (msg.sender != anchorAdmin) {\\n            return failOracle(asset, OracleError.UNAUTHORIZED, OracleFailureInfo.SET_PENDING_ANCHOR_PERMISSION_CHECK);\\n        }\\n\\n        uint256 oldScaledPrice = pendingAnchors[asset];\\n        pendingAnchors[asset] = newScaledPrice;\\n\\n        emit NewPendingAnchor(msg.sender, asset, oldScaledPrice, newScaledPrice);\\n\\n        return uint256(OracleError.NO_ERROR);\\n    }\\n\\n    /**\\n     * @dev emitted for all price changes\\n     */\\n    event PricePosted(\\n        address asset,\\n        uint256 previousPriceMantissa,\\n        uint256 requestedPriceMantissa,\\n        uint256 newPriceMantissa\\n    );\\n\\n    /**\\n     * @dev emitted if this contract successfully posts a capped-to-max price to the money market\\n     */\\n    event CappedPricePosted(\\n        address asset,\\n        uint256 requestedPriceMantissa,\\n        uint256 anchorPriceMantissa,\\n        uint256 cappedPriceMantissa\\n    );\\n\\n    /**\\n     * @dev emitted when admin either pauses or resumes the contract; newState is the resulting state\\n     */\\n    event SetPaused(bool newState);\\n\\n    /**\\n     * @dev emitted when pendingAnchorAdmin is changed\\n     */\\n    event NewPendingAnchorAdmin(address oldPendingAnchorAdmin, address newPendingAnchorAdmin);\\n\\n    /**\\n     * @dev emitted when pendingAnchorAdmin is accepted, which means anchor admin is updated\\n     */\\n    event NewAnchorAdmin(address oldAnchorAdmin, address newAnchorAdmin);\\n\\n    /**\\n     * @notice set `paused` to the specified state\\n     * @dev Admin function to pause or resume the market\\n     * @param requestedState value to assign to `paused`\\n     * @return uint 0=success, otherwise a failure\\n     */\\n    function _setPaused(bool requestedState) public returns (uint256) {\\n        // Check caller = anchorAdmin\\n        if (msg.sender != anchorAdmin) {\\n            return failOracle(address(0), OracleError.UNAUTHORIZED, OracleFailureInfo.SET_PAUSED_OWNER_CHECK);\\n        }\\n\\n        paused = requestedState;\\n        emit SetPaused(requestedState);\\n\\n        return uint256(Error.NO_ERROR);\\n    }\\n\\n    /**\\n     * @notice Begins transfer of anchor admin rights. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer.\\n     * @dev Admin function to begin change of anchor admin. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer.\\n     * @param newPendingAnchorAdmin New pending anchor admin.\\n     * @return uint 0=success, otherwise a failure\\n     *\\n     * TODO: Should we add a second arg to verify, like a checksum of `newAnchorAdmin` address?\\n     */\\n    function _setPendingAnchorAdmin(address newPendingAnchorAdmin) public returns (uint256) {\\n        // Check caller = anchorAdmin\\n        if (msg.sender != anchorAdmin) {\\n            return\\n                failOracle(\\n                    address(0),\\n                    OracleError.UNAUTHORIZED,\\n                    OracleFailureInfo.SET_PENDING_ANCHOR_ADMIN_OWNER_CHECK\\n                );\\n        }\\n\\n        // save current value, if any, for inclusion in log\\n        address oldPendingAnchorAdmin = pendingAnchorAdmin;\\n        // Store pendingAdmin = newPendingAdmin\\n        pendingAnchorAdmin = newPendingAnchorAdmin;\\n\\n        emit NewPendingAnchorAdmin(oldPendingAnchorAdmin, newPendingAnchorAdmin);\\n\\n        return uint256(Error.NO_ERROR);\\n    }\\n\\n    /**\\n     * @notice Accepts transfer of anchor admin rights. msg.sender must be pendingAnchorAdmin\\n     * @dev Admin function for pending anchor admin to accept role and update anchor admin\\n     * @return uint 0=success, otherwise a failure\\n     */\\n    function _acceptAnchorAdmin() public returns (uint256) {\\n        // Check caller = pendingAnchorAdmin\\n        // msg.sender can't be zero\\n        if (msg.sender != pendingAnchorAdmin) {\\n            return\\n                failOracle(\\n                    address(0),\\n                    OracleError.UNAUTHORIZED,\\n                    OracleFailureInfo.ACCEPT_ANCHOR_ADMIN_PENDING_ANCHOR_ADMIN_CHECK\\n                );\\n        }\\n\\n        // Save current value for inclusion in log\\n        address oldAnchorAdmin = anchorAdmin;\\n        // Store admin = pendingAnchorAdmin\\n        anchorAdmin = pendingAnchorAdmin;\\n        // Clear the pending value\\n        pendingAnchorAdmin = address(0);\\n\\n        emit NewAnchorAdmin(oldAnchorAdmin, msg.sender);\\n\\n        return uint256(Error.NO_ERROR);\\n    }\\n\\n    /**\\n     * @notice retrieves price of an asset\\n     * @dev function to get price for an asset\\n     * @param asset Asset for which to get the price\\n     * @return uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused\\n     */\\n    function assetPrices(address asset) public view returns (uint256) {\\n        // Note: zero is treated by the money market as an invalid\\n        //       price and will cease operations with that asset\\n        //       when zero.\\n        //\\n        // We get the price as:\\n        //\\n        //  1. If the contract is paused, return 0.\\n        //  2. Return price in `_assetPrices`, which may be zero.\\n\\n        if (paused) {\\n            return 0;\\n        }\\n        return _assetPrices[asset].mantissa;\\n    }\\n\\n    /**\\n     * @notice retrieves price of an asset\\n     * @dev function to get price for an asset\\n     * @param asset Asset for which to get the price\\n     * @return uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused\\n     */\\n    function getPrice(address asset) public view returns (uint256) {\\n        return assetPrices(asset);\\n    }\\n\\n    struct SetPriceLocalVars {\\n        Exp price;\\n        Exp swing;\\n        Exp anchorPrice;\\n        uint256 anchorPeriod;\\n        uint256 currentPeriod;\\n        bool priceCapped;\\n        uint256 cappingAnchorPriceMantissa;\\n        uint256 pendingAnchorMantissa;\\n    }\\n\\n    /**\\n     * @notice entry point for updating prices\\n     * @dev function to set price for an asset\\n     * @param asset Asset for which to set the price\\n     * @param requestedPriceMantissa requested new price, scaled by 10**18\\n     * @return uint 0=success, otherwise a failure (see enum OracleError for details)\\n     */\\n    function setPrice(address asset, uint256 requestedPriceMantissa) public returns (uint256) {\\n        // Fail when msg.sender is not poster\\n        if (msg.sender != poster) {\\n            return failOracle(asset, OracleError.UNAUTHORIZED, OracleFailureInfo.SET_PRICE_PERMISSION_CHECK);\\n        }\\n\\n        return setPriceInternal(asset, requestedPriceMantissa);\\n    }\\n\\n    function setPriceInternal(address asset, uint256 requestedPriceMantissa) internal returns (uint256) {\\n        // re-used for intermediate errors\\n        Error err;\\n        SetPriceLocalVars memory localVars;\\n        // We add 1 for currentPeriod so that it can never be zero and there's no ambiguity about an unset value.\\n        // (It can be a problem in tests with low block numbers.)\\n        localVars.currentPeriod = (block.number / numBlocksPerPeriod) + 1;\\n        localVars.pendingAnchorMantissa = pendingAnchors[asset];\\n        localVars.price = Exp({mantissa: requestedPriceMantissa});\\n\\n        if (localVars.pendingAnchorMantissa != 0) {\\n            // let's explicitly set to 0 rather than relying on default of declaration\\n            localVars.anchorPeriod = 0;\\n            localVars.anchorPrice = Exp({mantissa: localVars.pendingAnchorMantissa});\\n\\n            // Verify movement is within max swing of pending anchor (currently: 10%)\\n            (err, localVars.swing) = calculateSwing(localVars.anchorPrice, localVars.price);\\n            if (err != Error.NO_ERROR) {\\n                return\\n                    failOracleWithDetails(\\n                        asset,\\n                        OracleError.FAILED_TO_SET_PRICE,\\n                        OracleFailureInfo.SET_PRICE_CALCULATE_SWING,\\n                        uint256(err)\\n                    );\\n            }\\n\\n            // Fail when swing > maxSwing\\n            if (greaterThanExp(localVars.swing, maxSwing)) {\\n                return\\n                    failOracleWithDetails(\\n                        asset,\\n                        OracleError.FAILED_TO_SET_PRICE,\\n                        OracleFailureInfo.SET_PRICE_MAX_SWING_CHECK,\\n                        localVars.swing.mantissa\\n                    );\\n            }\\n        } else {\\n            localVars.anchorPeriod = anchors[asset].period;\\n            localVars.anchorPrice = Exp({mantissa: anchors[asset].priceMantissa});\\n\\n            if (localVars.anchorPeriod != 0) {\\n                (err, localVars.priceCapped, localVars.price) = capToMax(localVars.anchorPrice, localVars.price);\\n                if (err != Error.NO_ERROR) {\\n                    return\\n                        failOracleWithDetails(\\n                            asset,\\n                            OracleError.FAILED_TO_SET_PRICE,\\n                            OracleFailureInfo.SET_PRICE_CAP_TO_MAX,\\n                            uint256(err)\\n                        );\\n                }\\n                if (localVars.priceCapped) {\\n                    // save for use in log\\n                    localVars.cappingAnchorPriceMantissa = localVars.anchorPrice.mantissa;\\n                }\\n            } else {\\n                // Setting first price. Accept as is (already assigned above from requestedPriceMantissa) and use as anchor\\n                localVars.anchorPrice = Exp({mantissa: requestedPriceMantissa});\\n            }\\n        }\\n\\n        // Fail if anchorPrice or price is zero.\\n        // zero anchor represents an unexpected situation likely due to a problem in this contract\\n        // zero price is more likely as the result of bad input from the caller of this function\\n        if (isZeroExp(localVars.anchorPrice)) {\\n            // If we get here price could also be zero, but it does not seem worthwhile to distinguish the 3rd case\\n            return\\n                failOracle(\\n                    asset,\\n                    OracleError.FAILED_TO_SET_PRICE,\\n                    OracleFailureInfo.SET_PRICE_NO_ANCHOR_PRICE_OR_INITIAL_PRICE_ZERO\\n                );\\n        }\\n\\n        if (isZeroExp(localVars.price)) {\\n            return failOracle(asset, OracleError.FAILED_TO_SET_PRICE, OracleFailureInfo.SET_PRICE_ZERO_PRICE);\\n        }\\n\\n        // BEGIN SIDE EFFECTS\\n\\n        // Set pendingAnchor = Nothing\\n        // Pending anchor is only used once.\\n        if (pendingAnchors[asset] != 0) {\\n            pendingAnchors[asset] = 0;\\n        }\\n\\n        // If currentPeriod > anchorPeriod:\\n        //  Set anchors[asset] = (currentPeriod, price)\\n        //  The new anchor is if we're in a new period or we had a pending anchor, then we become the new anchor\\n        if (localVars.currentPeriod > localVars.anchorPeriod) {\\n            anchors[asset] = Anchor({period: localVars.currentPeriod, priceMantissa: localVars.price.mantissa});\\n        }\\n\\n        uint256 previousPrice = _assetPrices[asset].mantissa;\\n\\n        setPriceStorageInternal(asset, localVars.price.mantissa);\\n\\n        emit PricePosted(asset, previousPrice, requestedPriceMantissa, localVars.price.mantissa);\\n\\n        if (localVars.priceCapped) {\\n            // We have set a capped price. Log it so we can detect the situation and investigate.\\n            emit CappedPricePosted(\\n                asset,\\n                requestedPriceMantissa,\\n                localVars.cappingAnchorPriceMantissa,\\n                localVars.price.mantissa\\n            );\\n        }\\n\\n        return uint256(OracleError.NO_ERROR);\\n    }\\n\\n    // As a function to allow harness overrides\\n    function setPriceStorageInternal(address asset, uint256 priceMantissa) internal {\\n        _assetPrices[asset] = Exp({mantissa: priceMantissa});\\n    }\\n\\n    // abs(price - anchorPrice) / anchorPrice\\n    function calculateSwing(Exp memory anchorPrice, Exp memory price) internal pure returns (Error, Exp memory) {\\n        Exp memory numerator;\\n        Error err;\\n\\n        if (greaterThanExp(anchorPrice, price)) {\\n            (err, numerator) = subExp(anchorPrice, price);\\n            // can't underflow\\n            assert(err == Error.NO_ERROR);\\n        } else {\\n            (err, numerator) = subExp(price, anchorPrice);\\n            // Given greaterThan check above, price >= anchorPrice so can't underflow.\\n            assert(err == Error.NO_ERROR);\\n        }\\n\\n        return divExp(numerator, anchorPrice);\\n    }\\n\\n    function capToMax(Exp memory anchorPrice, Exp memory price)\\n        internal\\n        view\\n        returns (\\n            Error,\\n            bool,\\n            Exp memory\\n        )\\n    {\\n        Exp memory one = Exp({mantissa: mantissaOne});\\n        Exp memory onePlusMaxSwing;\\n        Exp memory oneMinusMaxSwing;\\n        Exp memory max;\\n        Exp memory min;\\n        // re-used for intermediate errors\\n        Error err;\\n\\n        (err, onePlusMaxSwing) = addExp(one, maxSwing);\\n        if (err != Error.NO_ERROR) {\\n            return (err, false, Exp({mantissa: 0}));\\n        }\\n\\n        // max = anchorPrice * (1 + maxSwing)\\n        (err, max) = mulExp(anchorPrice, onePlusMaxSwing);\\n        if (err != Error.NO_ERROR) {\\n            return (err, false, Exp({mantissa: 0}));\\n        }\\n\\n        // If price > anchorPrice * (1 + maxSwing)\\n        // Set price = anchorPrice * (1 + maxSwing)\\n        if (greaterThanExp(price, max)) {\\n            return (Error.NO_ERROR, true, max);\\n        }\\n\\n        (err, oneMinusMaxSwing) = subExp(one, maxSwing);\\n        if (err != Error.NO_ERROR) {\\n            return (err, false, Exp({mantissa: 0}));\\n        }\\n\\n        // min = anchorPrice * (1 - maxSwing)\\n        (err, min) = mulExp(anchorPrice, oneMinusMaxSwing);\\n        // We can't overflow here or we would have already overflowed above when calculating `max`\\n        assert(err == Error.NO_ERROR);\\n\\n        // If  price < anchorPrice * (1 - maxSwing)\\n        // Set price = anchorPrice * (1 - maxSwing)\\n        if (lessThanExp(price, min)) {\\n            return (Error.NO_ERROR, true, min);\\n        }\\n\\n        return (Error.NO_ERROR, false, price);\\n    }\\n\\n    /**\\n     * @notice entry point for updating multiple prices\\n     * @dev function to set prices for a variable number of assets.\\n     * @param assets a list of up to assets for which to set a price. required: 0 < assets.length == requestedPriceMantissas.length\\n     * @param requestedPriceMantissas requested new prices for the assets, scaled by 10**18. required: 0 < assets.length == requestedPriceMantissas.length\\n     * @return uint values in same order as inputs. For each: 0=success, otherwise a failure (see enum OracleError for details)\\n     */\\n    function setPrices(address[] memory assets, uint256[] memory requestedPriceMantissas)\\n        public\\n        returns (uint256[] memory)\\n    {\\n        uint256 numAssets = assets.length;\\n        uint256 numPrices = requestedPriceMantissas.length;\\n        uint256[] memory result;\\n\\n        // Fail when msg.sender is not poster\\n        if (msg.sender != poster) {\\n            result = new uint256[](1);\\n            result[0] = failOracle(address(0), OracleError.UNAUTHORIZED, OracleFailureInfo.SET_PRICE_PERMISSION_CHECK);\\n            return result;\\n        }\\n\\n        if ((numAssets == 0) || (numPrices != numAssets)) {\\n            result = new uint256[](1);\\n            result[0] = failOracle(\\n                address(0),\\n                OracleError.FAILED_TO_SET_PRICE,\\n                OracleFailureInfo.SET_PRICES_PARAM_VALIDATION\\n            );\\n            return result;\\n        }\\n\\n        result = new uint256[](numAssets);\\n\\n        for (uint256 i = 0; i < numAssets; i++) {\\n            result[i] = setPriceInternal(assets[i], requestedPriceMantissas[i]);\\n        }\\n\\n        return result;\\n    }\\n}\\n\",\"keccak256\":\"0x8277bdbcb3a4e8a56d93382f3df8eb3f512c88493b8ce00a9ee6a986f059d719\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516114b43803806114b48339818101604052602081101561003357600080fd5b505160028054336001600160a01b031991821617909155600480549091166001600160a01b03909216919091179055604080516020810190915267016345785d8a0000908190526005556114288061008c6000396000f3fe6080604052600436106101085760003560e01c80635c975abb116100955780639964622c116100645780639964622c1461049b5780639e8c4d95146104ce578063c5faf1d514610501578063ccb13cbd14610516578063de9d0e851461052b57610108565b80635c975abb146103de5780635e9a523c14610407578063692374e31461043a578063809597211461048657610108565b806326617c28116100dc57806326617c28146101d157806341976e09146101fd5780634352fa9f14610230578063451b1e3a146103b4578063485feabe146103c957610108565b8062e4768b1461010d57806308f31857146101585780630c9c630114610189578063183f34441461019e575b600080fd5b34801561011957600080fd5b506101466004803603604081101561013057600080fd5b506001600160a01b038135169060200135610564565b60408051918252519081900360200190f35b34801561016457600080fd5b5061016d6105a0565b604080516001600160a01b039092168252519081900360200190f35b34801561019557600080fd5b506101466105af565b3480156101aa57600080fd5b50610146600480360360208110156101c157600080fd5b50356001600160a01b03166105bb565b3480156101dd57600080fd5b50610146600480360360208110156101f457600080fd5b503515156105cd565b34801561020957600080fd5b506101466004803603602081101561022057600080fd5b50356001600160a01b0316610645565b34801561023c57600080fd5b506103646004803603604081101561025357600080fd5b81019060208101813564010000000081111561026e57600080fd5b82018360208201111561028057600080fd5b803590602001918460208302840111640100000000831117156102a257600080fd5b91908080602002602001604051908101604052809392919081815260200183836020028082843760009201919091525092959493602081019350359150506401000000008111156102f257600080fd5b82018360208201111561030457600080fd5b8035906020019184602083028401116401000000008311171561032657600080fd5b919080806020026020016040519081016040528093929190818152602001838360200280828437600092019190915250929550610650945050505050565b60408051602080825283518183015283519192839290830191858101910280838360005b838110156103a0578181015183820152602001610388565b505050509050019250505060405180910390f35b3480156103c057600080fd5b5061016d61078e565b3480156103d557600080fd5b5061014661079d565b3480156103ea57600080fd5b506103f36107a2565b604080519115158252519081900360200190f35b34801561041357600080fd5b506101466004803603602081101561042a57600080fd5b50356001600160a01b03166107ab565b34801561044657600080fd5b5061046d6004803603602081101561045d57600080fd5b50356001600160a01b03166107db565b6040805192835260208301919091528051918290030190f35b34801561049257600080fd5b5061016d6107f4565b3480156104a757600080fd5b50610146600480360360208110156104be57600080fd5b50356001600160a01b0316610803565b3480156104da57600080fd5b50610146600480360360208110156104f157600080fd5b50356001600160a01b031661088e565b34801561050d57600080fd5b506101466108a0565b34801561052257600080fd5b506101466108a6565b34801561053757600080fd5b506101466004803603604081101561054e57600080fd5b506001600160a01b038135169060200135610940565b6004546000906001600160a01b0316331461058d5761058683600160086109d3565b905061059a565b6105978383610a5c565b90505b92915050565b6002546001600160a01b031681565b67016345785d8a000081565b60016020526000908152604090205481565b6002546000906001600160a01b031633146105f6576105ef60006001806109d3565b9050610640565b6000805483151560ff19909116811790915560408051918252517f3c70af01296aef045b2f5c9d3c30b05d4428fd257145b9c7fcd76418e65b59809181900360200190a160005b90505b919050565b600061063d826107ab565b81518151600454606092919083906001600160a01b031633146106bd57604080516001808252818301909252906020808301908038833901905050905061069b6000600160086109d3565b816000815181106106a857fe5b6020908102919091010152925061059a915050565b8215806106ca5750828214155b156106fd57604080516001808252818301909252906020808301908038833901905050905061069b60006002600a6109d3565b82604051908082528060200260200182016040528015610727578160200160208202803883390190505b50905060005b838110156107845761076587828151811061074457fe5b602002602001015187838151811061075857fe5b6020026020010151610a5c565b82828151811061077157fe5b602090810291909101015260010161072d565b5095945050505050565b6003546001600160a01b031681565b60f081565b60005460ff1681565b6000805460ff16156107bf57506000610640565b506001600160a01b031660009081526001602052604090205490565b6006602052600090815260409020805460019091015482565b6004546001600160a01b031681565b6002546000906001600160a01b03163314610826576105ef6000600160026109d3565b600380546001600160a01b038481166001600160a01b0319831681179093556040805191909216808252602082019390935281517f6c773973d5bcf264b509f4194ceb99e891251f6aabb325523a863c282958b13e929181900390910190a160009392505050565b60076020526000908152604090205481565b60055481565b6003546000906001600160a01b031633146108d0576108c96000600160006109d3565b905061093d565b60028054600380546001600160a01b03198084166001600160a01b03838116919091179095551690556040805192909116808352336020840152815190927fbef9248fe57ae972dd47833f68c43f0b3b2d14217612dfbc804a520a23730d4692908290030190a160009150505b90565b6002546000906001600160a01b031633146109625761058683600160036109d3565b6001600160a01b0383166000818152600760209081526040918290208054908690558251338152918201939093528082018390526060810185905290517ff0aa20c29c1f8e751bfe0a78bc49a520ed14f2dab274087d90d1341d8b76af5c9181900360800190a16000949350505050565b60007f96f29b65cebbd6816352fb242b6af7180b49e8a09e19e589225d35bc8444f0b73385856002811115610a0457fe5b85600a811115610a1057fe5b604080516001600160a01b0395861681529390941660208401528284019190915260608201526000608082015290519081900360a00190a1826002811115610a5457fe5b949350505050565b600080610a67611387565b60f0430460010160808201526001600160a01b0385166000908152600760209081526040918290205460e08401908152825191820190925285815282525115610b4d57600060608201526040805160208101825260e083015181529082018190528151610ad49190610db2565b602083015291506000826017811115610ae957fe5b14610b1057610b078560026004856017811115610b0257fe5b610e38565b9250505061059a565b6020808201516040805192830190526005548252610b2d91610ec2565b15610b4857610b078560026006846020015160000151610e38565b610c04565b6001600160a01b038516600081815260066020818152604080842080546060880190815282518085018452969095529290915260019091015483528301919091525115610bf257610ba681604001518260000151610ec9565b8352151560a083015291506000826017811115610bbf57fe5b14610bd857610b078560026005856017811115610b0257fe5b8060a0015115610b485760408101515160c0820152610c04565b60408051602081018252858152908201525b610c118160400151611088565b15610c2357610b0785600260076109d3565b8051610c2e90611088565b15610c4057610b0785600260096109d3565b6001600160a01b03851660009081526007602052604090205415610c78576001600160a01b0385166000908152600760205260408120555b806060015181608001511115610cc8576040805180820182526080830151815282515160208083019182526001600160a01b03891660009081526006909152929092209051815590516001909101555b6001600160a01b038516600090815260016020526040902054815151610cef90879061108d565b815151604080516001600160a01b0389168152602081018490528082018890526060810192909252517fdd71a1d19fcba687442a1d5c58578f1e409af71a79d10fd95a4d66efd8fa9ae79181900360800190a18160a0015115610da65760c0820151825151604080516001600160a01b038a16815260208101899052808201939093526060830191909152517f7221f7a2708437039cc63319145b6b873a40594b9782a3bee45b975e2f3b0f689181900360800190a15b60009695505050505050565b6000610dbc6113e0565b610dc46113e0565b6000610dd08686610ec2565b15610dfd57610ddf86866110b8565b925090506000816017811115610df157fe5b14610df857fe5b610e20565b610e0785876110b8565b925090506000816017811115610e1957fe5b14610e2057fe5b610e2a82876110f2565b9350935050505b9250929050565b60007f96f29b65cebbd6816352fb242b6af7180b49e8a09e19e589225d35bc8444f0b73386866002811115610e6957fe5b86600a811115610e7557fe5b604080516001600160a01b0395861681529390941660208401528284019190915260608201526080810185905290519081900360a00190a1836002811115610eb957fe5b95945050505050565b5190511190565b600080610ed46113e0565b610edc6113e0565b506040805160208101909152670de0b6b3a76400008152610efb6113e0565b610f036113e0565b610f0b6113e0565b610f136113e0565b60408051602081019091526005548152600090610f31908790611115565b955090506000816017811115610f4357fe5b14610f6b57604080516020810190915260008082529199509097509550611081945050505050565b610f758b86611134565b935090506000816017811115610f8757fe5b14610faf57604080516020810190915260008082529199509097509550611081945050505050565b610fb98a84610ec2565b15610fd4576000600184985098509850505050505050611081565b60408051602081019091526005548152610fef9087906110b8565b94509050600081601781111561100157fe5b1461102957604080516020810190915260008082529199509097509550611081945050505050565b6110338b85611134565b92509050600081601781111561104557fe5b1461104c57fe5b6110568a8361121d565b156110705750600097506001965094506110819350505050565b6000808b9850985098505050505050505b9250925092565b511590565b60408051602080820183529281526001600160a01b0390931660009081526001909252902090519055565b60006110c26113e0565b6000806110d786600001518660000151611224565b60408051602081019091529081529097909650945050505050565b60006110fc6113e0565b8351835161110a9190611247565b915091509250929050565b600061111f6113e0565b6000806110d7866000015186600001516112f7565b600061113e6113e0565b6000806111538660000151866000015161131d565b9092509050600082601781111561116657fe5b1461118557506040805160208101909152600081529092509050610e31565b60008061119a6706f05b59d3b20000846112f7565b909250905060008260178111156111ad57fe5b146111cf57506040805160208101909152600081529094509250610e31915050565b6000806111e483670de0b6b3a764000061135c565b909250905060008260178111156111f757fe5b146111fe57fe5b604080516020810190915290815260009a909950975050505050505050565b5190511090565b60008083831161123b575060009050818303610e31565b50600490506000610e31565b60006112516113e0565b60008061126686670de0b6b3a764000061131d565b9092509050600082601781111561127957fe5b1461129857506040805160208101909152600081529092509050610e31565b6000806112a5838861135c565b909250905060008260178111156112b857fe5b146112da57506040805160208101909152600081529094509250610e31915050565b604080516020810190915290815260009890975095505050505050565b60008083830184811061130f57600092509050610e31565b506003915060009050610e31565b6000808361133057506000905080610e31565b8383028385828161133d57fe5b041461135157506003915060009050610e31565b600092509050610e31565b600080826113705750600590506000610e31565b600083858161137b57fe5b04915091509250929050565b60405180610100016040528061139b6113e0565b81526020016113a86113e0565b81526020016113b56113e0565b8152602001600081526020016000815260200160001515815260200160008152602001600081525090565b604051806020016040528060008152509056fea265627a7a72315820eb185f2cc0f328e203e70d13a4360df7269ac597c17e599d01b2ced0970e724d64736f6c63430005100032",
+  "deployedBytecode": "0x6080604052600436106101085760003560e01c80635c975abb116100955780639964622c116100645780639964622c1461049b5780639e8c4d95146104ce578063c5faf1d514610501578063ccb13cbd14610516578063de9d0e851461052b57610108565b80635c975abb146103de5780635e9a523c14610407578063692374e31461043a578063809597211461048657610108565b806326617c28116100dc57806326617c28146101d157806341976e09146101fd5780634352fa9f14610230578063451b1e3a146103b4578063485feabe146103c957610108565b8062e4768b1461010d57806308f31857146101585780630c9c630114610189578063183f34441461019e575b600080fd5b34801561011957600080fd5b506101466004803603604081101561013057600080fd5b506001600160a01b038135169060200135610564565b60408051918252519081900360200190f35b34801561016457600080fd5b5061016d6105a0565b604080516001600160a01b039092168252519081900360200190f35b34801561019557600080fd5b506101466105af565b3480156101aa57600080fd5b50610146600480360360208110156101c157600080fd5b50356001600160a01b03166105bb565b3480156101dd57600080fd5b50610146600480360360208110156101f457600080fd5b503515156105cd565b34801561020957600080fd5b506101466004803603602081101561022057600080fd5b50356001600160a01b0316610645565b34801561023c57600080fd5b506103646004803603604081101561025357600080fd5b81019060208101813564010000000081111561026e57600080fd5b82018360208201111561028057600080fd5b803590602001918460208302840111640100000000831117156102a257600080fd5b91908080602002602001604051908101604052809392919081815260200183836020028082843760009201919091525092959493602081019350359150506401000000008111156102f257600080fd5b82018360208201111561030457600080fd5b8035906020019184602083028401116401000000008311171561032657600080fd5b919080806020026020016040519081016040528093929190818152602001838360200280828437600092019190915250929550610650945050505050565b60408051602080825283518183015283519192839290830191858101910280838360005b838110156103a0578181015183820152602001610388565b505050509050019250505060405180910390f35b3480156103c057600080fd5b5061016d61078e565b3480156103d557600080fd5b5061014661079d565b3480156103ea57600080fd5b506103f36107a2565b604080519115158252519081900360200190f35b34801561041357600080fd5b506101466004803603602081101561042a57600080fd5b50356001600160a01b03166107ab565b34801561044657600080fd5b5061046d6004803603602081101561045d57600080fd5b50356001600160a01b03166107db565b6040805192835260208301919091528051918290030190f35b34801561049257600080fd5b5061016d6107f4565b3480156104a757600080fd5b50610146600480360360208110156104be57600080fd5b50356001600160a01b0316610803565b3480156104da57600080fd5b50610146600480360360208110156104f157600080fd5b50356001600160a01b031661088e565b34801561050d57600080fd5b506101466108a0565b34801561052257600080fd5b506101466108a6565b34801561053757600080fd5b506101466004803603604081101561054e57600080fd5b506001600160a01b038135169060200135610940565b6004546000906001600160a01b0316331461058d5761058683600160086109d3565b905061059a565b6105978383610a5c565b90505b92915050565b6002546001600160a01b031681565b67016345785d8a000081565b60016020526000908152604090205481565b6002546000906001600160a01b031633146105f6576105ef60006001806109d3565b9050610640565b6000805483151560ff19909116811790915560408051918252517f3c70af01296aef045b2f5c9d3c30b05d4428fd257145b9c7fcd76418e65b59809181900360200190a160005b90505b919050565b600061063d826107ab565b81518151600454606092919083906001600160a01b031633146106bd57604080516001808252818301909252906020808301908038833901905050905061069b6000600160086109d3565b816000815181106106a857fe5b6020908102919091010152925061059a915050565b8215806106ca5750828214155b156106fd57604080516001808252818301909252906020808301908038833901905050905061069b60006002600a6109d3565b82604051908082528060200260200182016040528015610727578160200160208202803883390190505b50905060005b838110156107845761076587828151811061074457fe5b602002602001015187838151811061075857fe5b6020026020010151610a5c565b82828151811061077157fe5b602090810291909101015260010161072d565b5095945050505050565b6003546001600160a01b031681565b60f081565b60005460ff1681565b6000805460ff16156107bf57506000610640565b506001600160a01b031660009081526001602052604090205490565b6006602052600090815260409020805460019091015482565b6004546001600160a01b031681565b6002546000906001600160a01b03163314610826576105ef6000600160026109d3565b600380546001600160a01b038481166001600160a01b0319831681179093556040805191909216808252602082019390935281517f6c773973d5bcf264b509f4194ceb99e891251f6aabb325523a863c282958b13e929181900390910190a160009392505050565b60076020526000908152604090205481565b60055481565b6003546000906001600160a01b031633146108d0576108c96000600160006109d3565b905061093d565b60028054600380546001600160a01b03198084166001600160a01b03838116919091179095551690556040805192909116808352336020840152815190927fbef9248fe57ae972dd47833f68c43f0b3b2d14217612dfbc804a520a23730d4692908290030190a160009150505b90565b6002546000906001600160a01b031633146109625761058683600160036109d3565b6001600160a01b0383166000818152600760209081526040918290208054908690558251338152918201939093528082018390526060810185905290517ff0aa20c29c1f8e751bfe0a78bc49a520ed14f2dab274087d90d1341d8b76af5c9181900360800190a16000949350505050565b60007f96f29b65cebbd6816352fb242b6af7180b49e8a09e19e589225d35bc8444f0b73385856002811115610a0457fe5b85600a811115610a1057fe5b604080516001600160a01b0395861681529390941660208401528284019190915260608201526000608082015290519081900360a00190a1826002811115610a5457fe5b949350505050565b600080610a67611387565b60f0430460010160808201526001600160a01b0385166000908152600760209081526040918290205460e08401908152825191820190925285815282525115610b4d57600060608201526040805160208101825260e083015181529082018190528151610ad49190610db2565b602083015291506000826017811115610ae957fe5b14610b1057610b078560026004856017811115610b0257fe5b610e38565b9250505061059a565b6020808201516040805192830190526005548252610b2d91610ec2565b15610b4857610b078560026006846020015160000151610e38565b610c04565b6001600160a01b038516600081815260066020818152604080842080546060880190815282518085018452969095529290915260019091015483528301919091525115610bf257610ba681604001518260000151610ec9565b8352151560a083015291506000826017811115610bbf57fe5b14610bd857610b078560026005856017811115610b0257fe5b8060a0015115610b485760408101515160c0820152610c04565b60408051602081018252858152908201525b610c118160400151611088565b15610c2357610b0785600260076109d3565b8051610c2e90611088565b15610c4057610b0785600260096109d3565b6001600160a01b03851660009081526007602052604090205415610c78576001600160a01b0385166000908152600760205260408120555b806060015181608001511115610cc8576040805180820182526080830151815282515160208083019182526001600160a01b03891660009081526006909152929092209051815590516001909101555b6001600160a01b038516600090815260016020526040902054815151610cef90879061108d565b815151604080516001600160a01b0389168152602081018490528082018890526060810192909252517fdd71a1d19fcba687442a1d5c58578f1e409af71a79d10fd95a4d66efd8fa9ae79181900360800190a18160a0015115610da65760c0820151825151604080516001600160a01b038a16815260208101899052808201939093526060830191909152517f7221f7a2708437039cc63319145b6b873a40594b9782a3bee45b975e2f3b0f689181900360800190a15b60009695505050505050565b6000610dbc6113e0565b610dc46113e0565b6000610dd08686610ec2565b15610dfd57610ddf86866110b8565b925090506000816017811115610df157fe5b14610df857fe5b610e20565b610e0785876110b8565b925090506000816017811115610e1957fe5b14610e2057fe5b610e2a82876110f2565b9350935050505b9250929050565b60007f96f29b65cebbd6816352fb242b6af7180b49e8a09e19e589225d35bc8444f0b73386866002811115610e6957fe5b86600a811115610e7557fe5b604080516001600160a01b0395861681529390941660208401528284019190915260608201526080810185905290519081900360a00190a1836002811115610eb957fe5b95945050505050565b5190511190565b600080610ed46113e0565b610edc6113e0565b506040805160208101909152670de0b6b3a76400008152610efb6113e0565b610f036113e0565b610f0b6113e0565b610f136113e0565b60408051602081019091526005548152600090610f31908790611115565b955090506000816017811115610f4357fe5b14610f6b57604080516020810190915260008082529199509097509550611081945050505050565b610f758b86611134565b935090506000816017811115610f8757fe5b14610faf57604080516020810190915260008082529199509097509550611081945050505050565b610fb98a84610ec2565b15610fd4576000600184985098509850505050505050611081565b60408051602081019091526005548152610fef9087906110b8565b94509050600081601781111561100157fe5b1461102957604080516020810190915260008082529199509097509550611081945050505050565b6110338b85611134565b92509050600081601781111561104557fe5b1461104c57fe5b6110568a8361121d565b156110705750600097506001965094506110819350505050565b6000808b9850985098505050505050505b9250925092565b511590565b60408051602080820183529281526001600160a01b0390931660009081526001909252902090519055565b60006110c26113e0565b6000806110d786600001518660000151611224565b60408051602081019091529081529097909650945050505050565b60006110fc6113e0565b8351835161110a9190611247565b915091509250929050565b600061111f6113e0565b6000806110d7866000015186600001516112f7565b600061113e6113e0565b6000806111538660000151866000015161131d565b9092509050600082601781111561116657fe5b1461118557506040805160208101909152600081529092509050610e31565b60008061119a6706f05b59d3b20000846112f7565b909250905060008260178111156111ad57fe5b146111cf57506040805160208101909152600081529094509250610e31915050565b6000806111e483670de0b6b3a764000061135c565b909250905060008260178111156111f757fe5b146111fe57fe5b604080516020810190915290815260009a909950975050505050505050565b5190511090565b60008083831161123b575060009050818303610e31565b50600490506000610e31565b60006112516113e0565b60008061126686670de0b6b3a764000061131d565b9092509050600082601781111561127957fe5b1461129857506040805160208101909152600081529092509050610e31565b6000806112a5838861135c565b909250905060008260178111156112b857fe5b146112da57506040805160208101909152600081529094509250610e31915050565b604080516020810190915290815260009890975095505050505050565b60008083830184811061130f57600092509050610e31565b506003915060009050610e31565b6000808361133057506000905080610e31565b8383028385828161133d57fe5b041461135157506003915060009050610e31565b600092509050610e31565b600080826113705750600590506000610e31565b600083858161137b57fe5b04915091509250929050565b60405180610100016040528061139b6113e0565b81526020016113a86113e0565b81526020016113b56113e0565b8152602001600081526020016000815260200160001515815260200160008152602001600081525090565b604051806020016040528060008152509056fea265627a7a72315820eb185f2cc0f328e203e70d13a4360df7269ac597c17e599d01b2ced0970e724d64736f6c63430005100032",
+  "devdoc": {
+    "methods": {
+      "_acceptAnchorAdmin()": {
+        "details": "Admin function for pending anchor admin to accept role and update anchor admin",
+        "return": "uint 0=success, otherwise a failure"
+      },
+      "_setPaused(bool)": {
+        "details": "Admin function to pause or resume the market",
+        "params": {
+          "requestedState": "value to assign to `paused`"
+        },
+        "return": "uint 0=success, otherwise a failure"
+      },
+      "_setPendingAnchor(address,uint256)": {
+        "details": "Admin function to set the anchor price for an asset",
+        "params": {
+          "asset": "Asset for which to override the anchor price",
+          "newScaledPrice": "New anchor price"
+        },
+        "return": "uint 0=success, otherwise a failure (see enum OracleError for details)"
+      },
+      "_setPendingAnchorAdmin(address)": {
+        "details": "Admin function to begin change of anchor admin. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer.",
+        "params": {
+          "newPendingAnchorAdmin": "New pending anchor admin."
+        },
+        "return": "uint 0=success, otherwise a failure     * TODO: Should we add a second arg to verify, like a checksum of `newAnchorAdmin` address?"
+      },
+      "assetPrices(address)": {
+        "details": "function to get price for an asset",
+        "params": {
+          "asset": "Asset for which to get the price"
+        },
+        "return": "uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused"
+      },
+      "getPrice(address)": {
+        "details": "function to get price for an asset",
+        "params": {
+          "asset": "Asset for which to get the price"
+        },
+        "return": "uint mantissa of asset price (scaled by 1e18) or zero if unset or contract paused"
+      },
+      "setPrice(address,uint256)": {
+        "details": "function to set price for an asset",
+        "params": {
+          "asset": "Asset for which to set the price",
+          "requestedPriceMantissa": "requested new price, scaled by 10**18"
+        },
+        "return": "uint 0=success, otherwise a failure (see enum OracleError for details)"
+      },
+      "setPrices(address[],uint256[])": {
+        "details": "function to set prices for a variable number of assets.",
+        "params": {
+          "assets": "a list of up to assets for which to set a price. required: 0 < assets.length == requestedPriceMantissas.length",
+          "requestedPriceMantissas": "requested new prices for the assets, scaled by 10**18. required: 0 < assets.length == requestedPriceMantissas.length"
+        },
+        "return": "uint values in same order as inputs. For each: 0=success, otherwise a failure (see enum OracleError for details)"
+      }
+    }
+  },
+  "userdoc": {
+    "methods": {
+      "_acceptAnchorAdmin()": {
+        "notice": "Accepts transfer of anchor admin rights. msg.sender must be pendingAnchorAdmin"
+      },
+      "_setPaused(bool)": {
+        "notice": "set `paused` to the specified state"
+      },
+      "_setPendingAnchor(address,uint256)": {
+        "notice": "provides ability to override the anchor price for an asset"
+      },
+      "_setPendingAnchorAdmin(address)": {
+        "notice": "Begins transfer of anchor admin rights. The newPendingAnchorAdmin must call `_acceptAnchorAdmin` to finalize the transfer."
+      },
+      "assetPrices(address)": {
+        "notice": "retrieves price of an asset"
+      },
+      "getPrice(address)": {
+        "notice": "retrieves price of an asset"
+      },
+      "setPrice(address,uint256)": {
+        "notice": "entry point for updating prices"
+      },
+      "setPrices(address[],uint256[])": {
+        "notice": "entry point for updating multiple prices"
+      }
+    }
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 791,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "paused",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_bool"
+      },
+      {
+        "astId": 804,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "_assetPrices",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_struct(Exp)362_storage)"
+      },
+      {
+        "astId": 922,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "anchorAdmin",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_address"
+      },
+      {
+        "astId": 924,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "pendingAnchorAdmin",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_address"
+      },
+      {
+        "astId": 926,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "poster",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_address"
+      },
+      {
+        "astId": 928,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "maxSwing",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_struct(Exp)362_storage"
+      },
+      {
+        "astId": 937,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "anchors",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_mapping(t_address,t_struct(Anchor)933_storage)"
+      },
+      {
+        "astId": 941,
+        "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+        "label": "pendingAnchors",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_mapping(t_address,t_uint256)"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_struct(Anchor)933_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct V1PriceOracle.Anchor)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Anchor)933_storage"
+      },
+      "t_mapping(t_address,t_struct(Exp)362_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct Exponential.Exp)",
+        "numberOfBytes": "32",
+        "value": "t_struct(Exp)362_storage"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_struct(Anchor)933_storage": {
+        "encoding": "inplace",
+        "label": "struct V1PriceOracle.Anchor",
+        "members": [
+          {
+            "astId": 930,
+            "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+            "label": "period",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 932,
+            "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+            "label": "priceMantissa",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "64"
+      },
+      "t_struct(Exp)362_storage": {
+        "encoding": "inplace",
+        "label": "struct Exponential.Exp",
+        "members": [
+          {
+            "astId": 361,
+            "contract": "contracts/PriceOracle/v1PriceOracle.sol:V1PriceOracle",
+            "label": "mantissa",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
