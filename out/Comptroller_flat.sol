@@ -3059,7 +3059,6 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
 }
 
 
-pragma experimental ABIEncoderV2;
 
 contract Comp {
     /// @notice EIP-20 token name for this token
