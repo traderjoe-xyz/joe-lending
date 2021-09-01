@@ -22,9 +22,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
       comptroller.address,
       interestRateModel.address,
       ethers.utils.parseUnits("2", 26).toString(),
-      "Wrapped Ether",
-      "WETH",
-      18,
+      "Compound Ether",
+      "cETH",
+      8,
       deployer,
       cEthDelegate.address,
       "0x",
@@ -33,7 +33,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     deterministicDeployment: false,
   });
   await deployment.receipt;
-  const cEthDelegator = await ethers.getContract("CUsdcDelegator");
+  const cEthDelegator = await ethers.getContract("CWrappedNativeDelegator");
 
   console.log("Supporting cETH market...");
   await comptroller._supportMarket(cEthDelegator.address, 2, {
