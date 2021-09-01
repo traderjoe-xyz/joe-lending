@@ -281,6 +281,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             require(nextTotalSupplies < supplyCap, "market supply cap reached");
         }
 
+        // Keep the flywheel moving
+        updateAndDistributeSupplierRewardsForToken(cToken, minter);
+
         return uint256(Error.NO_ERROR);
     }
 
@@ -321,7 +324,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         address redeemer,
         uint256 redeemTokens
     ) external returns (uint256) {
-        return redeemAllowedInternal(cToken, redeemer, redeemTokens);
+        uint256 allowed = redeemAllowedInternal(cToken, redeemer, redeemTokens);
+        if (allowed != uint256(Error.NO_ERROR)) {
+          return allowed;
+        }
+        
+        // Keep the flywheel going
+        updateAndDistributeSupplierRewardsForToken(cToken, redeemer);
+        return uint256(Error.NO_ERROR);
+
     }
 
     function redeemAllowedInternal(
@@ -436,6 +447,11 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint256(Error.INSUFFICIENT_LIQUIDITY);
         }
 
+
+        // Keep the flywheel going
+        Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
+        updateAndDistributeBorrowerRewardsForToken(cToken, borrower, borrowIndex);
+
         return uint256(Error.NO_ERROR);
     }
 
@@ -484,6 +500,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint256(Error.MARKET_NOT_LISTED);
         }
 
+        // Keep the flywheel going
+        Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
+        updateAndDistributeBorrowerRewardsForToken(cToken, borrower, borrowIndex);
         return uint256(Error.NO_ERROR);
     }
 
@@ -618,6 +637,10 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint256(Error.COMPTROLLER_MISMATCH);
         }
 
+        // Keep the flywheel moving
+        updateAndDistributeSupplierRewardsForToken(cTokenCollateral, borrower);
+        updateAndDistributeSupplierRewardsForToken(cTokenCollateral, liquidator);
+
         return uint256(Error.NO_ERROR);
     }
 
@@ -672,7 +695,15 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
-        return redeemAllowedInternal(cToken, src, transferTokens);
+        uint256 allowed = redeemAllowedInternal(cToken, src, transferTokens);
+        if (allowed != uint(Error.NO_ERROR)) {
+            return allowed;
+        }
+
+        // Keep the flywheel moving
+        updateAndDistributeSupplierRewardsForToken(cToken, src);
+        updateAndDistributeSupplierRewardsForToken(cToken, dst);
+        return uint256(Error.NO_ERROR);
     }
 
     /**
