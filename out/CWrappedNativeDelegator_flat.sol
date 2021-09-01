@@ -970,6 +970,615 @@ interface EIP20NonStandardInterface {
 
 
 
+
+contract PriceOracle {
+    /**
+     * @notice Get the underlying price of a cToken asset
+     * @param cToken The cToken to get the underlying price of
+     * @return The underlying asset price mantissa (scaled by 1e18).
+     *  Zero means the price is unavailable.
+     */
+    function getUnderlyingPrice(CToken cToken) external view returns (uint256);
+}
+
+
+contract UnitrollerAdminStorage {
+    /**
+     * @notice Administrator for this contract
+     */
+    address public admin;
+
+    /**
+     * @notice Pending administrator for this contract
+     */
+    address public pendingAdmin;
+
+    /**
+     * @notice Active brains of Unitroller
+     */
+    address public comptrollerImplementation;
+
+    /**
+     * @notice Pending brains of Unitroller
+     */
+    address public pendingComptrollerImplementation;
+}
+
+contract ComptrollerV1Storage is UnitrollerAdminStorage {
+    /**
+     * @notice Oracle which gives the price of any given asset
+     */
+    PriceOracle public oracle;
+
+    /**
+     * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
+     */
+    uint256 public closeFactorMantissa;
+
+    /**
+     * @notice Multiplier representing the discount on collateral that a liquidator receives
+     */
+    uint256 public liquidationIncentiveMantissa;
+
+    /**
+     * @notice Per-account mapping of "assets you are in"
+     */
+    mapping(address => CToken[]) public accountAssets;
+
+    enum Version {
+        VANILLA,
+        COLLATERALCAP,
+        WRAPPEDNATIVE
+    }
+
+    struct Market {
+        /// @notice Whether or not this market is listed
+        bool isListed;
+        /**
+         * @notice Multiplier representing the most one can borrow against their collateral in this market.
+         *  For instance, 0.9 to allow borrowing 90% of collateral value.
+         *  Must be between 0 and 1, and stored as a mantissa.
+         */
+        uint256 collateralFactorMantissa;
+        /// @notice Per-market mapping of "accounts in this asset"
+        mapping(address => bool) accountMembership;
+        /// @notice CToken version
+        Version version;
+    }
+
+    /**
+     * @notice Official mapping of cTokens -> Market metadata
+     * @dev Used e.g. to determine if a market is supported
+     */
+    mapping(address => Market) public markets;
+
+    /**
+     * @notice The Pause Guardian can pause certain actions as a safety mechanism.
+     *  Actions which allow users to remove their own assets cannot be paused.
+     *  Liquidation / seizing / transfer can only be paused globally, not by market.
+     */
+    address public pauseGuardian;
+    bool public _mintGuardianPaused;
+    bool public _borrowGuardianPaused;
+    bool public transferGuardianPaused;
+    bool public seizeGuardianPaused;
+    mapping(address => bool) public mintGuardianPaused;
+    mapping(address => bool) public borrowGuardianPaused;
+
+    struct CompMarketState {
+        /// @notice The market's last updated compBorrowIndex or compSupplyIndex
+        uint224 index;
+        /// @notice The block number the index was last updated at
+        uint32 block;
+    }
+
+    /// @notice A list of all markets
+    CToken[] public allMarkets;
+
+    /// @notice The portion of compRate that each market currently receives
+    mapping(address => uint256) public compSpeeds;
+
+    /// @notice The COMP market supply state for each market
+    mapping(address => CompMarketState) public compSupplyState;
+
+    /// @notice The COMP market borrow state for each market
+    mapping(address => CompMarketState) public compBorrowState;
+
+    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
+    mapping(address => mapping(address => uint256)) public compSupplierIndex;
+
+    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
+    mapping(address => mapping(address => uint256)) public compBorrowerIndex;
+
+    /// @notice The COMP accrued but not yet transferred to each user
+    mapping(address => uint256) public compAccrued;
+
+    // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
+    address public borrowCapGuardian;
+
+    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
+    mapping(address => uint256) public borrowCaps;
+
+    // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
+    address public supplyCapGuardian;
+
+    // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
+    mapping(address => uint256) public supplyCaps;
+
+    // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
+    mapping(address => uint256) public creditLimits;
+
+    // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
+    mapping(address => bool) public flashloanGuardianPaused;
+
+    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
+    address public liquidityMining;
+}
+
+
+contract ComptrollerInterface {
+    /// @notice Indicator that this is a Comptroller contract (for inspection)
+    bool public constant isComptroller = true;
+
+    /*** Assets You Are In ***/
+
+    function enterMarkets(address[] calldata cTokens) external returns (uint256[] memory);
+
+    function exitMarket(address cToken) external returns (uint256);
+
+    /*** Policy Hooks ***/
+
+    function mintAllowed(
+        address cToken,
+        address minter,
+        uint256 mintAmount
+    ) external returns (uint256);
+
+    function mintVerify(
+        address cToken,
+        address minter,
+        uint256 mintAmount,
+        uint256 mintTokens
+    ) external;
+
+    function redeemAllowed(
+        address cToken,
+        address redeemer,
+        uint256 redeemTokens
+    ) external returns (uint256);
+
+    function redeemVerify(
+        address cToken,
+        address redeemer,
+        uint256 redeemAmount,
+        uint256 redeemTokens
+    ) external;
+
+    function borrowAllowed(
+        address cToken,
+        address borrower,
+        uint256 borrowAmount
+    ) external returns (uint256);
+
+    function borrowVerify(
+        address cToken,
+        address borrower,
+        uint256 borrowAmount
+    ) external;
+
+    function repayBorrowAllowed(
+        address cToken,
+        address payer,
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256);
+
+    function repayBorrowVerify(
+        address cToken,
+        address payer,
+        address borrower,
+        uint256 repayAmount,
+        uint256 borrowerIndex
+    ) external;
+
+    function liquidateBorrowAllowed(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        address liquidator,
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256);
+
+    function liquidateBorrowVerify(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        address liquidator,
+        address borrower,
+        uint256 repayAmount,
+        uint256 seizeTokens
+    ) external;
+
+    function seizeAllowed(
+        address cTokenCollateral,
+        address cTokenBorrowed,
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) external returns (uint256);
+
+    function seizeVerify(
+        address cTokenCollateral,
+        address cTokenBorrowed,
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) external;
+
+    function transferAllowed(
+        address cToken,
+        address src,
+        address dst,
+        uint256 transferTokens
+    ) external returns (uint256);
+
+    function transferVerify(
+        address cToken,
+        address src,
+        address dst,
+        uint256 transferTokens
+    ) external;
+
+    /*** Liquidity/Liquidation Calculations ***/
+
+    function liquidateCalculateSeizeTokens(
+        address cTokenBorrowed,
+        address cTokenCollateral,
+        uint256 repayAmount
+    ) external view returns (uint256, uint256);
+}
+
+interface ComptrollerInterfaceExtension {
+    function checkMembership(address account, CToken cToken) external view returns (bool);
+
+    function updateCTokenVersion(address cToken, ComptrollerV1Storage.Version version) external;
+
+    function flashloanAllowed(
+        address cToken,
+        address receiver,
+        uint256 amount,
+        bytes calldata params
+    ) external view returns (bool);
+}
+
+
+
+
+contract CTokenStorage {
+    /**
+     * @dev Guard variable for re-entrancy checks
+     */
+    bool internal _notEntered;
+
+    /**
+     * @notice EIP-20 token name for this token
+     */
+    string public name;
+
+    /**
+     * @notice EIP-20 token symbol for this token
+     */
+    string public symbol;
+
+    /**
+     * @notice EIP-20 token decimals for this token
+     */
+    uint8 public decimals;
+
+    /**
+     * @notice Maximum borrow rate that can ever be applied (.0005% / block)
+     */
+
+    uint256 internal constant borrowRateMaxMantissa = 0.0005e16;
+
+    /**
+     * @notice Maximum fraction of interest that can be set aside for reserves
+     */
+    uint256 internal constant reserveFactorMaxMantissa = 1e18;
+
+    /**
+     * @notice Administrator for this contract
+     */
+    address payable public admin;
+
+    /**
+     * @notice Pending administrator for this contract
+     */
+    address payable public pendingAdmin;
+
+    /**
+     * @notice Contract which oversees inter-cToken operations
+     */
+    ComptrollerInterface public comptroller;
+
+    /**
+     * @notice Model which tells what the current interest rate should be
+     */
+    InterestRateModel public interestRateModel;
+
+    /**
+     * @notice Initial exchange rate used when minting the first CTokens (used when totalSupply = 0)
+     */
+    uint256 internal initialExchangeRateMantissa;
+
+    /**
+     * @notice Fraction of interest currently set aside for reserves
+     */
+    uint256 public reserveFactorMantissa;
+
+    /**
+     * @notice Block number that interest was last accrued at
+     */
+    uint256 public accrualBlockNumber;
+
+    /**
+     * @notice Accumulator of the total earned interest rate since the opening of the market
+     */
+    uint256 public borrowIndex;
+
+    /**
+     * @notice Total amount of outstanding borrows of the underlying in this market
+     */
+    uint256 public totalBorrows;
+
+    /**
+     * @notice Total amount of reserves of the underlying held in this market
+     */
+    uint256 public totalReserves;
+
+    /**
+     * @notice Total number of tokens in circulation
+     */
+    uint256 public totalSupply;
+
+    /**
+     * @notice Official record of token balances for each account
+     */
+    mapping(address => uint256) internal accountTokens;
+
+    /**
+     * @notice Approved token transfer amounts on behalf of others
+     */
+    mapping(address => mapping(address => uint256)) internal transferAllowances;
+
+    /**
+     * @notice Container for borrow balance information
+     * @member principal Total balance (with accrued interest), after applying the most recent balance-changing action
+     * @member interestIndex Global borrowIndex as of the most recent balance-changing action
+     */
+    struct BorrowSnapshot {
+        uint256 principal;
+        uint256 interestIndex;
+    }
+
+    /**
+     * @notice Mapping of account addresses to outstanding borrow balances
+     */
+    mapping(address => BorrowSnapshot) internal accountBorrows;
+}
+
+contract CErc20Storage {
+    /**
+     * @notice Underlying asset for this CToken
+     */
+    address public underlying;
+
+    /**
+     * @notice Implementation address for this contract
+     */
+    address public implementation;
+}
+
+contract CSupplyCapStorage {
+    /**
+     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
+     */
+    uint256 public internalCash;
+}
+
+contract CCollateralCapStorage {
+    /**
+     * @notice Total number of tokens used as collateral in circulation.
+     */
+    uint256 public totalCollateralTokens;
+
+    /**
+     * @notice Record of token balances which could be treated as collateral for each account.
+     *         If collateral cap is not set, the value should be equal to accountTokens.
+     */
+    mapping(address => uint256) public accountCollateralTokens;
+
+    /**
+     * @notice Check if accountCollateralTokens have been initialized.
+     */
+    mapping(address => bool) public isCollateralTokenInit;
+
+    /**
+     * @notice Collateral cap for this CToken, zero for no cap.
+     */
+    uint256 public collateralCap;
+}
+
+/*** Interface ***/
+
+contract CTokenInterface is CTokenStorage {
+    /**
+     * @notice Indicator that this is a CToken contract (for inspection)
+     */
+    bool public constant isCToken = true;
+
+    /*** Market Events ***/
+
+    /**
+     * @notice Event emitted when interest is accrued
+     */
+    event AccrueInterest(uint256 cashPrior, uint256 interestAccumulated, uint256 borrowIndex, uint256 totalBorrows);
+
+    /**
+     * @notice Event emitted when tokens are minted
+     */
+    event Mint(address minter, uint256 mintAmount, uint256 mintTokens);
+
+    /**
+     * @notice Event emitted when tokens are redeemed
+     */
+    event Redeem(address redeemer, uint256 redeemAmount, uint256 redeemTokens);
+
+    /**
+     * @notice Event emitted when underlying is borrowed
+     */
+    event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows);
+
+    /**
+     * @notice Event emitted when a borrow is repaid
+     */
+    event RepayBorrow(
+        address payer,
+        address borrower,
+        uint256 repayAmount,
+        uint256 accountBorrows,
+        uint256 totalBorrows
+    );
+
+    /**
+     * @notice Event emitted when a borrow is liquidated
+     */
+    event LiquidateBorrow(
+        address liquidator,
+        address borrower,
+        uint256 repayAmount,
+        address cTokenCollateral,
+        uint256 seizeTokens
+    );
+
+    /*** Admin Events ***/
+
+    /**
+     * @notice Event emitted when pendingAdmin is changed
+     */
+    event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
+
+    /**
+     * @notice Event emitted when pendingAdmin is accepted, which means admin is updated
+     */
+    event NewAdmin(address oldAdmin, address newAdmin);
+
+    /**
+     * @notice Event emitted when comptroller is changed
+     */
+    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
+
+    /**
+     * @notice Event emitted when interestRateModel is changed
+     */
+    event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
+
+    /**
+     * @notice Event emitted when the reserve factor is changed
+     */
+    event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
+
+    /**
+     * @notice Event emitted when the reserves are added
+     */
+    event ReservesAdded(address benefactor, uint256 addAmount, uint256 newTotalReserves);
+
+    /**
+     * @notice Event emitted when the reserves are reduced
+     */
+    event ReservesReduced(address admin, uint256 reduceAmount, uint256 newTotalReserves);
+
+    /**
+     * @notice EIP20 Transfer event
+     */
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+
+    /**
+     * @notice EIP20 Approval event
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
+
+    /**
+     * @notice Failure event
+     */
+    event Failure(uint256 error, uint256 info, uint256 detail);
+
+    /*** User Interface ***/
+
+    function transfer(address dst, uint256 amount) external returns (bool);
+
+    function transferFrom(
+        address src,
+        address dst,
+        uint256 amount
+    ) external returns (bool);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function balanceOf(address owner) external view returns (uint256);
+
+    function balanceOfUnderlying(address owner) external returns (uint256);
+
+    function getAccountSnapshot(address account)
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        );
+
+    function borrowRatePerBlock() external view returns (uint256);
+
+    function supplyRatePerBlock() external view returns (uint256);
+
+    function totalBorrowsCurrent() external returns (uint256);
+
+    function borrowBalanceCurrent(address account) external returns (uint256);
+
+    function borrowBalanceStored(address account) public view returns (uint256);
+
+    function exchangeRateCurrent() public returns (uint256);
+
+    function exchangeRateStored() public view returns (uint256);
+
+    function getCash() external view returns (uint256);
+
+    function accrueInterest() public returns (uint256);
+
+    function seize(
+        address liquidator,
+        address borrower,
+        uint256 seizeTokens
+    ) external returns (uint256);
+
+    /*** Admin Functions ***/
+
+    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint256);
+
+    function _acceptAdmin() external returns (uint256);
+
+    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint256);
+
+    function _setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256);
+
+    function _reduceReserves(uint256 reduceAmount) external returns (uint256);
+
+    function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256);
+}
+
 /**
  * @title Compound's CToken Contract
  * @notice Abstract base for CTokens
@@ -2149,615 +2758,6 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
 
 
-
-
-contract PriceOracle {
-    /**
-     * @notice Get the underlying price of a cToken asset
-     * @param cToken The cToken to get the underlying price of
-     * @return The underlying asset price mantissa (scaled by 1e18).
-     *  Zero means the price is unavailable.
-     */
-    function getUnderlyingPrice(CToken cToken) external view returns (uint256);
-}
-
-
-contract UnitrollerAdminStorage {
-    /**
-     * @notice Administrator for this contract
-     */
-    address public admin;
-
-    /**
-     * @notice Pending administrator for this contract
-     */
-    address public pendingAdmin;
-
-    /**
-     * @notice Active brains of Unitroller
-     */
-    address public comptrollerImplementation;
-
-    /**
-     * @notice Pending brains of Unitroller
-     */
-    address public pendingComptrollerImplementation;
-}
-
-contract ComptrollerV1Storage is UnitrollerAdminStorage {
-    /**
-     * @notice Oracle which gives the price of any given asset
-     */
-    PriceOracle public oracle;
-
-    /**
-     * @notice Multiplier used to calculate the maximum repayAmount when liquidating a borrow
-     */
-    uint256 public closeFactorMantissa;
-
-    /**
-     * @notice Multiplier representing the discount on collateral that a liquidator receives
-     */
-    uint256 public liquidationIncentiveMantissa;
-
-    /**
-     * @notice Per-account mapping of "assets you are in"
-     */
-    mapping(address => CToken[]) public accountAssets;
-
-    enum Version {
-        VANILLA,
-        COLLATERALCAP,
-        WRAPPEDNATIVE
-    }
-
-    struct Market {
-        /// @notice Whether or not this market is listed
-        bool isListed;
-        /**
-         * @notice Multiplier representing the most one can borrow against their collateral in this market.
-         *  For instance, 0.9 to allow borrowing 90% of collateral value.
-         *  Must be between 0 and 1, and stored as a mantissa.
-         */
-        uint256 collateralFactorMantissa;
-        /// @notice Per-market mapping of "accounts in this asset"
-        mapping(address => bool) accountMembership;
-        /// @notice CToken version
-        Version version;
-    }
-
-    /**
-     * @notice Official mapping of cTokens -> Market metadata
-     * @dev Used e.g. to determine if a market is supported
-     */
-    mapping(address => Market) public markets;
-
-    /**
-     * @notice The Pause Guardian can pause certain actions as a safety mechanism.
-     *  Actions which allow users to remove their own assets cannot be paused.
-     *  Liquidation / seizing / transfer can only be paused globally, not by market.
-     */
-    address public pauseGuardian;
-    bool public _mintGuardianPaused;
-    bool public _borrowGuardianPaused;
-    bool public transferGuardianPaused;
-    bool public seizeGuardianPaused;
-    mapping(address => bool) public mintGuardianPaused;
-    mapping(address => bool) public borrowGuardianPaused;
-
-    struct CompMarketState {
-        /// @notice The market's last updated compBorrowIndex or compSupplyIndex
-        uint224 index;
-        /// @notice The block number the index was last updated at
-        uint32 block;
-    }
-
-    /// @notice A list of all markets
-    CToken[] public allMarkets;
-
-    /// @notice The portion of compRate that each market currently receives
-    mapping(address => uint256) public compSpeeds;
-
-    /// @notice The COMP market supply state for each market
-    mapping(address => CompMarketState) public compSupplyState;
-
-    /// @notice The COMP market borrow state for each market
-    mapping(address => CompMarketState) public compBorrowState;
-
-    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
-    mapping(address => mapping(address => uint256)) public compSupplierIndex;
-
-    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
-    mapping(address => mapping(address => uint256)) public compBorrowerIndex;
-
-    /// @notice The COMP accrued but not yet transferred to each user
-    mapping(address => uint256) public compAccrued;
-
-    // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
-    address public borrowCapGuardian;
-
-    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
-    mapping(address => uint256) public borrowCaps;
-
-    // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
-    address public supplyCapGuardian;
-
-    // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
-    mapping(address => uint256) public supplyCaps;
-
-    // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
-    mapping(address => uint256) public creditLimits;
-
-    // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
-    mapping(address => bool) public flashloanGuardianPaused;
-
-    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
-    address public liquidityMining;
-}
-
-
-contract ComptrollerInterface {
-    /// @notice Indicator that this is a Comptroller contract (for inspection)
-    bool public constant isComptroller = true;
-
-    /*** Assets You Are In ***/
-
-    function enterMarkets(address[] calldata cTokens) external returns (uint256[] memory);
-
-    function exitMarket(address cToken) external returns (uint256);
-
-    /*** Policy Hooks ***/
-
-    function mintAllowed(
-        address cToken,
-        address minter,
-        uint256 mintAmount
-    ) external returns (uint256);
-
-    function mintVerify(
-        address cToken,
-        address minter,
-        uint256 mintAmount,
-        uint256 mintTokens
-    ) external;
-
-    function redeemAllowed(
-        address cToken,
-        address redeemer,
-        uint256 redeemTokens
-    ) external returns (uint256);
-
-    function redeemVerify(
-        address cToken,
-        address redeemer,
-        uint256 redeemAmount,
-        uint256 redeemTokens
-    ) external;
-
-    function borrowAllowed(
-        address cToken,
-        address borrower,
-        uint256 borrowAmount
-    ) external returns (uint256);
-
-    function borrowVerify(
-        address cToken,
-        address borrower,
-        uint256 borrowAmount
-    ) external;
-
-    function repayBorrowAllowed(
-        address cToken,
-        address payer,
-        address borrower,
-        uint256 repayAmount
-    ) external returns (uint256);
-
-    function repayBorrowVerify(
-        address cToken,
-        address payer,
-        address borrower,
-        uint256 repayAmount,
-        uint256 borrowerIndex
-    ) external;
-
-    function liquidateBorrowAllowed(
-        address cTokenBorrowed,
-        address cTokenCollateral,
-        address liquidator,
-        address borrower,
-        uint256 repayAmount
-    ) external returns (uint256);
-
-    function liquidateBorrowVerify(
-        address cTokenBorrowed,
-        address cTokenCollateral,
-        address liquidator,
-        address borrower,
-        uint256 repayAmount,
-        uint256 seizeTokens
-    ) external;
-
-    function seizeAllowed(
-        address cTokenCollateral,
-        address cTokenBorrowed,
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    ) external returns (uint256);
-
-    function seizeVerify(
-        address cTokenCollateral,
-        address cTokenBorrowed,
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    ) external;
-
-    function transferAllowed(
-        address cToken,
-        address src,
-        address dst,
-        uint256 transferTokens
-    ) external returns (uint256);
-
-    function transferVerify(
-        address cToken,
-        address src,
-        address dst,
-        uint256 transferTokens
-    ) external;
-
-    /*** Liquidity/Liquidation Calculations ***/
-
-    function liquidateCalculateSeizeTokens(
-        address cTokenBorrowed,
-        address cTokenCollateral,
-        uint256 repayAmount
-    ) external view returns (uint256, uint256);
-}
-
-interface ComptrollerInterfaceExtension {
-    function checkMembership(address account, CToken cToken) external view returns (bool);
-
-    function updateCTokenVersion(address cToken, ComptrollerV1Storage.Version version) external;
-
-    function flashloanAllowed(
-        address cToken,
-        address receiver,
-        uint256 amount,
-        bytes calldata params
-    ) external view returns (bool);
-}
-
-
-
-
-contract CTokenStorage {
-    /**
-     * @dev Guard variable for re-entrancy checks
-     */
-    bool internal _notEntered;
-
-    /**
-     * @notice EIP-20 token name for this token
-     */
-    string public name;
-
-    /**
-     * @notice EIP-20 token symbol for this token
-     */
-    string public symbol;
-
-    /**
-     * @notice EIP-20 token decimals for this token
-     */
-    uint8 public decimals;
-
-    /**
-     * @notice Maximum borrow rate that can ever be applied (.0005% / block)
-     */
-
-    uint256 internal constant borrowRateMaxMantissa = 0.0005e16;
-
-    /**
-     * @notice Maximum fraction of interest that can be set aside for reserves
-     */
-    uint256 internal constant reserveFactorMaxMantissa = 1e18;
-
-    /**
-     * @notice Administrator for this contract
-     */
-    address payable public admin;
-
-    /**
-     * @notice Pending administrator for this contract
-     */
-    address payable public pendingAdmin;
-
-    /**
-     * @notice Contract which oversees inter-cToken operations
-     */
-    ComptrollerInterface public comptroller;
-
-    /**
-     * @notice Model which tells what the current interest rate should be
-     */
-    InterestRateModel public interestRateModel;
-
-    /**
-     * @notice Initial exchange rate used when minting the first CTokens (used when totalSupply = 0)
-     */
-    uint256 internal initialExchangeRateMantissa;
-
-    /**
-     * @notice Fraction of interest currently set aside for reserves
-     */
-    uint256 public reserveFactorMantissa;
-
-    /**
-     * @notice Block number that interest was last accrued at
-     */
-    uint256 public accrualBlockNumber;
-
-    /**
-     * @notice Accumulator of the total earned interest rate since the opening of the market
-     */
-    uint256 public borrowIndex;
-
-    /**
-     * @notice Total amount of outstanding borrows of the underlying in this market
-     */
-    uint256 public totalBorrows;
-
-    /**
-     * @notice Total amount of reserves of the underlying held in this market
-     */
-    uint256 public totalReserves;
-
-    /**
-     * @notice Total number of tokens in circulation
-     */
-    uint256 public totalSupply;
-
-    /**
-     * @notice Official record of token balances for each account
-     */
-    mapping(address => uint256) internal accountTokens;
-
-    /**
-     * @notice Approved token transfer amounts on behalf of others
-     */
-    mapping(address => mapping(address => uint256)) internal transferAllowances;
-
-    /**
-     * @notice Container for borrow balance information
-     * @member principal Total balance (with accrued interest), after applying the most recent balance-changing action
-     * @member interestIndex Global borrowIndex as of the most recent balance-changing action
-     */
-    struct BorrowSnapshot {
-        uint256 principal;
-        uint256 interestIndex;
-    }
-
-    /**
-     * @notice Mapping of account addresses to outstanding borrow balances
-     */
-    mapping(address => BorrowSnapshot) internal accountBorrows;
-}
-
-contract CErc20Storage {
-    /**
-     * @notice Underlying asset for this CToken
-     */
-    address public underlying;
-
-    /**
-     * @notice Implementation address for this contract
-     */
-    address public implementation;
-}
-
-contract CSupplyCapStorage {
-    /**
-     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
-     */
-    uint256 public internalCash;
-}
-
-contract CCollateralCapStorage {
-    /**
-     * @notice Total number of tokens used as collateral in circulation.
-     */
-    uint256 public totalCollateralTokens;
-
-    /**
-     * @notice Record of token balances which could be treated as collateral for each account.
-     *         If collateral cap is not set, the value should be equal to accountTokens.
-     */
-    mapping(address => uint256) public accountCollateralTokens;
-
-    /**
-     * @notice Check if accountCollateralTokens have been initialized.
-     */
-    mapping(address => bool) public isCollateralTokenInit;
-
-    /**
-     * @notice Collateral cap for this CToken, zero for no cap.
-     */
-    uint256 public collateralCap;
-}
-
-/*** Interface ***/
-
-contract CTokenInterface is CTokenStorage {
-    /**
-     * @notice Indicator that this is a CToken contract (for inspection)
-     */
-    bool public constant isCToken = true;
-
-    /*** Market Events ***/
-
-    /**
-     * @notice Event emitted when interest is accrued
-     */
-    event AccrueInterest(uint256 cashPrior, uint256 interestAccumulated, uint256 borrowIndex, uint256 totalBorrows);
-
-    /**
-     * @notice Event emitted when tokens are minted
-     */
-    event Mint(address minter, uint256 mintAmount, uint256 mintTokens);
-
-    /**
-     * @notice Event emitted when tokens are redeemed
-     */
-    event Redeem(address redeemer, uint256 redeemAmount, uint256 redeemTokens);
-
-    /**
-     * @notice Event emitted when underlying is borrowed
-     */
-    event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows);
-
-    /**
-     * @notice Event emitted when a borrow is repaid
-     */
-    event RepayBorrow(
-        address payer,
-        address borrower,
-        uint256 repayAmount,
-        uint256 accountBorrows,
-        uint256 totalBorrows
-    );
-
-    /**
-     * @notice Event emitted when a borrow is liquidated
-     */
-    event LiquidateBorrow(
-        address liquidator,
-        address borrower,
-        uint256 repayAmount,
-        address cTokenCollateral,
-        uint256 seizeTokens
-    );
-
-    /*** Admin Events ***/
-
-    /**
-     * @notice Event emitted when pendingAdmin is changed
-     */
-    event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
-
-    /**
-     * @notice Event emitted when pendingAdmin is accepted, which means admin is updated
-     */
-    event NewAdmin(address oldAdmin, address newAdmin);
-
-    /**
-     * @notice Event emitted when comptroller is changed
-     */
-    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
-
-    /**
-     * @notice Event emitted when interestRateModel is changed
-     */
-    event NewMarketInterestRateModel(InterestRateModel oldInterestRateModel, InterestRateModel newInterestRateModel);
-
-    /**
-     * @notice Event emitted when the reserve factor is changed
-     */
-    event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
-
-    /**
-     * @notice Event emitted when the reserves are added
-     */
-    event ReservesAdded(address benefactor, uint256 addAmount, uint256 newTotalReserves);
-
-    /**
-     * @notice Event emitted when the reserves are reduced
-     */
-    event ReservesReduced(address admin, uint256 reduceAmount, uint256 newTotalReserves);
-
-    /**
-     * @notice EIP20 Transfer event
-     */
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-
-    /**
-     * @notice EIP20 Approval event
-     */
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
-
-    /**
-     * @notice Failure event
-     */
-    event Failure(uint256 error, uint256 info, uint256 detail);
-
-    /*** User Interface ***/
-
-    function transfer(address dst, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address src,
-        address dst,
-        uint256 amount
-    ) external returns (bool);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function balanceOf(address owner) external view returns (uint256);
-
-    function balanceOfUnderlying(address owner) external returns (uint256);
-
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        );
-
-    function borrowRatePerBlock() external view returns (uint256);
-
-    function supplyRatePerBlock() external view returns (uint256);
-
-    function totalBorrowsCurrent() external returns (uint256);
-
-    function borrowBalanceCurrent(address account) external returns (uint256);
-
-    function borrowBalanceStored(address account) public view returns (uint256);
-
-    function exchangeRateCurrent() public returns (uint256);
-
-    function exchangeRateStored() public view returns (uint256);
-
-    function getCash() external view returns (uint256);
-
-    function accrueInterest() public returns (uint256);
-
-    function seize(
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    ) external returns (uint256);
-
-    /*** Admin Functions ***/
-
-    function _setPendingAdmin(address payable newPendingAdmin) external returns (uint256);
-
-    function _acceptAdmin() external returns (uint256);
-
-    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint256);
-
-    function _setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256);
-
-    function _reduceReserves(uint256 reduceAmount) external returns (uint256);
-
-    function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256);
-}
 
 contract CErc20Interface is CErc20Storage {
     /*** User Interface ***/
