@@ -53,6 +53,18 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
     /// @notice Emitted when an action is paused on a market
     event ActionPaused(CToken cToken, string action, bool pauseState);
 
+    /// @notice Emitted when a new COMP speed is calculated for a market
+    event CompSpeedUpdated(uint8 rewardType, CToken indexed cToken, uint newSpeed);
+
+    /// @notice Emitted when COMP is distributed to a supplier
+    event DistributedSupplierComp(uint8 rewardType, CToken indexed cToken, address indexed supplier, uint compDelta, uint compSupplyIndex);
+
+    /// @notice Emitted when COMP is distributed to a borrower
+    event DistributedBorrowerComp(uint8 rewardType, CToken indexed cToken, address indexed borrower, uint compDelta, uint compBorrowIndex);
+
+    /// @notice Emitted when COMP is granted by admin
+    event CompGranted(address recipient, uint amount);
+
     /// @notice Emitted when borrow cap for a cToken is changed
     event NewBorrowCap(CToken indexed cToken, uint256 newBorrowCap);
 
@@ -70,6 +82,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
     /// @notice Emitted when cToken version is changed
     event NewCTokenVersion(CToken cToken, Version oldVersion, Version newVersion);
+
+    /// @notice The initial COMP index for a market
+    uint224 public constant compInitialIndex = 1e36;
 
     // No collateralFactorMantissa may exceed this value
     uint256 internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
@@ -1324,6 +1339,297 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
 
         creditLimits[protocol] = creditLimit;
         emit CreditLimitChanged(protocol, creditLimit);
+    }
+
+    /**
+     * @notice Checks caller is admin, or this contract is becoming the new implementation
+     */
+    function adminOrInitializing() internal view returns (bool) {
+        return msg.sender == admin || msg.sender == comptrollerImplementation;
+    }
+
+    /*** JOE Distribution ***/
+
+    /**
+     * @notice Set JOE/AVAX speed for a single market
+     * @param rewardType  0: JOE, 1: AVAX 
+     * @param cToken The market whose speed to update
+     * @param newSpeed New JOE or AVAX speed for market
+     */
+    function setCompSpeedInternal(uint8 rewardType, CToken cToken, uint newSpeed) internal {
+        uint currentCompSpeed = compSpeeds[rewardType][address(cToken)];
+        if (currentCompSpeed != 0) {
+            // note that JOE speed could be set to 0 to halt liquidity rewards for a market
+            Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+            updateCompSupplyIndex(rewardType, address(cToken));
+            updateCompBorrowIndex(rewardType, address(cToken), borrowIndex);
+        } else if (newSpeed != 0) {
+            // Add the JOE market
+            Market storage market = markets[address(cToken)];
+            require(market.isListed == true, "joe market is not listed");
+
+            if (compSupplyState[rewardType][address(cToken)].index == 0 &&
+                compSupplyState[rewardType][address(cToken)].block == 0) {
+                compSupplyState[rewardType][address(cToken)] = CompMarketState({
+                    index: compInitialIndex,
+                    block: safe32(getBlockNumber(), "block timestamp exceeds 32 bits")
+                });
+            }
+
+            if (compBorrowState[rewardType][address(cToken)].index == 0 &&
+                compBorrowState[rewardType][address(cToken)].block == 0) {
+                compBorrowState[rewardType][address(cToken)] = CompMarketState({
+                    index: compInitialIndex,
+                    block: safe32(getBlockNumber(), "block timestamp exceeds 32 bits")
+                });
+            }
+        }
+
+        if (currentCompSpeed != newSpeed) {
+            compSpeeds[rewardType][address(cToken)] = newSpeed;
+            emit CompSpeedUpdated(rewardType, cToken, newSpeed);
+        }
+    }
+
+    /**
+     * @notice Accrue JOE to the market by updating the supply index
+     * @param rewardType  0: JOE, 1: AVAX 
+     * @param cToken The market whose supply index to update
+     */
+    function updateCompSupplyIndex(uint8 rewardType, address cToken) internal {
+        require(rewardType <= 1, "rewardType is invalid"); 
+        CompMarketState storage supplyState = compSupplyState[rewardType][cToken];
+        uint supplySpeed = compSpeeds[rewardType][cToken];
+        uint blockNumber = getBlockNumber();
+        uint deltaBlocks = sub_(blockNumber, uint(supplyState.block));
+        if (deltaBlocks > 0 && supplySpeed > 0) {
+            uint supplyTokens = CToken(cToken).totalSupply();
+            uint compAccrued = mul_(deltaBlocks, supplySpeed);
+            Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
+            Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
+            compSupplyState[rewardType][cToken] = CompMarketState({
+                index: safe224(index.mantissa, "new index exceeds 224 bits"),
+                block: safe32(blockNumber, "block timestamp exceeds 32 bits")
+            });
+        } else if (deltaBlocks > 0) {
+            supplyState.block = safe32(blockNumber, "block timestamp exceeds 32 bits");
+        }
+    }
+
+    /**
+     * @notice Accrue JOE to the market by updating the borrow index
+     * @param rewardType  0: JOE, 1: AVAX 
+     * @param cToken The market whose borrow index to update
+     */
+    function updateCompBorrowIndex(uint8 rewardType, address cToken, Exp memory marketBorrowIndex) internal {
+        require(rewardType <= 1, "rewardType is invalid"); 
+        CompMarketState storage borrowState = compBorrowState[rewardType][cToken];
+        uint borrowSpeed = compSpeeds[rewardType][cToken];
+        uint blockNumber = getBlockNumber();
+        uint deltaBlocks = sub_(blockNumber, uint(borrowState.block));
+        if (deltaBlocks > 0 && borrowSpeed > 0) {
+            uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
+            uint compAccrued = mul_(deltaBlocks, borrowSpeed);
+            Double memory ratio = borrowAmount > 0 ? fraction(compAccrued, borrowAmount) : Double({mantissa: 0});
+            Double memory index = add_(Double({mantissa: borrowState.index}), ratio);
+            compBorrowState[rewardType][cToken] = CompMarketState({
+                index: safe224(index.mantissa, "new index exceeds 224 bits"),
+                block: safe32(blockNumber, "block timestamp exceeds 32 bits")
+            });
+        } else if (deltaBlocks > 0) {
+            borrowState.block = safe32(blockNumber, "block timestamp exceeds 32 bits");
+        }
+    }
+
+    /**
+     * @notice Refactored function to calc and rewards accounts supplier rewards
+     * @param cToken The market to verify the mint against
+     * @param supplier The supplier to be rewarded
+     */
+    function updateAndDistributeSupplierRewardsForToken(address cToken, address supplier) internal {
+        for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
+            updateCompSupplyIndex(rewardType, cToken);
+            distributeSupplierComp(rewardType, cToken, supplier);
+        }
+    }
+
+    /**
+     * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
+     * @param rewardType  0: JOE, 1: AVAX 
+     * @param cToken The market in which the supplier is interacting
+     * @param supplier The address of the supplier to distribute JOE to
+     */
+    function distributeSupplierComp(uint8 rewardType, address cToken, address supplier) internal {
+        require(rewardType <= 1, "rewardType is invalid"); 
+        CompMarketState storage supplyState = compSupplyState[rewardType][cToken];
+        Double memory supplyIndex = Double({mantissa: supplyState.index});
+        Double memory supplierIndex = Double({mantissa:
+                                             compSupplierIndex[rewardType][cToken][supplier]});
+        compSupplierIndex[rewardType][cToken][supplier] = supplyIndex.mantissa;
+
+        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
+            supplierIndex.mantissa = compInitialIndex;
+        }
+
+        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
+        uint supplierTokens = CToken(cToken).balanceOf(supplier);
+        uint supplierDelta = mul_(supplierTokens, deltaIndex);
+        uint supplierAccrued = add_(compAccrued[rewardType][supplier], supplierDelta);
+        compAccrued[rewardType][supplier] = supplierAccrued;
+        emit DistributedSupplierComp(rewardType, CToken(cToken), supplier, supplierDelta, supplyIndex.mantissa);
+    }
+
+   /**
+     * @notice Refactored function to calc and rewards accounts supplier rewards
+     * @param cToken The market to verify the mint against
+     * @param borrower Borrower to be rewarded
+     */
+    function updateAndDistributeBorrowerRewardsForToken(address cToken, address borrower, Exp memory marketBorrowIndex) internal {
+        for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
+            updateCompBorrowIndex(rewardType, cToken, marketBorrowIndex);
+            distributeBorrowerComp(rewardType, cToken, borrower, marketBorrowIndex);
+        }
+    }
+
+    /**
+     * @notice Calculate JOE accrued by a borrower and possibly transfer it to them
+     * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.
+     * @param rewardType  0: JOE, 1: AVAX 
+     * @param cToken The market in which the borrower is interacting
+     * @param borrower The address of the borrower to distribute JOE to
+     */
+    function distributeBorrowerComp(uint8 rewardType, address cToken, address borrower, Exp memory marketBorrowIndex) internal {
+        require(rewardType <= 1, "rewardType is invalid"); 
+        CompMarketState storage borrowState = compBorrowState[rewardType][cToken];
+        Double memory borrowIndex = Double({mantissa: borrowState.index});
+        Double memory borrowerIndex = Double({mantissa:
+                                             compBorrowerIndex[rewardType][cToken][borrower]});
+        compBorrowerIndex[rewardType][cToken][borrower] = borrowIndex.mantissa;
+
+        if (borrowerIndex.mantissa > 0) {
+            Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
+            uint borrowerAmount = div_(CToken(cToken).borrowBalanceStored(borrower), marketBorrowIndex);
+            uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
+            uint borrowerAccrued = add_(compAccrued[rewardType][borrower], borrowerDelta);
+            compAccrued[rewardType][borrower] = borrowerAccrued;
+            emit DistributedBorrowerComp(rewardType, CToken(cToken), borrower, borrowerDelta, borrowIndex.mantissa);
+        }
+    }
+
+    /**
+     * @notice Claim all the JOE/AVAX accrued by holder in all markets
+     * @param holder The address to claim JOE/AVAX for
+     */
+    function claimComp(uint8 rewardType, address payable holder) public {
+        return claimComp(rewardType, holder, allMarkets);
+    }
+
+    /**
+     * @notice Claim all the JOE/AVAX accrued by holder in the specified markets
+     * @param holder The address to claim JOE/AVAX for
+     * @param cTokens The list of markets to claim JOE/AVAX in
+     */
+    function claimComp(uint8 rewardType, address payable holder, CToken[] memory cTokens) public {
+        address payable [] memory holders = new address payable[](1);
+        holders[0] = holder;
+        claimComp(rewardType, holders, cTokens, true, true);
+    }
+
+    /**
+     * @notice Claim all JOE/AVAX  accrued by the holders
+     * @param rewardType  0 = JOE, 1 = AVAX
+     * @param holders The addresses to claim JOE/AVAX for
+     * @param cTokens The list of markets to claim JOE/AVAX in
+     * @param borrowers Whether or not to claim JOE/AVAX earned by borrowing
+     * @param suppliers Whether or not to claim JOE/AVAX earned by supplying
+     */
+    function claimComp(uint8 rewardType, address payable[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public payable {
+        require(rewardType <= 1, "rewardType is invalid");
+        for (uint i = 0; i < cTokens.length; i++) {
+            CToken cToken = cTokens[i];
+            require(markets[address(cToken)].isListed, "market must be listed");
+            if (borrowers == true) {
+                Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
+                updateCompBorrowIndex(rewardType, address(cToken), borrowIndex);
+                for (uint j = 0; j < holders.length; j++) {
+                    distributeBorrowerComp(rewardType, address(cToken), holders[j], borrowIndex);
+                    compAccrued[rewardType][holders[j]] = grantRewardInternal(rewardType, holders[j], compAccrued[rewardType][holders[j]]);
+                }
+            }
+            if (suppliers == true) {
+                updateCompSupplyIndex(rewardType, address(cToken));
+                for (uint j = 0; j < holders.length; j++) {
+                    distributeSupplierComp(rewardType, address(cToken), holders[j]);
+                    compAccrued[rewardType][holders[j]] = grantRewardInternal(rewardType, holders[j], compAccrued[rewardType][holders[j]]);
+                }
+            }
+        }
+    }
+
+    /**
+     * @notice Transfer JOE/AVAX to the user
+     * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer all.
+     * @param user The address of the user to transfer JOE/AVAX to
+     * @param amount The amount of JOE/AVAX to (possibly) transfer
+     * @return The amount of JOE/AVAX which was NOT transferred to the user
+     */
+    function grantRewardInternal(uint rewardType, address payable user, uint amount) internal returns (uint) {
+        if (rewardType == 0) {
+            Comp comp = Comp(joeAddress);
+            uint compRemaining = comp.balanceOf(address(this));
+            if (amount > 0 && amount <= compRemaining) {
+                comp.transfer(user, amount);
+                return 0;
+            }
+        } else if (rewardType == 1) {
+            uint avaxRemaining = address(this).balance;
+            if (amount > 0 && amount <= avaxRemaining) {
+                user.transfer(amount);
+                return 0;
+            }
+        }
+        return amount;
+    }
+
+    /*** Joe Distribution Admin ***/
+
+    /**
+     * @notice Transfer JOE to the recipient
+     * @dev Note: If there is not enough JOE, we do not perform the transfer all.
+     * @param recipient The address of the recipient to transfer JOE to
+     * @param amount The amount of JOE to (possibly) transfer
+     */
+    function _grantComp(address payable recipient, uint amount) public {
+        require(adminOrInitializing(), "only admin can grant joe");
+        uint amountLeft = grantRewardInternal(0, recipient, amount);
+        require(amountLeft == 0, "insufficient joe for grant");
+        emit CompGranted(recipient, amount);
+    }
+
+    /**
+     * @notice Set JOE/AVAX speed for a single market
+     * @param rewardType 0 = QI, 1 = AVAX
+     * @param cToken The market whose reward speed to update
+     * @param compSpeed New reward speed for market
+     */
+    function _setCompSpeed(uint8 rewardType, CToken cToken, uint compSpeed) public {
+        require(rewardType <= 1, "rewardType is invalid"); 
+        require(adminOrInitializing(), "only admin can set reward speed");
+        setCompSpeedInternal(rewardType, cToken, compSpeed);
+    }
+
+    /**
+     * @notice Set the JOE token address
+     */
+    function setJoeAddress(address newJoeAddress) public {
+        require(msg.sender == admin);
+        joeAddress = newJoeAddress;
+    }
+
+    /**
+     * @notice payable function needed to receive AVAX
+     */
+    function () payable external {
     }
 
     /**

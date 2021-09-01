@@ -167,6 +167,11 @@
     "constant": true,
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -187,6 +192,11 @@
   {
     "constant": true,
     "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
       {
         "internalType": "address",
         "name": "",
@@ -214,6 +224,11 @@
     "constant": true,
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -240,6 +255,11 @@
     "constant": true,
     "inputs": [
       {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
+      {
         "internalType": "address",
         "name": "",
         "type": "address"
@@ -260,6 +280,11 @@
   {
     "constant": true,
     "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
       {
         "internalType": "address",
         "name": "",
@@ -286,6 +311,11 @@
   {
     "constant": true,
     "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      },
       {
         "internalType": "address",
         "name": "",
@@ -360,6 +390,21 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "joeAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
       }
     ],
     "payable": false,

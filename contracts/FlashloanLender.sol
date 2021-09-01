@@ -18,7 +18,7 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
     /**
      * @notice C.R.E.A.M. comptroller address
      */
-    address public comptroller;
+    address payable public comptroller;
 
     address public owner;
 
@@ -30,7 +30,7 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
         _;
     }
 
-    constructor(address _comptroller, address _owner) public {
+    constructor(address payable _comptroller, address _owner) public {
         comptroller = _comptroller;
         owner = _owner;
         initialiseUnderlyingMapping();

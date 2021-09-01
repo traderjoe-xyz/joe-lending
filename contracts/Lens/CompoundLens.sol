@@ -100,7 +100,9 @@ contract CompoundLens is Exponential {
     }
 
     function cTokenMetadata(CToken cToken) public returns (CTokenMetadata memory) {
-        Comptroller comptroller = Comptroller(address(cToken.comptroller()));
+        address comptrollerAddress = address(cToken.comptroller()); 
+        address payable payableComptrollerAddress = address(uint160(comptrollerAddress));
+        Comptroller comptroller = Comptroller(payableComptrollerAddress);
         PriceOracle priceOracle = comptroller.oracle();
         return cTokenMetadataInternal(cToken, comptroller, priceOracle);
     }
@@ -109,7 +111,9 @@ contract CompoundLens is Exponential {
         uint256 cTokenCount = cTokens.length;
         require(cTokenCount > 0, "invalid input");
         CTokenMetadata[] memory res = new CTokenMetadata[](cTokenCount);
-        Comptroller comptroller = Comptroller(address(cTokens[0].comptroller()));
+        address comptrollerAddress = address(cTokens[0].comptroller()); 
+        address payable payableComptrollerAddress = address(uint160(comptrollerAddress));
+        Comptroller comptroller = Comptroller(payableComptrollerAddress);
         PriceOracle priceOracle = comptroller.oracle();
         for (uint256 i = 0; i < cTokenCount; i++) {
             require(address(comptroller) == address(cTokens[i].comptroller()), "mismatch comptroller");
@@ -131,8 +135,9 @@ contract CompoundLens is Exponential {
     }
 
     function cTokenBalances(CToken cToken, address payable account) public returns (CTokenBalances memory) {
-        address comptroller = address(cToken.comptroller());
-        bool collateralEnabled = Comptroller(comptroller).checkMembership(account, cToken);
+        address comptrollerAddress = address(cToken.comptroller());
+        address payable payableComptrollerAddress = address(uint160(comptrollerAddress));
+        bool collateralEnabled = Comptroller(payableComptrollerAddress).checkMembership(account, cToken);
         uint256 tokenBalance;
         uint256 tokenAllowance;
         uint256 collateralBalance;
