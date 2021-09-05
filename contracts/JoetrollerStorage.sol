@@ -91,8 +91,8 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     struct JoeMarketState {
         /// @notice The market's last updated joeBorrowIndex or joeSupplyIndex
         uint224 index;
-        /// @notice The block number the index was last updated at
-        uint32 block;
+        /// @notice The timestamp number the index was last updated at
+        uint32 timestamp;
     }
 
     /// @notice A list of all markets

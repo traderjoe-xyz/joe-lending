@@ -47,19 +47,19 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "baseRatePerBlock",
+        "name": "baseRatePerSecond",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "multiplierPerBlock",
+        "name": "multiplierPerSecond",
         "type": "uint256"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "jumpMultiplierPerBlock",
+        "name": "jumpMultiplierPerSecond",
         "type": "uint256"
       },
       {
@@ -87,22 +87,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "baseRatePerBlock",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "blocksPerYear",
+    "name": "baseRatePerSecond",
     "outputs": [
       {
         "internalType": "uint256",
@@ -199,7 +184,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "jumpMultiplierPerBlock",
+    "name": "jumpMultiplierPerSecond",
     "outputs": [
       {
         "internalType": "uint256",
@@ -244,7 +229,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "multiplierPerBlock",
+    "name": "multiplierPerSecond",
     "outputs": [
       {
         "internalType": "uint256",
@@ -275,6 +260,21 @@
     "constant": true,
     "inputs": [],
     "name": "roof",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "secondsPerYear",
     "outputs": [
       {
         "internalType": "uint256",

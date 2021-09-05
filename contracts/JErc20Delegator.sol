@@ -255,18 +255,18 @@ contract JErc20Delegator is JTokenInterface, JErc20Interface, JDelegatorInterfac
     }
 
     /**
-     * @notice Returns the current per-block borrow interest rate for this jToken
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec borrow interest rate for this jToken
+     * @return The borrow interest rate per sec, scaled by 1e18
      */
-    function borrowRatePerBlock() external view returns (uint256) {
+    function borrowRatePerSecond() external view returns (uint256) {
         delegateToViewAndReturn();
     }
 
     /**
-     * @notice Returns the current per-block supply interest rate for this jToken
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec supply interest rate for this jToken
+     * @return The supply interest rate per sec, scaled by 1e18
      */
-    function supplyRatePerBlock() external view returns (uint256) {
+    function supplyRatePerSecond() external view returns (uint256) {
         delegateToViewAndReturn();
     }
 
@@ -325,8 +325,8 @@ contract JErc20Delegator is JTokenInterface, JErc20Interface, JDelegatorInterfac
 
     /**
      * @notice Applies accrued interest to total borrows and reserves.
-     * @dev This calculates interest accrued from the last checkpointed block
-     *      up to the current block and writes new checkpoint to storage.
+     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     *      up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
         delegateAndReturn();

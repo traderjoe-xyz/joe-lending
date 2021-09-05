@@ -278,7 +278,7 @@ contract JErc20 is JToken, JErc20Interface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current timestamp 
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -303,8 +303,8 @@ contract JErc20 is JToken, JErc20Interface {
             return (uint256(Error.NO_ERROR), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.MINT_FRESHNESS_CHECK), 0);
         }
 
@@ -361,7 +361,7 @@ contract JErc20 is JToken, JErc20Interface {
 
     /**
      * @notice User redeems jTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
+     * @dev Assumes interest has already been accrued up to the current timestamp. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
      * @param redeemer The address of the account which is redeeming the tokens
      * @param redeemTokensIn The number of jTokens to redeem into underlying
      * @param redeemAmountIn The number of underlying tokens to receive from redeeming jTokens
@@ -414,8 +414,8 @@ contract JErc20 is JToken, JErc20Interface {
             return uint256(Error.NO_ERROR);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK);
         }
 

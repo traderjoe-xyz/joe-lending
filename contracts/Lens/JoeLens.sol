@@ -22,8 +22,8 @@ contract JoeLens is Exponential {
     struct JTokenMetadata {
         address jToken;
         uint256 exchangeRateCurrent;
-        uint256 supplyRatePerBlock;
-        uint256 borrowRatePerBlock;
+        uint256 supplyRatePerSecond;
+        uint256 borrowRatePerSecond;
         uint256 reserveFactorMantissa;
         uint256 totalBorrows;
         uint256 totalReserves;
@@ -76,8 +76,8 @@ contract JoeLens is Exponential {
             JTokenMetadata({
                 jToken: address(jToken),
                 exchangeRateCurrent: exchangeRateCurrent,
-                supplyRatePerBlock: jToken.supplyRatePerBlock(),
-                borrowRatePerBlock: jToken.borrowRatePerBlock(),
+                supplyRatePerSecond: jToken.supplyRatePerSecond(),
+                borrowRatePerSecond: jToken.borrowRatePerSecond(),
                 reserveFactorMantissa: jToken.reserveFactorMantissa(),
                 totalBorrows: jToken.totalBorrows(),
                 totalReserves: jToken.totalReserves(),

@@ -28,7 +28,7 @@ contract JTokenStorage {
     uint8 public decimals;
 
     /**
-     * @notice Maximum borrow rate that can ever be applied (.0005% / block)
+     * @notice Maximum borrow rate that can ever be applied (.0005% / sec)
      */
 
     uint256 internal constant borrowRateMaxMantissa = 0.0005e16;
@@ -69,9 +69,9 @@ contract JTokenStorage {
     uint256 public reserveFactorMantissa;
 
     /**
-     * @notice Block number that interest was last accrued at
+     * @notice Block timestamp that interest was last accrued at
      */
-    uint256 public accrualBlockNumber;
+    uint256 public accrualBlockTimestamp;
 
     /**
      * @notice Accumulator of the total earned interest rate since the opening of the market
@@ -293,9 +293,9 @@ contract JTokenInterface is JTokenStorage {
             uint256
         );
 
-    function borrowRatePerBlock() external view returns (uint256);
+    function borrowRatePerSecond() external view returns (uint256);
 
-    function supplyRatePerBlock() external view returns (uint256);
+    function supplyRatePerSecond() external view returns (uint256);
 
     function totalBorrowsCurrent() external returns (uint256);
 

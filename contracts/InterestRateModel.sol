@@ -11,11 +11,11 @@ contract InterestRateModel {
     bool public constant isInterestRateModel = true;
 
     /**
-     * @notice Calculates the current borrow interest rate per block
+     * @notice Calculates the current borrow interest rate per sec
      * @param cash The total amount of cash the market has
      * @param borrows The total amount of borrows the market has outstanding
      * @param reserves The total amnount of reserves the market has
-     * @return The borrow rate per block (as a percentage, and scaled by 1e18)
+     * @return The borrow rate per sec (as a percentage, and scaled by 1e18)
      */
     function getBorrowRate(
         uint256 cash,
@@ -24,12 +24,12 @@ contract InterestRateModel {
     ) external view returns (uint256);
 
     /**
-     * @notice Calculates the current supply interest rate per block
+     * @notice Calculates the current supply interest rate per sec
      * @param cash The total amount of cash the market has
      * @param borrows The total amount of borrows the market has outstanding
      * @param reserves The total amnount of reserves the market has
      * @param reserveFactorMantissa The current reserve factor the market has
-     * @return The supply rate per block (as a percentage, and scaled by 1e18)
+     * @return The supply rate per sec (as a percentage, and scaled by 1e18)
      */
     function getSupplyRate(
         uint256 cash,

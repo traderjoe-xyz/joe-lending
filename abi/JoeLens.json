@@ -244,12 +244,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "supplyRatePerBlock",
+            "name": "supplyRatePerSecond",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "borrowRatePerBlock",
+            "name": "borrowRatePerSecond",
             "type": "uint256"
           },
           {
@@ -377,12 +377,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "supplyRatePerBlock",
+            "name": "supplyRatePerSecond",
             "type": "uint256"
           },
           {
             "internalType": "uint256",
-            "name": "borrowRatePerBlock",
+            "name": "borrowRatePerSecond",
             "type": "uint256"
           },
           {

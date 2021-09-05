@@ -389,7 +389,7 @@ contract V1PriceOracle is Exponential {
      */
     bool public paused;
 
-    uint256 public constant numBlocksPerPeriod = 240; // approximately 1 hour: 60 seconds/minute * 60 minutes/hour * 1 block/15 seconds
+    uint256 public constant numSecondsPerPeriod = 3600; // approximately 1 hour
 
     uint256 public constant maxSwingMantissa = (10**17); // 0.1
 
@@ -492,7 +492,7 @@ contract V1PriceOracle is Exponential {
     Exp public maxSwing;
 
     struct Anchor {
-        // floor(block.number / numBlocksPerPeriod) + 1
+        // floor(block.timestamp / numSecondsPerPeriod) + 1
         uint256 period;
         // Price in ETH, scaled by 10**18
         uint256 priceMantissa;
@@ -712,8 +712,8 @@ contract V1PriceOracle is Exponential {
         Error err;
         SetPriceLocalVars memory localVars;
         // We add 1 for currentPeriod so that it can never be zero and there's no ambiguity about an unset value.
-        // (It can be a problem in tests with low block numbers.)
-        localVars.currentPeriod = (block.number / numBlocksPerPeriod) + 1;
+        // (It can be a problem in tests with low block timestamps.)
+        localVars.currentPeriod = (block.timestamp / numSecondsPerPeriod) + 1;
         localVars.pendingAnchorMantissa = pendingAnchors[asset];
         localVars.price = Exp({mantissa: requestedPriceMantissa});
 

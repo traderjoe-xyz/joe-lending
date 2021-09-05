@@ -34,7 +34,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint8 decimals_
     ) public {
         require(msg.sender == admin, "only admin may initialize the market");
-        require(accrualBlockNumber == 0 && borrowIndex == 0, "market may only be initialized once");
+        require(accrualBlockTimestamp == 0 && borrowIndex == 0, "market may only be initialized once");
 
         // Set initial exchange rate
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
@@ -44,11 +44,11 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 err = _setJoetroller(joetroller_);
         require(err == uint256(Error.NO_ERROR), "setting joetroller failed");
 
-        // Initialize block number and borrow index (block number mocks depend on joetroller being set)
-        accrualBlockNumber = getBlockNumber();
+        // Initialize block timestamp and borrow index (block timestamp mocks depend on joetroller being set)
+        accrualBlockTimestamp = getBlockTimestamp();
         borrowIndex = mantissaOne;
 
-        // Set the interest rate model (depends on block number / borrow index)
+        // Set the interest rate model (depends on block timestamp / borrow index)
         err = _setInterestRateModelFresh(interestRateModel_);
         require(err == uint256(Error.NO_ERROR), "setting interest rate model failed");
 
@@ -154,34 +154,34 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @dev Function to simply retrieve block number
+     * @dev Function to simply retrieve block timestamp 
      *  This exists mainly for inheriting test contracts to stub this result.
      */
-    function getBlockNumber() internal view returns (uint256) {
+    function getBlockTimestamp() internal view returns (uint256) {
         return block.timestamp;
     }
 
     /**
-     * @notice Returns the current per-block borrow interest rate for this jToken
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec borrow interest rate for this jToken
+     * @return The borrow interest rate per sec, scaled by 1e18
      */
-    function borrowRatePerBlock() external view returns (uint256) {
+    function borrowRatePerSecond() external view returns (uint256) {
         return interestRateModel.getBorrowRate(getCashPrior(), totalBorrows, totalReserves);
     }
 
     /**
-     * @notice Returns the current per-block supply interest rate for this jToken
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec supply interest rate for this jToken
+     * @return The supply interest rate per sec, scaled by 1e18
      */
-    function supplyRatePerBlock() external view returns (uint256) {
+    function supplyRatePerSecond() external view returns (uint256) {
         return interestRateModel.getSupplyRate(getCashPrior(), totalBorrows, totalReserves, reserveFactorMantissa);
     }
 
     /**
-     * @notice Returns the estimated per-block borrow interest rate for this jToken after some change
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-sec borrow interest rate for this jToken after some change
+     * @return The borrow interest rate per sec, scaled by 1e18
      */
-    function estimateBorrowRatePerBlockAfterChange(uint256 change, bool repay) external view returns (uint256) {
+    function estimateBorrowRatePerSecondAfterChange(uint256 change, bool repay) external view returns (uint256) {
         uint256 cashPriorNew;
         uint256 totalBorrowsNew;
 
@@ -196,10 +196,10 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Returns the estimated per-block supply interest rate for this jToken after some change
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-sec supply interest rate for this jToken after some change
+     * @return The supply interest rate per sec, scaled by 1e18
      */
-    function estimateSupplyRatePerBlockAfterChange(uint256 change, bool repay) external view returns (uint256) {
+    function estimateSupplyRatePerSecondAfterChange(uint256 change, bool repay) external view returns (uint256) {
         uint256 cashPriorNew;
         uint256 totalBorrowsNew;
 
@@ -319,16 +319,16 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed block
-     *   up to the current block and writes new checkpoint to storage.
+     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     *   up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
-        /* Remember the initial block number */
-        uint256 currentBlockNumber = getBlockNumber();
-        uint256 accrualBlockNumberPrior = accrualBlockNumber;
+        /* Remember the initial block timestamp */
+        uint256 currentBlockTimestamp = getBlockTimestamp();
+        uint256 accrualBlockTimestampPrior = accrualBlockTimestamp;
 
         /* Short-circuit accumulating 0 interest */
-        if (accrualBlockNumberPrior == currentBlockNumber) {
+        if (accrualBlockTimestampPrior == currentBlockTimestamp) {
             return uint256(Error.NO_ERROR);
         }
 
@@ -342,19 +342,19 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 borrowRateMantissa = interestRateModel.getBorrowRate(cashPrior, borrowsPrior, reservesPrior);
         require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
 
-        /* Calculate the number of blocks elapsed since the last accrual */
-        uint256 blockDelta = sub_(currentBlockNumber, accrualBlockNumberPrior);
+        /* Calculate the number of seconds elapsed since the last accrual */
+        uint256 blockTimestamp = sub_(currentBlockTimestamp, accrualBlockTimestampPrior);
 
         /*
          * Calculate the interest accumulated into borrows and reserves and the new index:
-         *  simpleInterestFactor = borrowRate * blockDelta
+         *  simpleInterestFactor = borrowRate * blockTimestamp
          *  interestAccumulated = simpleInterestFactor * totalBorrows
          *  totalBorrowsNew = interestAccumulated + totalBorrows
          *  totalReservesNew = interestAccumulated * reserveFactor + totalReserves
          *  borrowIndexNew = simpleInterestFactor * borrowIndex + borrowIndex
          */
 
-        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockDelta);
+        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockTimestamp);
         uint256 interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
         uint256 totalBorrowsNew = add_(interestAccumulated, borrowsPrior);
         uint256 totalReservesNew = mul_ScalarTruncateAddUInt(
@@ -369,7 +369,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         // (No safe failures beyond this point)
 
         /* We write the previously calculated values into storage */
-        accrualBlockNumber = currentBlockNumber;
+        accrualBlockTimestamp = currentBlockTimestamp;
         borrowIndex = borrowIndexNew;
         totalBorrows = totalBorrowsNew;
         totalReserves = totalReservesNew;
@@ -480,8 +480,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return uint256(Error.NO_ERROR);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.BORROW_FRESHNESS_CHECK);
         }
 
@@ -587,8 +587,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return (uint256(Error.NO_ERROR), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REPAY_BORROW_FRESHNESS_CHECK), 0);
         }
 
@@ -703,13 +703,13 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.LIQUIDATE_JOETROLLER_REJECTION, allowed), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.LIQUIDATE_FRESHNESS_CHECK), 0);
         }
 
-        /* Verify jTokenCollateral market's block number equals current block number */
-        if (jTokenCollateral.accrualBlockNumber() != getBlockNumber()) {
+        /* Verify jTokenCollateral market's block timestamp equals current block timestamp */
+        if (jTokenCollateral.accrualBlockTimestamp() != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.LIQUIDATE_COLLATERAL_FRESHNESS_CHECK), 0);
         }
 
@@ -895,8 +895,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_RESERVE_FACTOR_ADMIN_CHECK);
         }
 
-        // Verify market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // Verify market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_RESERVE_FACTOR_FRESH_CHECK);
         }
 
@@ -943,8 +943,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.ADD_RESERVES_FRESH_CHECK), actualAddAmount);
         }
 
@@ -1004,8 +1004,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.REDUCE_RESERVES_ADMIN_CHECK);
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDUCE_RESERVES_FRESH_CHECK);
         }
 
@@ -1068,8 +1068,8 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_INTEREST_RATE_MODEL_OWNER_CHECK);
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_INTEREST_RATE_MODEL_FRESH_CHECK);
         }
 
@@ -1136,7 +1136,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current timestamp
      */
     function mintFresh(
         address minter,
@@ -1146,7 +1146,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User redeems jTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block
+     * @dev Assumes interest has already been accrued up to the current timestamp 
      */
     function redeemFresh(
         address payable redeemer,

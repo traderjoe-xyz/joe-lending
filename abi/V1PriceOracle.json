@@ -442,7 +442,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "numBlocksPerPeriod",
+    "name": "numSecondsPerPeriod",
     "outputs": [
       {
         "internalType": "uint256",

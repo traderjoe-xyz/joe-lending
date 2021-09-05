@@ -1400,18 +1400,18 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
             require(market.isListed == true, "joe market is not listed");
 
             if (joeSupplyState[rewardType][address(jToken)].index == 0 &&
-                joeSupplyState[rewardType][address(jToken)].block == 0) {
+                joeSupplyState[rewardType][address(jToken)].timestamp == 0) {
                 joeSupplyState[rewardType][address(jToken)] = JoeMarketState({
                     index: joeInitialIndex,
-                    block: safe32(getBlockNumber(), "block timestamp exceeds 32 bits")
+                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
             }
 
             if (joeBorrowState[rewardType][address(jToken)].index == 0 &&
-                joeBorrowState[rewardType][address(jToken)].block == 0) {
+                joeBorrowState[rewardType][address(jToken)].timestamp == 0) {
                 joeBorrowState[rewardType][address(jToken)] = JoeMarketState({
                     index: joeInitialIndex,
-                    block: safe32(getBlockNumber(), "block timestamp exceeds 32 bits")
+                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
             }
         }
@@ -1431,19 +1431,19 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         require(rewardType <= 1, "rewardType is invalid"); 
         JoeMarketState storage supplyState = joeSupplyState[rewardType][jToken];
         uint supplySpeed = joeSpeeds[rewardType][jToken];
-        uint blockNumber = getBlockNumber();
-        uint deltaBlocks = sub_(blockNumber, uint(supplyState.block));
-        if (deltaBlocks > 0 && supplySpeed > 0) {
+        uint blockTimestamp = getBlockTimestamp();
+        uint deltaTimestamps = sub_(blockTimestamp, uint(supplyState.timestamp));
+        if (deltaTimestamps > 0 && supplySpeed > 0) {
             uint supplyTokens = JToken(jToken).totalSupply();
-            uint joeAccrued = mul_(deltaBlocks, supplySpeed);
+            uint joeAccrued = mul_(deltaTimestamps, supplySpeed);
             Double memory ratio = supplyTokens > 0 ? fraction(joeAccrued, supplyTokens) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
             joeSupplyState[rewardType][jToken] = JoeMarketState({
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
-                block: safe32(blockNumber, "block timestamp exceeds 32 bits")
+                timestamp: safe32(blockTimestamp, "block timestamp exceeds 32 bits")
             });
-        } else if (deltaBlocks > 0) {
-            supplyState.block = safe32(blockNumber, "block timestamp exceeds 32 bits");
+        } else if (deltaTimestamps > 0) {
+            supplyState.timestamp = safe32(blockTimestamp, "block timestamp exceeds 32 bits");
         }
     }
 
@@ -1456,19 +1456,19 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         require(rewardType <= 1, "rewardType is invalid"); 
         JoeMarketState storage borrowState = joeBorrowState[rewardType][jToken];
         uint borrowSpeed = joeSpeeds[rewardType][jToken];
-        uint blockNumber = getBlockNumber();
-        uint deltaBlocks = sub_(blockNumber, uint(borrowState.block));
-        if (deltaBlocks > 0 && borrowSpeed > 0) {
+        uint blockTimestamp = getBlockTimestamp();
+        uint deltaTimestamps = sub_(blockTimestamp, uint(borrowState.timestamp));
+        if (deltaTimestamps > 0 && borrowSpeed > 0) {
             uint borrowAmount = div_(JToken(jToken).totalBorrows(), marketBorrowIndex);
-            uint joeAccrued = mul_(deltaBlocks, borrowSpeed);
+            uint joeAccrued = mul_(deltaTimestamps, borrowSpeed);
             Double memory ratio = borrowAmount > 0 ? fraction(joeAccrued, borrowAmount) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: borrowState.index}), ratio);
             joeBorrowState[rewardType][jToken] = JoeMarketState({
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
-                block: safe32(blockNumber, "block timestamp exceeds 32 bits")
+                timestamp: safe32(blockTimestamp, "block timestamp exceeds 32 bits")
             });
-        } else if (deltaBlocks > 0) {
-            borrowState.block = safe32(blockNumber, "block timestamp exceeds 32 bits");
+        } else if (deltaTimestamps > 0) {
+            borrowState.timestamp = safe32(blockTimestamp, "block timestamp exceeds 32 bits");
         }
     }
 
@@ -1672,7 +1672,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         return allMarkets;
     }
 
-    function getBlockNumber() public view returns (uint256) {
+    function getBlockTimestamp() public view returns (uint256) {
         return block.timestamp;
     }
 }

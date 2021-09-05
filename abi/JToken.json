@@ -528,7 +528,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "accrualBlockNumber",
+    "name": "accrualBlockTimestamp",
     "outputs": [
       {
         "internalType": "uint256",
@@ -724,7 +724,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "borrowRatePerBlock",
+    "name": "borrowRatePerSecond",
     "outputs": [
       {
         "internalType": "uint256",
@@ -765,7 +765,7 @@
         "type": "bool"
       }
     ],
-    "name": "estimateBorrowRatePerBlockAfterChange",
+    "name": "estimateBorrowRatePerSecondAfterChange",
     "outputs": [
       {
         "internalType": "uint256",
@@ -791,7 +791,7 @@
         "type": "bool"
       }
     ],
-    "name": "estimateSupplyRatePerBlockAfterChange",
+    "name": "estimateSupplyRatePerSecondAfterChange",
     "outputs": [
       {
         "internalType": "uint256",
@@ -1048,7 +1048,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "supplyRatePerBlock",
+    "name": "supplyRatePerSecond",
     "outputs": [
       {
         "internalType": "uint256",

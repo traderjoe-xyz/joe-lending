@@ -269,7 +269,7 @@
       },
       {
         "internalType": "uint32",
-        "name": "block",
+        "name": "timestamp",
         "type": "uint32"
       }
     ],
@@ -388,7 +388,7 @@
       },
       {
         "internalType": "uint32",
-        "name": "block",
+        "name": "timestamp",
         "type": "uint32"
       }
     ],
