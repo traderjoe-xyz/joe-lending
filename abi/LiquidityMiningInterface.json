@@ -2,7 +2,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "comptroller",
+    "name": "joetroller",
     "outputs": [
       {
         "internalType": "address",
@@ -19,7 +19,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "jToken",
         "type": "address"
       },
       {
@@ -39,7 +39,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "cToken",
+        "name": "jToken",
         "type": "address"
       },
       {

@@ -3,8 +3,8 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
-import "./CErc20.sol";
-import "./CToken.sol";
+import "./JErc20.sol";
+import "./JToken.sol";
 import "./PriceOracle/PriceOracle.sol";
 import "./Exponential.sol";
 import "./EIP20Interface.sol";
@@ -106,15 +106,15 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
     }
 
     /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @notice Get the underlying price of a listed jToken asset
+     * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
-        address cTokenAddress = address(cToken);
+    function getUnderlyingPrice(JToken jToken) public view returns (uint256) {
+        address jTokenAddress = address(jToken);
 
-        uint256 chainLinkPrice = getPriceFromChainlink(cTokenAddress);
-        uint256 bandPrice = getPriceFromBAND(cTokenAddress);
+        uint256 chainLinkPrice = getPriceFromChainlink(jTokenAddress);
+        uint256 bandPrice = getPriceFromBAND(jTokenAddress);
         if (chainLinkPrice != 0 && bandPrice != 0) {
             checkPriceDiff(chainLinkPrice, bandPrice);
 
@@ -128,7 +128,7 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
             return bandPrice;
         }
 
-        return getPriceFromV1(cTokenAddress);
+        return getPriceFromV1(jTokenAddress);
     }
 
     /*** Internal fucntions ***/
@@ -149,12 +149,12 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
     }
 
     /**
-     * @notice Try to get the underlying price of a cToken from Chain Link.
-     * @param cTokenAddress The token to get the underlying price of
+     * @notice Try to get the underlying price of a jToken from Chain Link.
+     * @param jTokenAddress The token to get the underlying price of
      * @return The price. Return 0 if the aggregator is not set.
      */
-    function getPriceFromChainlink(address cTokenAddress) internal view returns (uint256) {
-        AggregatorV3Interface aggregator = aggregators[cTokenAddress];
+    function getPriceFromChainlink(address jTokenAddress) internal view returns (uint256) {
+        AggregatorV3Interface aggregator = aggregators[jTokenAddress];
         if (address(aggregator) != address(0)) {
             (, int256 answer, , , ) = aggregator.latestRoundData();
 
@@ -165,22 +165,22 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
 
             // Extend the decimals to 1e18.
             uint256 price = mul_(uint256(answer), 10**(18 - uint256(aggregator.decimals())));
-            return getNormalizedPrice(price, cTokenAddress);
+            return getNormalizedPrice(price, jTokenAddress);
         }
         return 0;
     }
 
     /**
-     * @notice Try to get the underlying price of a cToken from BAND protocol.
-     * @param cTokenAddress The token to get the underlying price of
+     * @notice Try to get the underlying price of a jToken from BAND protocol.
+     * @param jTokenAddress The token to get the underlying price of
      * @return The price. Return 0 if the undelrying sumbol is not set.
      */
-    function getPriceFromBAND(address cTokenAddress) internal view returns (uint256) {
-        bytes memory symbol = bytes(underlyingSymbols[cTokenAddress]);
+    function getPriceFromBAND(address jTokenAddress) internal view returns (uint256) {
+        bytes memory symbol = bytes(underlyingSymbols[jTokenAddress]);
         if (symbol.length != 0) {
             IStdReference.ReferenceData memory data = ref.getReferenceData(string(symbol), QUOTE_SYMBOL);
             // Price from BAND is always 1e18 base.
-            return getNormalizedPrice(data.rate, cTokenAddress);
+            return getNormalizedPrice(data.rate, jTokenAddress);
         }
         return 0;
     }
@@ -188,21 +188,21 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
     /**
      * @notice Normalize the price according to the underlying decimals.
      * @param price The original price
-     * @param cTokenAddress The cToken address
+     * @param jTokenAddress The jToken address
      * @return The normalized price.
      */
-    function getNormalizedPrice(uint256 price, address cTokenAddress) internal view returns (uint256) {
-        uint256 underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+    function getNormalizedPrice(uint256 price, address jTokenAddress) internal view returns (uint256) {
+        uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
         return mul_(price, 10**(18 - underlyingDecimals));
     }
 
     /**
      * @notice Get price from v1 price oracle
-     * @param cTokenAddress The token to get the underlying price of
+     * @param jTokenAddress The token to get the underlying price of
      * @return The underlying price.
      */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint256) {
-        address underlying = CErc20(cTokenAddress).underlying();
+    function getPriceFromV1(address jTokenAddress) internal view returns (uint256) {
+        address underlying = JErc20(jTokenAddress).underlying();
         return v1PriceOracle.assetPrices(underlying);
     }
 
@@ -210,8 +210,8 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
 
     event AdminUpdated(address admin);
     event MaxPriceDiffUpdated(uint256 maxDiff);
-    event AggregatorUpdated(address cTokenAddress, address source);
-    event UnderlyingSymbolUpdated(address cTokenAddress, string symbol);
+    event AggregatorUpdated(address jTokenAddress, address source);
+    event UnderlyingSymbolUpdated(address jTokenAddress, string symbol);
 
     function _setAdmin(address _admin) external {
         require(msg.sender == admin, "only the admin may set the new admin");
@@ -225,19 +225,19 @@ contract PriceOracleProxyFTM is PriceOracle, Exponential {
         emit MaxPriceDiffUpdated(_maxPriceDiff);
     }
 
-    function _setAggregators(address[] calldata cTokenAddresses, address[] calldata sources) external {
+    function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin, "only the admin may set the aggregators");
-        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
-            aggregators[cTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
-            emit AggregatorUpdated(cTokenAddresses[i], sources[i]);
+        for (uint256 i = 0; i < jTokenAddresses.length; i++) {
+            aggregators[jTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
+            emit AggregatorUpdated(jTokenAddresses[i], sources[i]);
         }
     }
 
-    function _setUnderlyingSymbols(address[] calldata cTokenAddresses, string[] calldata symbols) external {
+    function _setUnderlyingSymbols(address[] calldata jTokenAddresses, string[] calldata symbols) external {
         require(msg.sender == admin, "only the admin may set the undelrying symbols");
-        for (uint256 i = 0; i < cTokenAddresses.length; i++) {
-            underlyingSymbols[cTokenAddresses[i]] = symbols[i];
-            emit UnderlyingSymbolUpdated(cTokenAddresses[i], symbols[i]);
+        for (uint256 i = 0; i < jTokenAddresses.length; i++) {
+            underlyingSymbols[jTokenAddresses[i]] = symbols[i];
+            emit UnderlyingSymbolUpdated(jTokenAddresses[i], symbols[i]);
         }
     }
 }

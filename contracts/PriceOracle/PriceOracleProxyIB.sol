@@ -10,8 +10,8 @@ import "./interfaces/CurveTokenInterface.sol";
 import "./interfaces/FeedRegistryInterface.sol";
 import "./interfaces/V1PriceOracleInterface.sol";
 import "./interfaces/YVaultTokenInterface.sol";
-import "../CErc20.sol";
-import "../CToken.sol";
+import "../JErc20.sol";
+import "../JToken.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
 
@@ -86,12 +86,12 @@ contract PriceOracleProxyIB is PriceOracle, Exponential, Denominations {
     }
 
     /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @notice Get the underlying price of a listed jToken asset
+     * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint256) {
-        address underlying = CErc20(address(cToken)).underlying();
+    function getUnderlyingPrice(JToken jToken) public view returns (uint256) {
+        address underlying = JErc20(address(jToken)).underlying();
 
         // Handle y3Crv.
         if (underlying == y3CRVAddress) {

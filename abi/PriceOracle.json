@@ -3,8 +3,8 @@
     "constant": true,
     "inputs": [
       {
-        "internalType": "contract CToken",
-        "name": "cToken",
+        "internalType": "contract JToken",
+        "name": "jToken",
         "type": "address"
       }
     ],

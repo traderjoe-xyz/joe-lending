@@ -3,9 +3,9 @@
 pragma solidity ^0.5.16;
 
 contract LiquidityMiningInterface {
-    function comptroller() external view returns (address);
+    function joetroller() external view returns (address);
 
-    function updateSupplyIndex(address cToken, address[] calldata accounts) external;
+    function updateSupplyIndex(address jToken, address[] calldata accounts) external;
 
-    function updateBorrowIndex(address cToken, address[] calldata accounts) external;
+    function updateBorrowIndex(address jToken, address[] calldata accounts) external;
 }

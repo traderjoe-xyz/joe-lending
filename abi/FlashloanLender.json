@@ -3,7 +3,7 @@
     "inputs": [
       {
         "internalType": "address payable",
-        "name": "_comptroller",
+        "name": "_joetroller",
         "type": "address"
       },
       {
@@ -15,21 +15,6 @@
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "constructor"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "comptroller",
-    "outputs": [
-      {
-        "internalType": "address payable",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
   },
   {
     "constant": true,
@@ -95,6 +80,21 @@
   },
   {
     "constant": true,
+    "inputs": [],
+    "name": "joetroller",
+    "outputs": [
+      {
+        "internalType": "address payable",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
     "inputs": [
       {
         "internalType": "address",
@@ -133,8 +133,8 @@
     "constant": false,
     "inputs": [
       {
-        "internalType": "contract CToken[]",
-        "name": "cTokens",
+        "internalType": "contract JToken[]",
+        "name": "jTokens",
         "type": "address[]"
       }
     ],
@@ -159,7 +159,7 @@
         "type": "address"
       }
     ],
-    "name": "underlyingToCToken",
+    "name": "underlyingToJToken",
     "outputs": [
       {
         "internalType": "address",
@@ -175,8 +175,8 @@
     "constant": false,
     "inputs": [
       {
-        "internalType": "contract CToken[]",
-        "name": "cTokens",
+        "internalType": "contract JToken[]",
+        "name": "jTokens",
         "type": "address[]"
       }
     ],

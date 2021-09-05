@@ -13,7 +13,7 @@
       },
       {
         "internalType": "address",
-        "name": "cEthAddress_",
+        "name": "jAvaxAddress_",
         "type": "address"
       },
       {
@@ -641,22 +641,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "cEthAddress",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "crXSushiAddress",
+    "name": "crXJoeAddress",
     "outputs": [
       {
         "internalType": "address",
@@ -703,8 +688,8 @@
     "constant": true,
     "inputs": [
       {
-        "internalType": "contract CToken",
-        "name": "cToken",
+        "internalType": "contract JToken",
+        "name": "jToken",
         "type": "address"
       }
     ],
@@ -774,10 +759,10 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "registry",
+    "name": "jAvaxAddress",
     "outputs": [
       {
-        "internalType": "contract FeedRegistryInterface",
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -789,10 +774,25 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "sushiAddress",
+    "name": "joeAddress",
     "outputs": [
       {
         "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "registry",
+    "outputs": [
+      {
+        "internalType": "contract FeedRegistryInterface",
         "name": "",
         "type": "address"
       }
@@ -849,7 +849,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "xSushiExRateAddress",
+    "name": "xJoeExRateAddress",
     "outputs": [
       {
         "internalType": "address",

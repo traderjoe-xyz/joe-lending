@@ -2,8 +2,8 @@
 
 pragma solidity ^0.5.16;
 
-import "../CErc20.sol";
-import "../CToken.sol";
+import "../JErc20.sol";
+import "../JToken.sol";
 import "./PriceOracle.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
@@ -91,25 +91,25 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     }
 
     /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @notice Get the underlying price of a listed jToken asset
+     * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint) {
-        address cTokenAddress = address(cToken);
+    function getUnderlyingPrice(JToken jToken) public view returns (uint) {
+        address jTokenAddress = address(jToken);
 
-        AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
+        AggregatorInfo memory aggregatorInfo = aggregators[jTokenAddress];
         if (address(aggregatorInfo.source) != address(0)) {
             uint price = getPriceFromChainlink(aggregatorInfo.source);
             if (aggregatorInfo.base == AggregatorBase.ETH) {
                 // Convert the price to USD based if it's ETH based.
                 price = mul_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
             }
-            uint underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
+            uint underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
             return mul_(price, 10**(18 - underlyingDecimals));
         }
 
-        return getPriceFromV1(cTokenAddress);
+        return getPriceFromV1(jTokenAddress);
     }
 
     /*** Internal fucntions ***/
@@ -129,17 +129,17 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
 
     /**
      * @notice Get price from v1 price oracle
-     * @param cTokenAddress The CToken address
+     * @param jTokenAddress The JToken address
      * @return The price
      */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
-        address underlying = CErc20(cTokenAddress).underlying();
+    function getPriceFromV1(address jTokenAddress) internal view returns (uint) {
+        address underlying = JErc20(jTokenAddress).underlying();
         return v1PriceOracle.assetPrices(underlying);
     }
 
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(address jTokenAddress, address source, AggregatorBase base);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
 
@@ -164,20 +164,20 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     }
 
     /**
-     * @notice Set ChainLink aggregators for multiple cTokens
-     * @param cTokenAddresses The list of cTokens
+     * @notice Set ChainLink aggregators for multiple jTokens
+     * @param jTokenAddresses The list of jTokens
      * @param sources The list of ChainLink aggregator sources
      * @param bases The list of ChainLink aggregator bases
      */
-    function _setAggregators(address[] calldata cTokenAddresses, address[] calldata sources, AggregatorBase[] calldata bases) external {
+    function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources, AggregatorBase[] calldata bases) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
-        for (uint i = 0; i < cTokenAddresses.length; i++) {
+        require(jTokenAddresses.length == sources.length && jTokenAddresses.length == bases.length, "mismatched data");
+        for (uint i = 0; i < jTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
             }
-            aggregators[cTokenAddresses[i]] = AggregatorInfo({source: AggregatorV3Interface(sources[i]), base: bases[i]});
-            emit AggregatorUpdated(cTokenAddresses[i], sources[i], bases[i]);
+            aggregators[jTokenAddresses[i]] = AggregatorInfo({source: AggregatorV3Interface(sources[i]), base: bases[i]});
+            emit AggregatorUpdated(jTokenAddresses[i], sources[i], bases[i]);
         }
     }
 }

@@ -40,7 +40,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "cTokenAddress",
+        "name": "jTokenAddress",
         "type": "address"
       },
       {
@@ -72,7 +72,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "cTokenAddress",
+        "name": "jTokenAddress",
         "type": "address"
       },
       {
@@ -120,7 +120,7 @@
     "inputs": [
       {
         "internalType": "address[]",
-        "name": "cTokenAddresses",
+        "name": "jTokenAddresses",
         "type": "address[]"
       },
       {
@@ -155,7 +155,7 @@
     "inputs": [
       {
         "internalType": "address[]",
-        "name": "cTokenAddresses",
+        "name": "jTokenAddresses",
         "type": "address[]"
       },
       {
@@ -210,8 +210,8 @@
     "constant": true,
     "inputs": [
       {
-        "internalType": "contract CToken",
-        "name": "cToken",
+        "internalType": "contract JToken",
+        "name": "jToken",
         "type": "address"
       }
     ],

@@ -201,7 +201,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "comptrollerImplementation",
+    "name": "joetrollerImplementation",
     "outputs": [
       {
         "internalType": "address",
@@ -231,7 +231,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "pendingComptrollerImplementation",
+    "name": "pendingJoetrollerImplementation",
     "outputs": [
       {
         "internalType": "address",
