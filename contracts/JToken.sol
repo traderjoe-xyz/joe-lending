@@ -343,18 +343,18 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
 
         /* Calculate the number of seconds elapsed since the last accrual */
-        uint256 blockTimestamp = sub_(currentBlockTimestamp, accrualBlockTimestampPrior);
+        uint256 timestampDelta = sub_(currentBlockTimestamp, accrualBlockTimestampPrior);
 
         /*
          * Calculate the interest accumulated into borrows and reserves and the new index:
-         *  simpleInterestFactor = borrowRate * blockTimestamp
+         *  simpleInterestFactor = borrowRate * timestampDelta
          *  interestAccumulated = simpleInterestFactor * totalBorrows
          *  totalBorrowsNew = interestAccumulated + totalBorrows
          *  totalReservesNew = interestAccumulated * reserveFactor + totalReserves
          *  borrowIndexNew = simpleInterestFactor * borrowIndex + borrowIndex
          */
 
-        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockTimestamp);
+        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), timestampDelta);
         uint256 interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
         uint256 totalBorrowsNew = add_(interestAccumulated, borrowsPrior);
         uint256 totalReservesNew = mul_ScalarTruncateAddUInt(
