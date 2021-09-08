@@ -1,4 +1,4 @@
-module.exports = async function({ getNamedAccounts, deployments }) {
+module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
 
   const { deployer } = await getNamedAccounts();
@@ -11,40 +11,40 @@ module.exports = async function({ getNamedAccounts, deployments }) {
 
   const unitroller = await ethers.getContract("Unitroller");
 
-  await deploy("Comptroller", {
+  await deploy("Joetroller", {
     from: deployer,
     log: true,
     deterministicDeployment: false,
   });
 
-  const Comptroller = await ethers.getContract("Comptroller");
-  console.log("Setting Comptroller as implementation of Unitroller...");
+  const Joetroller = await ethers.getContract("Joetroller");
+  console.log("Setting Joetroller as implementation of Unitroller...");
   const deployment = await unitroller._setPendingImplementation(
-    Comptroller.address,
+    Joetroller.address,
     {
       gasLimit: 4000000,
     }
   );
   await deployment.receipt;
-  await Comptroller._become(unitroller.address, { gasLimit: 4000000 });
+  await Joetroller._become(unitroller.address, { gasLimit: 4000000 });
   await deployment.receipt;
 
-  const comptroller = Comptroller.attach(unitroller.address);
+  const joetroller = Joetroller.attach(unitroller.address);
 
   const closeFactor = "0.5";
   console.log("Setting close factor of ", closeFactor);
-  await comptroller._setCloseFactor(ethers.utils.parseEther(closeFactor));
+  await joetroller._setCloseFactor(ethers.utils.parseEther(closeFactor));
 
   const liquidationIncentive = "1.08";
   console.log("Setting liquidation incentive of ", liquidationIncentive);
-  await comptroller._setLiquidationIncentive(
+  await joetroller._setLiquidationIncentive(
     ethers.utils.parseEther(liquidationIncentive)
   );
 
   const priceOracle = await ethers.getContract("PriceOracleProxyUSD");
   console.log("Setting price oracle ", priceOracle.address);
-  await comptroller._setPriceOracle(priceOracle.address);
+  await joetroller._setPriceOracle(priceOracle.address);
 };
 
-module.exports.tags = ["Comptroller"];
+module.exports.tags = ["Joetroller"];
 module.exports.dependencies = ["Oracle"];

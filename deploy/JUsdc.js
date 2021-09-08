@@ -1,31 +1,31 @@
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
 
-  const { deployer, dev, treasury } = await getNamedAccounts();
-  const Comptroller = await ethers.getContract("Comptroller");
+  const { deployer } = await getNamedAccounts();
+  const Joetroller = await ethers.getContract("Joetroller");
   const unitroller = await ethers.getContract("Unitroller");
-  const comptroller = Comptroller.attach(unitroller.address);
+  const joetroller = Joetroller.attach(unitroller.address);
 
-  await deploy("CUsdcDelegate", {
+  await deploy("JUsdcDelegate", {
     from: deployer,
     log: true,
     deterministicDeployment: false,
-    contract: "CErc20Delegate",
+    contract: "JErc20Delegate",
   });
 
-  const cUsdcDelegate = await ethers.getContract("CUsdcDelegate");
+  const cUsdcDelegate = await ethers.getContract("JUsdcDelegate");
 
   const interestRateModel = await ethers.getContract("TripleSlopeRateModel");
 
-  const deployment = await deploy("CUsdcDelegator", {
+  const deployment = await deploy("JUsdcDelegator", {
     from: deployer,
     args: [
       "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b", // USDC address on Rinkeby
-      comptroller.address,
+      joetroller.address,
       interestRateModel.address,
       ethers.utils.parseUnits("2", 14).toString(),
-      "Compound USDC Token",
-      "cUSDC",
+      "Banker Joe USDC Token",
+      "jUSDC",
       "8",
       deployer,
       cUsdcDelegate.address,
@@ -33,20 +33,20 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     ],
     log: true,
     deterministicDeployment: false,
-    contract: "CErc20Delegator",
+    contract: "JErc20Delegator",
     gasLimit: 4000000,
   });
   await deployment.receipt;
-  const cUsdcDelegator = await ethers.getContract("CUsdcDelegator");
+  const cUsdcDelegator = await ethers.getContract("JUsdcDelegator");
 
-  console.log("Supporting cUSDC market...");
-  await comptroller._supportMarket(cUsdcDelegator.address, 0, {
+  console.log("Supporting jUSDC market...");
+  await joetroller._supportMarket(cUsdcDelegator.address, 0, {
     gasLimit: 4000000,
   });
 
   const collateralFactor = "0.75";
   console.log("Setting collateral factor ", collateralFactor);
-  await comptroller._setCollateralFactor(
+  await joetroller._setCollateralFactor(
     cUsdcDelegator.address,
     ethers.utils.parseEther(collateralFactor),
     { gasLimit: 4000000 }
@@ -59,5 +59,5 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   );
 };
 
-module.exports.tags = ["cUSDC"];
-// module.exports.dependencies = ["Comptroller", "TripleSlopeRateModel"];
+module.exports.tags = ["jUSDC"];
+module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];

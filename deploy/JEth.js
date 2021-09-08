@@ -1,29 +1,29 @@
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
 
-  const { deployer, dev, treasury } = await getNamedAccounts();
-  const Comptroller = await ethers.getContract("Comptroller");
+  const { deployer } = await getNamedAccounts();
+  const Joetroller = await ethers.getContract("Joetroller");
   const unitroller = await ethers.getContract("Unitroller");
-  const comptroller = Comptroller.attach(unitroller.address);
+  const joetroller = Joetroller.attach(unitroller.address);
 
   const interestRateModel = await ethers.getContract("TripleSlopeRateModel");
 
-  await deploy("CWrappedNativeDelegate", {
+  await deploy("JWrappedNativeDelegate", {
     from: deployer,
     log: true,
     deterministicDeployment: false,
   });
-  const cEthDelegate = await ethers.getContract("CWrappedNativeDelegate");
+  const cEthDelegate = await ethers.getContract("JWrappedNativeDelegate");
 
-  const deployment = await deploy("CWrappedNativeDelegator", {
+  const deployment = await deploy("JWrappedNativeDelegator", {
     from: deployer,
     args: [
       "0xc778417e063141139fce010982780140aa0cd5ab", // WETH on Rinkeby
-      comptroller.address,
+      joetroller.address,
       interestRateModel.address,
       ethers.utils.parseUnits("2", 26).toString(),
-      "Compound Ether",
-      "cETH",
+      "Banker Joe Ether",
+      "jETH",
       8,
       deployer,
       cEthDelegate.address,
@@ -33,16 +33,16 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     deterministicDeployment: false,
   });
   await deployment.receipt;
-  const cEthDelegator = await ethers.getContract("CWrappedNativeDelegator");
+  const cEthDelegator = await ethers.getContract("JWrappedNativeDelegator");
 
-  console.log("Supporting cETH market...");
-  await comptroller._supportMarket(cEthDelegator.address, 2, {
+  console.log("Supporting jETH market...");
+  await joetroller._supportMarket(cEthDelegator.address, 2, {
     gasLimit: 4000000,
   });
 
   const collateralFactor = "0.75";
   console.log("Setting collateral factor ", collateralFactor);
-  await comptroller._setCollateralFactor(
+  await joetroller._setCollateralFactor(
     cEthDelegator.address,
     ethers.utils.parseEther(collateralFactor),
     {
@@ -55,5 +55,5 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   await cEthDelegator._setReserveFactor(ethers.utils.parseEther(reserveFactor));
 };
 
-module.exports.tags = ["cETH"];
-// module.exports.dependencies = ["Comptroller", "TripleSlopeRateModel"];
+module.exports.tags = ["jETH"];
+module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];
