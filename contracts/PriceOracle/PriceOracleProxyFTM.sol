@@ -3,11 +3,11 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
-import "./JErc20.sol";
-import "./JToken.sol";
-import "./PriceOracle/PriceOracle.sol";
-import "./Exponential.sol";
-import "./EIP20Interface.sol";
+import "../JErc20.sol";
+import "../JToken.sol";
+import "./PriceOracle.sol";
+import "../Exponential.sol";
+import "../EIP20Interface.sol";
 
 interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint256);
