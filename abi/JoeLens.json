@@ -1,0 +1,488 @@
+[
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract Joetroller",
+        "name": "joetroller",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getAccountLimits",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "contract JToken[]",
+            "name": "markets",
+            "type": "address[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidity",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "shortfall",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct JoeLens.AccountLimits",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JJTokenInterface[]",
+        "name": "jTokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address",
+        "name": "joe",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getClaimableJoeRewards",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JToken",
+        "name": "jToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address payable",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "jTokenBalances",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "jToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balanceOf",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowBalanceCurrent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balanceOfUnderlying",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAllowance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "collateralEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nativeTokenBalance",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct JoeLens.JTokenBalances",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JToken[]",
+        "name": "jTokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "address payable",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "jTokenBalancesAll",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "jToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balanceOf",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowBalanceCurrent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balanceOfUnderlying",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "tokenAllowance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "collateralEnabled",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralBalance",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nativeTokenBalance",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct JoeLens.JTokenBalances[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JToken",
+        "name": "jToken",
+        "type": "address"
+      }
+    ],
+    "name": "jTokenMetadata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "jToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "exchangeRateCurrent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "supplyRatePerSecond",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowRatePerSecond",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reserveFactorMantissa",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrows",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalReserves",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCash",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCollateralTokens",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isListed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralFactorMantissa",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "underlyingAssetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "jTokenDecimals",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingDecimals",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum JoetrollerV1Storage.Version",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralCap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingPrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "supplyPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "borrowPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "supplyCap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowCap",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct JoeLens.JTokenMetadata",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JToken[]",
+        "name": "jTokens",
+        "type": "address[]"
+      }
+    ],
+    "name": "jTokenMetadataAll",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "jToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "exchangeRateCurrent",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "supplyRatePerSecond",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowRatePerSecond",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reserveFactorMantissa",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrows",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalReserves",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCash",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCollateralTokens",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isListed",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralFactorMantissa",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "underlyingAssetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "jTokenDecimals",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingDecimals",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum JoetrollerV1Storage.Version",
+            "name": "version",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "collateralCap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "underlyingPrice",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "supplyPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "borrowPaused",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "supplyCap",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowCap",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct JoeLens.JTokenMetadata[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -9,7 +9,6 @@ import "./Exponential.sol";
 import "./PriceOracle/PriceOracle.sol";
 import "./JoetrollerInterface.sol";
 import "./JoetrollerStorage.sol";
-import "./LiquidityMiningInterface.sol";
 import "./Unitroller.sol";
 
 /**
@@ -43,9 +42,6 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
 
     /// @notice Emitted when pause guardian is changed
     event NewPauseGuardian(address oldPauseGuardian, address newPauseGuardian);
-
-    /// @notice Emitted when liquidity mining module is changed
-    event NewLiquidityMining(address oldLiquidityMining, address newLiquidityMining);
 
     /// @notice Emitted when an action is paused globally
     event ActionPaused(string action, bool pauseState);
@@ -1286,25 +1282,6 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         emit NewPauseGuardian(oldPauseGuardian, pauseGuardian);
 
         return uint256(Error.NO_ERROR);
-    }
-
-    /**
-     * @notice Admin function to set the liquidity mining module address
-     * @dev Removing the liquidity mining module address could cause the inconsistency in the LM module.
-     * @param newLiquidityMining The address of the new liquidity mining module
-     */
-    function _setLiquidityMining(address newLiquidityMining) external {
-        require(msg.sender == admin, "only admin can set liquidity mining module");
-        require(LiquidityMiningInterface(newLiquidityMining).joetroller() == address(this), "mismatch joetroller");
-
-        // Save current value for inclusion in log
-        address oldLiquidityMining = liquidityMining;
-
-        // Store pauseGuardian with value newLiquidityMining
-        liquidityMining = newLiquidityMining;
-
-        // Emit NewLiquidityMining(OldLiquidityMining, NewLiquidityMining)
-        emit NewLiquidityMining(oldLiquidityMining, liquidityMining);
     }
 
     function _setMintPaused(JToken jToken, bool state) public returns (bool) {
