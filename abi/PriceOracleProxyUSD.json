@@ -5,16 +5,6 @@
         "internalType": "address",
         "name": "admin_",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "v1PriceOracle_",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "ethUsdAggregator_",
-        "type": "address"
       }
     ],
     "payable": false,
@@ -35,12 +25,6 @@
         "internalType": "address",
         "name": "source",
         "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum PriceOracleProxyUSD.AggregatorBase",
-        "name": "base",
-        "type": "uint8"
       }
     ],
     "name": "AggregatorUpdated",
@@ -99,11 +83,6 @@
         "internalType": "address[]",
         "name": "sources",
         "type": "address[]"
-      },
-      {
-        "internalType": "enum PriceOracleProxyUSD.AggregatorBase[]",
-        "name": "bases",
-        "type": "uint8[]"
       }
     ],
     "name": "_setAggregators",
@@ -122,6 +101,26 @@
       }
     ],
     "name": "_setGuardian",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "contract JToken",
+        "name": "jToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "underlyingPriceMantissa",
+        "type": "uint256"
+      }
+    ],
+    "name": "_setUnderlyingPrice",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -152,47 +151,6 @@
       }
     ],
     "name": "aggregators",
-    "outputs": [
-      {
-        "internalType": "contract AggregatorV3Interface",
-        "name": "source",
-        "type": "address"
-      },
-      {
-        "internalType": "enum PriceOracleProxyUSD.AggregatorBase",
-        "name": "base",
-        "type": "uint8"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "curveSwap",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "ethUsdAggregator",
     "outputs": [
       {
         "internalType": "contract AggregatorV3Interface",
@@ -241,39 +199,23 @@
     "type": "function"
   },
   {
-    "constant": true,
-    "inputs": [],
-    "name": "v1PriceOracle",
-    "outputs": [
-      {
-        "internalType": "contract V1PriceOracleInterface",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
+    "constant": false,
     "inputs": [
       {
         "internalType": "address",
-        "name": "",
+        "name": "asset",
         "type": "address"
-      }
-    ],
-    "name": "yVaults",
-    "outputs": [
+      },
       {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "price",
+        "type": "uint256"
       }
     ],
+    "name": "setDirectPrice",
+    "outputs": [],
     "payable": false,
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

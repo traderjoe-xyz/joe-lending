@@ -8,18 +8,6 @@ import "./PriceOracle.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
 
-interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint);
-}
-
-interface CurveSwapInterface {
-    function get_virtual_price() external view returns (uint256);
-}
-
-interface YVaultInterface {
-    function getPricePerFullShare() external view returns (uint256);
-}
-
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
     function description() external view returns (string memory);
@@ -46,11 +34,9 @@ interface AggregatorV3Interface {
 }
 
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
-    /// @notice ChainLink aggregator base, currently support USD and ETH
-    enum AggregatorBase {
-        USD,
-        ETH
-    }
+
+    /// @notice Fallback price feed - not used
+    mapping(address => uint256) internal prices;
 
     /// @notice Admin address
     address public admin;
@@ -58,36 +44,14 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     /// @notice Guardian address
     address public guardian;
 
-    struct AggregatorInfo {
-        /// @notice The source address of the aggregator
-        AggregatorV3Interface source;
-
-        /// @notice The aggregator base
-        AggregatorBase base;
-    }
-
     /// @notice Chainlink Aggregators
-    mapping(address => AggregatorInfo) public aggregators;
-
-    /// @notice Mapping of crToken to y-vault token
-    mapping(address => address) public yVaults;
-
-    /// @notice Mapping of crToken to curve swap
-    mapping(address => address) public curveSwap;
-
-    /// @notice The v1 price oracle, maintain by CREAM
-    V1PriceOracleInterface public v1PriceOracle;
-
-    AggregatorV3Interface public ethUsdAggregator;
+    mapping(address => AggregatorV3Interface) public aggregators;
 
     /**
      * @param admin_ The address of admin to set aggregators
-     * @param v1PriceOracle_ The v1 price oracle
      */
-    constructor(address admin_, address v1PriceOracle_, address ethUsdAggregator_) public {
+    constructor(address admin_) public {
         admin = admin_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
-        ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
     }
 
     /**
@@ -98,18 +62,16 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     function getUnderlyingPrice(JToken jToken) public view returns (uint) {
         address jTokenAddress = address(jToken);
 
-        AggregatorInfo memory aggregatorInfo = aggregators[jTokenAddress];
-        if (address(aggregatorInfo.source) != address(0)) {
-            uint price = getPriceFromChainlink(aggregatorInfo.source);
-            if (aggregatorInfo.base == AggregatorBase.ETH) {
-                // Convert the price to USD based if it's ETH based.
-                price = mul_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
-            }
+        AggregatorV3Interface aggregator = aggregators[jTokenAddress];
+        if (address(aggregator) != address(0)) {
+            uint price = getPriceFromChainlink(aggregator);
             uint underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
             return mul_(price, 10**(18 - underlyingDecimals));
         }
 
-        return getPriceFromV1(jTokenAddress);
+        address asset = address(JErc20(jTokenAddress).underlying());
+
+        return prices[asset];
     }
 
     /*** Internal fucntions ***/
@@ -127,19 +89,9 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
         return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
     }
 
-    /**
-     * @notice Get price from v1 price oracle
-     * @param jTokenAddress The JToken address
-     * @return The price
-     */
-    function getPriceFromV1(address jTokenAddress) internal view returns (uint) {
-        address underlying = JErc20(jTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
-    }
-
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address jTokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(address jTokenAddress, address source);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
 
@@ -167,17 +119,37 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @notice Set ChainLink aggregators for multiple jTokens
      * @param jTokenAddresses The list of jTokens
      * @param sources The list of ChainLink aggregator sources
-     * @param bases The list of ChainLink aggregator bases
      */
-    function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources, AggregatorBase[] calldata bases) external {
+    function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(jTokenAddresses.length == sources.length && jTokenAddresses.length == bases.length, "mismatched data");
+        require(jTokenAddresses.length == sources.length, "mismatched data");
         for (uint i = 0; i < jTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
             }
-            aggregators[jTokenAddresses[i]] = AggregatorInfo({source: AggregatorV3Interface(sources[i]), base: bases[i]});
-            emit AggregatorUpdated(jTokenAddresses[i], sources[i], bases[i]);
+            aggregators[jTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
+            emit AggregatorUpdated(jTokenAddresses[i], sources[i]);
         }
+    }
+
+    /**
+     * @notice Set the price of underlying asset
+     * @param jToken The jToken to get underlying asset from
+     * @param underlyingPriceMantissa The new price for the underling asset
+     */
+    function _setUnderlyingPrice(JToken jToken, uint underlyingPriceMantissa) external {
+        require(msg.sender == admin, "only the admin may set the underlying price"); 
+        address asset = address(JErc20(address(jToken)).underlying());
+        prices[asset] = underlyingPriceMantissa;
+    }
+
+    /**
+     * @notice Set the price of the underlying asset directly
+     * @param asset The address of the underlying asset
+     * @param price The new price of the asset
+     */
+    function setDirectPrice(address asset, uint price) external {
+        require(msg.sender == admin, "only the admin may set the direct price");
+        prices[asset] = price;
     }
 }
