@@ -100,9 +100,7 @@ contract JoeLens is Exponential {
     }
 
     function jTokenMetadata(JToken jToken) public returns (JTokenMetadata memory) {
-        address joetrollerAddress = address(jToken.joetroller()); 
-        address payable payableJoetrollerAddress = address(uint160(joetrollerAddress));
-        Joetroller joetroller = Joetroller(payableJoetrollerAddress);
+        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
         return jTokenMetadataInternal(jToken, joetroller, priceOracle);
     }
@@ -111,9 +109,7 @@ contract JoeLens is Exponential {
         uint256 jTokenCount = jTokens.length;
         require(jTokenCount > 0, "invalid input");
         JTokenMetadata[] memory res = new JTokenMetadata[](jTokenCount);
-        address joetrollerAddress = address(jTokens[0].joetroller()); 
-        address payable payableJoetrollerAddress = address(uint160(joetrollerAddress));
-        Joetroller joetroller = Joetroller(payableJoetrollerAddress);
+        Joetroller joetroller = Joetroller(address(jTokens[0].joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
         for (uint256 i = 0; i < jTokenCount; i++) {
             require(address(joetroller) == address(jTokens[i].joetroller()), "mismatch joetroller");
@@ -135,9 +131,7 @@ contract JoeLens is Exponential {
     }
 
     function jTokenBalances(JToken jToken, address payable account) public returns (JTokenBalances memory) {
-        address joetrollerAddress = address(jToken.joetroller());
-        address payable payableJoetrollerAddress = address(uint160(joetrollerAddress));
-        bool collateralEnabled = Joetroller(payableJoetrollerAddress).checkMembership(account, jToken);
+        bool collateralEnabled = Joetroller(address(jToken.joetroller())).checkMembership(account, jToken);
         uint256 tokenBalance;
         uint256 tokenAllowance;
         uint256 collateralBalance;

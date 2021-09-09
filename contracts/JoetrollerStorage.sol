@@ -88,33 +88,8 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     mapping(address => bool) public mintGuardianPaused;
     mapping(address => bool) public borrowGuardianPaused;
 
-    struct JoeMarketState {
-        /// @notice The market's last updated joeBorrowIndex or joeSupplyIndex
-        uint224 index;
-        /// @notice The timestamp number the index was last updated at
-        uint32 timestamp;
-    }
-
     /// @notice A list of all markets
     JToken[] public allMarkets;
-
-    /// @notice The portion of joeRate that each market currently receives
-    mapping(uint8 => mapping(address => uint256)) public joeSpeeds;
-
-    /// @notice The JOE market supply state for each market
-    mapping(uint8 => mapping(address => JoeMarketState)) public joeSupplyState;
-
-    /// @notice The JOE market borrow state for each market
-    mapping(uint8 => mapping(address => JoeMarketState)) public joeBorrowState;
-
-    /// @notice The JOE borrow index for each market for each supplier as of the last time they accrued JOE
-    mapping(uint8 => mapping(address => mapping(address => uint256))) public joeSupplierIndex;
-
-    /// @notice The JOE borrow index for each market for each borrower as of the last time they accrued JOE
-    mapping(uint8 => mapping(address => mapping(address => uint256))) public joeBorrowerIndex;
-
-    /// @notice The JOE accrued but not yet transferred to each user
-    mapping(uint8 => mapping(address => uint256)) public joeAccrued;
 
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
@@ -134,10 +109,6 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
     mapping(address => bool) public flashloanGuardianPaused;
 
-    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
-    address public liquidityMining;
-
-    /// @notice JOE token contract address
-    address public joeAddress;
-
+    // @notice rewardDistributor The module that handles reward distribution.
+    address payable public rewardDistributor;
 }

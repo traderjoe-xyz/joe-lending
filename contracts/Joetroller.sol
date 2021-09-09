@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.5.16;
+pragma experimental ABIEncoderV2;
 
 import "./JToken.sol";
 import "./EIP20Interface.sol";
@@ -9,6 +10,7 @@ import "./Exponential.sol";
 import "./PriceOracle/PriceOracle.sol";
 import "./JoetrollerInterface.sol";
 import "./JoetrollerStorage.sol";
+import "./RewardDistributor.sol";
 import "./Unitroller.sol";
 
 /**
@@ -49,18 +51,6 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     /// @notice Emitted when an action is paused on a market
     event ActionPaused(JToken jToken, string action, bool pauseState);
 
-    /// @notice Emitted when a new JOE speed is calculated for a market
-    event JoeSpeedUpdated(uint8 rewardType, JToken indexed jToken, uint newSpeed);
-
-    /// @notice Emitted when JOE is distributed to a supplier
-    event DistributedSupplierJoe(uint8 rewardType, JToken indexed jToken, address indexed supplier, uint joeDelta, uint joeSupplyIndex);
-
-    /// @notice Emitted when JOE is distributed to a borrower
-    event DistributedBorrowerJoe(uint8 rewardType, JToken indexed jToken, address indexed borrower, uint joeDelta, uint joeBorrowIndex);
-
-    /// @notice Emitted when JOE is granted by admin
-    event JoeGranted(address recipient, uint amount);
-
     /// @notice Emitted when borrow cap for a jToken is changed
     event NewBorrowCap(JToken indexed jToken, uint256 newBorrowCap);
 
@@ -79,14 +69,24 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     /// @notice Emitted when jToken version is changed
     event NewJTokenVersion(JToken jToken, Version oldVersion, Version newVersion);
 
-    /// @notice The initial JOE index for a market
-    uint224 public constant joeInitialIndex = 1e36;
-
     // No collateralFactorMantissa may exceed this value
     uint256 internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
 
-    constructor() public {
+    constructor(address payable _rewardDistributor) public {
         admin = msg.sender;
+        rewardDistributor = _rewardDistributor;
+    }
+    /**
+     * @notice Return all of the markets
+     * @dev The automatic getter may be used to access an individual market.
+     * @return The list of market addresses
+     */
+    function getAllMarkets() public view returns (JToken[] memory) {
+        return allMarkets;
+    }
+
+    function getBlockTimestamp() public view returns (uint256) {
+        return block.timestamp;
     }
 
     /*** Assets You Are In ***/
@@ -278,7 +278,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         }
 
         // Keep the flywheel moving
-        updateAndDistributeSupplierRewardsForToken(jToken, minter);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jToken, minter);
 
         return uint256(Error.NO_ERROR);
     }
@@ -326,7 +326,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         }
         
         // Keep the flywheel going
-        updateAndDistributeSupplierRewardsForToken(jToken, redeemer);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jToken, redeemer);
         return uint256(Error.NO_ERROR);
 
     }
@@ -446,7 +446,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
 
         // Keep the flywheel going
         Exp memory borrowIndex = Exp({mantissa: JToken(jToken).borrowIndex()});
-        updateAndDistributeBorrowerRewardsForToken(jToken, borrower, borrowIndex);
+        RewardDistributor(rewardDistributor).updateAndDistributeBorrowerRewardsForToken(jToken, borrower, borrowIndex);
 
         return uint256(Error.NO_ERROR);
     }
@@ -498,7 +498,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
 
         // Keep the flywheel going
         Exp memory borrowIndex = Exp({mantissa: JToken(jToken).borrowIndex()});
-        updateAndDistributeBorrowerRewardsForToken(jToken, borrower, borrowIndex);
+        RewardDistributor(rewardDistributor).updateAndDistributeBorrowerRewardsForToken(jToken, borrower, borrowIndex);
         return uint256(Error.NO_ERROR);
     }
 
@@ -634,8 +634,8 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         }
 
         // Keep the flywheel moving
-        updateAndDistributeSupplierRewardsForToken(jTokenCollateral, borrower);
-        updateAndDistributeSupplierRewardsForToken(jTokenCollateral, liquidator);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jTokenCollateral, borrower);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jTokenCollateral, liquidator);
 
         return uint256(Error.NO_ERROR);
     }
@@ -697,8 +697,8 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         }
 
         // Keep the flywheel moving
-        updateAndDistributeSupplierRewardsForToken(jToken, src);
-        updateAndDistributeSupplierRewardsForToken(jToken, dst);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jToken, src);
+        RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jToken, dst);
         return uint256(Error.NO_ERROR);
     }
 
@@ -1356,180 +1356,15 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         return msg.sender == admin || msg.sender == joetrollerImplementation;
     }
 
-    /*** JOE Distribution ***/
 
-    /**
-     * @notice Set JOE/AVAX speed for a single market
-     * @param rewardType  0: JOE, 1: AVAX 
-     * @param jToken The market whose speed to update
-     * @param newSpeed New JOE or AVAX speed for market
-     */
-    function setJoeSpeedInternal(uint8 rewardType, JToken jToken, uint newSpeed) internal {
-        uint currentJoeSpeed = joeSpeeds[rewardType][address(jToken)];
-        if (currentJoeSpeed != 0) {
-            // note that JOE speed could be set to 0 to halt liquidity rewards for a market
-            Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
-            updateJoeSupplyIndex(rewardType, address(jToken));
-            updateJoeBorrowIndex(rewardType, address(jToken), borrowIndex);
-        } else if (newSpeed != 0) {
-            // Add the JOE market
-            Market storage market = markets[address(jToken)];
-            require(market.isListed == true, "joe market is not listed");
-
-            if (joeSupplyState[rewardType][address(jToken)].index == 0 &&
-                joeSupplyState[rewardType][address(jToken)].timestamp == 0) {
-                joeSupplyState[rewardType][address(jToken)] = JoeMarketState({
-                    index: joeInitialIndex,
-                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
-                });
-            }
-
-            if (joeBorrowState[rewardType][address(jToken)].index == 0 &&
-                joeBorrowState[rewardType][address(jToken)].timestamp == 0) {
-                joeBorrowState[rewardType][address(jToken)] = JoeMarketState({
-                    index: joeInitialIndex,
-                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
-                });
-            }
-        }
-
-        if (currentJoeSpeed != newSpeed) {
-            joeSpeeds[rewardType][address(jToken)] = newSpeed;
-            emit JoeSpeedUpdated(rewardType, jToken, newSpeed);
-        }
-    }
-
-    /**
-     * @notice Accrue JOE to the market by updating the supply index
-     * @param rewardType  0: JOE, 1: AVAX 
-     * @param jToken The market whose supply index to update
-     */
-    function updateJoeSupplyIndex(uint8 rewardType, address jToken) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
-        JoeMarketState storage supplyState = joeSupplyState[rewardType][jToken];
-        uint supplySpeed = joeSpeeds[rewardType][jToken];
-        uint blockTimestamp = getBlockTimestamp();
-        uint deltaTimestamps = sub_(blockTimestamp, uint(supplyState.timestamp));
-        if (deltaTimestamps > 0 && supplySpeed > 0) {
-            uint supplyTokens = JToken(jToken).totalSupply();
-            uint joeAccrued = mul_(deltaTimestamps, supplySpeed);
-            Double memory ratio = supplyTokens > 0 ? fraction(joeAccrued, supplyTokens) : Double({mantissa: 0});
-            Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
-            joeSupplyState[rewardType][jToken] = JoeMarketState({
-                index: safe224(index.mantissa, "new index exceeds 224 bits"),
-                timestamp: safe32(blockTimestamp, "block timestamp exceeds 32 bits")
-            });
-        } else if (deltaTimestamps > 0) {
-            supplyState.timestamp = safe32(blockTimestamp, "block timestamp exceeds 32 bits");
-        }
-    }
-
-    /**
-     * @notice Accrue JOE to the market by updating the borrow index
-     * @param rewardType  0: JOE, 1: AVAX 
-     * @param jToken The market whose borrow index to update
-     */
-    function updateJoeBorrowIndex(uint8 rewardType, address jToken, Exp memory marketBorrowIndex) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
-        JoeMarketState storage borrowState = joeBorrowState[rewardType][jToken];
-        uint borrowSpeed = joeSpeeds[rewardType][jToken];
-        uint blockTimestamp = getBlockTimestamp();
-        uint deltaTimestamps = sub_(blockTimestamp, uint(borrowState.timestamp));
-        if (deltaTimestamps > 0 && borrowSpeed > 0) {
-            uint borrowAmount = div_(JToken(jToken).totalBorrows(), marketBorrowIndex);
-            uint joeAccrued = mul_(deltaTimestamps, borrowSpeed);
-            Double memory ratio = borrowAmount > 0 ? fraction(joeAccrued, borrowAmount) : Double({mantissa: 0});
-            Double memory index = add_(Double({mantissa: borrowState.index}), ratio);
-            joeBorrowState[rewardType][jToken] = JoeMarketState({
-                index: safe224(index.mantissa, "new index exceeds 224 bits"),
-                timestamp: safe32(blockTimestamp, "block timestamp exceeds 32 bits")
-            });
-        } else if (deltaTimestamps > 0) {
-            borrowState.timestamp = safe32(blockTimestamp, "block timestamp exceeds 32 bits");
-        }
-    }
-
-    /**
-     * @notice Refactored function to calc and rewards accounts supplier rewards
-     * @param jToken The market to verify the mint against
-     * @param supplier The supplier to be rewarded
-     */
-    function updateAndDistributeSupplierRewardsForToken(address jToken, address supplier) internal {
-        for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
-            updateJoeSupplyIndex(rewardType, jToken);
-            distributeSupplierJoe(rewardType, jToken, supplier);
-        }
-    }
-
-    /**
-     * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
-     * @param rewardType  0: JOE, 1: AVAX 
-     * @param jToken The market in which the supplier is interacting
-     * @param supplier The address of the supplier to distribute JOE to
-     */
-    function distributeSupplierJoe(uint8 rewardType, address jToken, address supplier) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
-        JoeMarketState storage supplyState = joeSupplyState[rewardType][jToken];
-        Double memory supplyIndex = Double({mantissa: supplyState.index});
-        Double memory supplierIndex = Double({mantissa:
-                                             joeSupplierIndex[rewardType][jToken][supplier]});
-        joeSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
-
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = joeInitialIndex;
-        }
-
-        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
-        uint supplierTokens = JToken(jToken).balanceOf(supplier);
-        uint supplierDelta = mul_(supplierTokens, deltaIndex);
-        uint supplierAccrued = add_(joeAccrued[rewardType][supplier], supplierDelta);
-        joeAccrued[rewardType][supplier] = supplierAccrued;
-        emit DistributedSupplierJoe(rewardType, JToken(jToken), supplier, supplierDelta, supplyIndex.mantissa);
-    }
-
-   /**
-     * @notice Refactored function to calc and rewards accounts supplier rewards
-     * @param jToken The market to verify the mint against
-     * @param borrower Borrower to be rewarded
-     */
-    function updateAndDistributeBorrowerRewardsForToken(address jToken, address borrower, Exp memory marketBorrowIndex) internal {
-        for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
-            updateJoeBorrowIndex(rewardType, jToken, marketBorrowIndex);
-            distributeBorrowerJoe(rewardType, jToken, borrower, marketBorrowIndex);
-        }
-    }
-
-    /**
-     * @notice Calculate JOE accrued by a borrower and possibly transfer it to them
-     * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.
-     * @param rewardType  0: JOE, 1: AVAX 
-     * @param jToken The market in which the borrower is interacting
-     * @param borrower The address of the borrower to distribute JOE to
-     */
-    function distributeBorrowerJoe(uint8 rewardType, address jToken, address borrower, Exp memory marketBorrowIndex) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
-        JoeMarketState storage borrowState = joeBorrowState[rewardType][jToken];
-        Double memory borrowIndex = Double({mantissa: borrowState.index});
-        Double memory borrowerIndex = Double({mantissa:
-                                             joeBorrowerIndex[rewardType][jToken][borrower]});
-        joeBorrowerIndex[rewardType][jToken][borrower] = borrowIndex.mantissa;
-
-        if (borrowerIndex.mantissa > 0) {
-            Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
-            uint borrowerAmount = div_(JToken(jToken).borrowBalanceStored(borrower), marketBorrowIndex);
-            uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
-            uint borrowerAccrued = add_(joeAccrued[rewardType][borrower], borrowerDelta);
-            joeAccrued[rewardType][borrower] = borrowerAccrued;
-            emit DistributedBorrowerJoe(rewardType, JToken(jToken), borrower, borrowerDelta, borrowIndex.mantissa);
-        }
-    }
+    /*** Reward distribution functions ***/
 
     /**
      * @notice Claim all the JOE/AVAX accrued by holder in all markets
      * @param holder The address to claim JOE/AVAX for
      */
-    function claimJoe(uint8 rewardType, address payable holder) public {
-        return claimJoe(rewardType, holder, allMarkets);
+    function claimReward(uint8 rewardType, address payable holder) public {
+       RewardDistributor(rewardDistributor).claimReward(rewardType, holder);
     }
 
     /**
@@ -1537,10 +1372,8 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @param holder The address to claim JOE/AVAX for
      * @param jTokens The list of markets to claim JOE/AVAX in
      */
-    function claimJoe(uint8 rewardType, address payable holder, JToken[] memory jTokens) public {
-        address payable [] memory holders = new address payable[](1);
-        holders[0] = holder;
-        claimJoe(rewardType, holders, jTokens, true, true);
+    function claimReward(uint8 rewardType, address payable holder, JToken[] memory jTokens) public {
+        RewardDistributor(rewardDistributor).claimReward(rewardType, holder, jTokens);
     }
 
     /**
@@ -1551,105 +1384,8 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @param borrowers Whether or not to claim JOE/AVAX earned by borrowing
      * @param suppliers Whether or not to claim JOE/AVAX earned by supplying
      */
-    function claimJoe(uint8 rewardType, address payable[] memory holders, JToken[] memory jTokens, bool borrowers, bool suppliers) public payable {
-        require(rewardType <= 1, "rewardType is invalid");
-        for (uint i = 0; i < jTokens.length; i++) {
-            JToken jToken = jTokens[i];
-            require(markets[address(jToken)].isListed, "market must be listed");
-            if (borrowers == true) {
-                Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
-                updateJoeBorrowIndex(rewardType, address(jToken), borrowIndex);
-                for (uint j = 0; j < holders.length; j++) {
-                    distributeBorrowerJoe(rewardType, address(jToken), holders[j], borrowIndex);
-                    joeAccrued[rewardType][holders[j]] = grantRewardInternal(rewardType, holders[j], joeAccrued[rewardType][holders[j]]);
-                }
-            }
-            if (suppliers == true) {
-                updateJoeSupplyIndex(rewardType, address(jToken));
-                for (uint j = 0; j < holders.length; j++) {
-                    distributeSupplierJoe(rewardType, address(jToken), holders[j]);
-                    joeAccrued[rewardType][holders[j]] = grantRewardInternal(rewardType, holders[j], joeAccrued[rewardType][holders[j]]);
-                }
-            }
-        }
+    function claimReward(uint8 rewardType, address payable[] memory holders, JToken[] memory jTokens, bool borrowers, bool suppliers) public payable {
+        RewardDistributor(rewardDistributor).claimReward(rewardType, holders, jTokens, borrowers, suppliers);
     }
 
-    /**
-     * @notice Transfer JOE/AVAX to the user
-     * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer all.
-     * @param user The address of the user to transfer JOE/AVAX to
-     * @param amount The amount of JOE/AVAX to (possibly) transfer
-     * @return The amount of JOE/AVAX which was NOT transferred to the user
-     */
-    function grantRewardInternal(uint rewardType, address payable user, uint amount) internal returns (uint) {
-        if (rewardType == 0) {
-            EIP20Interface joe = EIP20Interface(joeAddress);
-            uint joeRemaining = joe.balanceOf(address(this));
-            if (amount > 0 && amount <= joeRemaining) {
-                joe.transfer(user, amount);
-                return 0;
-            }
-        } else if (rewardType == 1) {
-            uint avaxRemaining = address(this).balance;
-            if (amount > 0 && amount <= avaxRemaining) {
-                user.transfer(amount);
-                return 0;
-            }
-        }
-        return amount;
-    }
-
-    /*** Joe Distribution Admin ***/
-
-    /**
-     * @notice Transfer JOE to the recipient
-     * @dev Note: If there is not enough JOE, we do not perform the transfer all.
-     * @param recipient The address of the recipient to transfer JOE to
-     * @param amount The amount of JOE to (possibly) transfer
-     */
-    function _grantJoe(address payable recipient, uint amount) public {
-        require(adminOrInitializing(), "only admin can grant joe");
-        uint amountLeft = grantRewardInternal(0, recipient, amount);
-        require(amountLeft == 0, "insufficient joe for grant");
-        emit JoeGranted(recipient, amount);
-    }
-
-    /**
-     * @notice Set JOE/AVAX speed for a single market
-     * @param rewardType 0 = QI, 1 = AVAX
-     * @param jToken The market whose reward speed to update
-     * @param joeSpeed New reward speed for market
-     */
-    function _setJoeSpeed(uint8 rewardType, JToken jToken, uint joeSpeed) public {
-        require(rewardType <= 1, "rewardType is invalid"); 
-        require(adminOrInitializing(), "only admin can set reward speed");
-        setJoeSpeedInternal(rewardType, jToken, joeSpeed);
-    }
-
-    /**
-     * @notice Set the JOE token address
-     */
-    function setJoeAddress(address newJoeAddress) public {
-        require(msg.sender == admin);
-        joeAddress = newJoeAddress;
-    }
-
-    /**
-     * @notice payable function needed to receive AVAX
-     */
-    function () payable external {
-    }
-
-    /**
-     * @notice Return all of the markets
-     * @dev The automatic getter may be used to access an individual market.
-     * @return The list of market addresses
-     */
-    function getAllMarkets() public view returns (JToken[] memory) {
-        return allMarkets;
-    }
-
-    function getBlockTimestamp() public view returns (uint256) {
-        return block.timestamp;
-    }
 }
