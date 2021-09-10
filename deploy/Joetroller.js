@@ -3,6 +3,12 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const { deployer } = await getNamedAccounts();
 
+  await deploy("RewardDistributor", {
+    from: deployer,
+    log: true,
+    deterministicDeployment: false,
+  });
+
   await deploy("Unitroller", {
     from: deployer,
     log: true,
@@ -44,6 +50,10 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const priceOracle = await ethers.getContract("PriceOracleProxyUSD");
   console.log("Setting price oracle ", priceOracle.address);
   await joetroller._setPriceOracle(priceOracle.address);
+
+  const rewardDistributor = await ethers.getContract("RewardDistributor");
+  console.log("Setting reward distributor", rewardDistributor.address);
+  await joetroller._setRewardDistributor(rewardDistributor.address);
 };
 
 module.exports.tags = ["Joetroller"];
