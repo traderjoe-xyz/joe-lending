@@ -72,10 +72,10 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     // No collateralFactorMantissa may exceed this value
     uint256 internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
 
-    constructor(address payable _rewardDistributor) public {
-        admin = msg.sender;
-        rewardDistributor = _rewardDistributor;
+    constructor() public {
+      admin = msg.sender;
     }
+
     /**
      * @notice Return all of the markets
      * @dev The automatic getter may be used to access an individual market.
@@ -1018,6 +1018,22 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
 
     /*** Admin Functions ***/
 
+    function _setRewardDistributor(address payable newRewardDistributor) public returns (uint256) {
+        if (msg.sender != admin) {
+          return uint256(Error.UNAUTHORIZED);
+        }
+        (bool success, ) = newRewardDistributor.call.value(0)(
+                              abi.encodeWithSignature("initialize()", 0)
+                           );
+        if (!success) {
+          return uint256(Error.REJECTION);
+        }
+        
+        address oldRewardDistributor = rewardDistributor;
+        rewardDistributor = newRewardDistributor;
+
+        return uint256(Error.NO_ERROR);
+    }
     /**
      * @notice Sets a new price oracle for the joetroller
      * @dev Admin function to set a new price oracle

@@ -65,9 +65,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /// @notice Emitted when JOE is granted by admin
     event JoeGranted(address recipient, uint amount);
 
-    constructor(address payable _joetroller) public {
+    bool private initialized;
+
+    constructor() public {
+    }
+
+    function initialize() public {
+      require(!initialized, "RewardDistributor already initialized");
       admin = msg.sender;
-      joetroller = Joetroller(_joetroller);
+      setJoetroller(msg.sender);
+      initialized = true;
     }
 
     /**
@@ -354,6 +361,22 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     function setJoeAddress(address newJoeAddress) public {
         require(msg.sender == admin);
         joeAddress = newJoeAddress;
+    }
+    
+    /**
+     * @notice Set the Joetroller address
+     */
+    function setJoetroller(address _joetroller) public {
+        require(msg.sender == admin);
+        joetroller = Joetroller(_joetroller);
+    }
+
+    /**
+     * @notice Set the admin
+     */
+    function setAdmin(address _newAdmin) public {
+      require(msg.sender == admin);
+      admin = _newAdmin;
     }
 
     /**
