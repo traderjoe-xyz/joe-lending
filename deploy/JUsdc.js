@@ -60,4 +60,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 };
 
 module.exports.tags = ["jUSDC"];
-module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];
+// module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];

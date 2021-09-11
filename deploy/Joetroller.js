@@ -53,7 +53,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const rewardDistributor = await ethers.getContract("RewardDistributor");
   console.log("Setting reward distributor", rewardDistributor.address);
-  await joetroller._setRewardDistributor(rewardDistributor.address);
+  await joetroller._setRewardDistributor(rewardDistributor.address, {
+    gasLimit: 4000000,
+  });
 };
 
 module.exports.tags = ["Joetroller"];
