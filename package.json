@@ -1,6 +1,6 @@
 {
   "name": "@traderjoe-xyz/lending",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "description": "Banker Joe Lending Protocol",
   "main": "index.js",
   "files": [
@@ -20,6 +20,7 @@
     "deploy": "./scenario/script/repl -s ./script/scen/deploy.scen",
     "lint": "./script/lint",
     "repl": "./scenario/script/repl",
+    "test": "echo \"No test specified\"",
     "test:prepare": "NO_RUN=true ./script/test",
     "checksize": "npx run ./script/saddle/contractSizer.js",
     "rinkeby:deploy": "hardhat --network rinkeby deploy",
