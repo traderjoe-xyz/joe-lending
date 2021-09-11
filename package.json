@@ -9,6 +9,9 @@
     "contracts",
     "deployments"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "hardhat compile",
     "compile": "./script/compile",
