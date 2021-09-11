@@ -136,7 +136,7 @@ contract JoeLens is Exponential {
         uint256 tokenAllowance;
         uint256 collateralBalance;
 
-        if (compareStrings(jToken.symbol(), "JAVAX")) {
+        if (compareStrings(jToken.symbol(), "jAVAX")) {
             tokenBalance = account.balance;
             tokenAllowance = account.balance;
         } else {
@@ -164,6 +164,40 @@ contract JoeLens is Exponential {
             });
     }
 
+    function jTokenBalancesStored(JToken jToken, address payable account) public view returns (JTokenBalances memory) {
+        bool collateralEnabled = Joetroller(address(jToken.joetroller())).checkMembership(account, jToken);
+        uint256 tokenBalance;
+        uint256 tokenAllowance;
+        uint256 collateralBalance;
+
+        if (compareStrings(jToken.symbol(), "jAVAX")) {
+            tokenBalance = account.balance;
+            tokenAllowance = account.balance;
+        } else {
+            JErc20 cErc20 = JErc20(address(jToken));
+            EIP20Interface underlying = EIP20Interface(cErc20.underlying());
+            tokenBalance = underlying.balanceOf(account);
+            tokenAllowance = underlying.allowance(account, address(jToken));
+        }
+
+        if (collateralEnabled) {
+            (, collateralBalance, , ) = jToken.getAccountSnapshot(account);
+        }
+
+        return
+            JTokenBalances({
+                jToken: address(jToken),
+                balanceOf: jToken.balanceOf(account),
+                borrowBalanceCurrent: jToken.borrowBalanceStored(account),
+                balanceOfUnderlying: jToken.balanceOfUnderlyingStored(account),
+                tokenBalance: tokenBalance,
+                tokenAllowance: tokenAllowance,
+                collateralEnabled: collateralEnabled,
+                collateralBalance: collateralBalance,
+                nativeTokenBalance: account.balance
+            });
+    }
+
     function jTokenBalancesAll(JToken[] calldata jTokens, address payable account)
         external
         returns (JTokenBalances[] memory)
@@ -172,6 +206,18 @@ contract JoeLens is Exponential {
         JTokenBalances[] memory res = new JTokenBalances[](jTokenCount);
         for (uint256 i = 0; i < jTokenCount; i++) {
             res[i] = jTokenBalances(jTokens[i], account);
+        }
+        return res;
+    }
+
+    function jTokenBalancesAllStored(JToken[] calldata jTokens, address payable account)
+        external view
+        returns (JTokenBalances[] memory)
+    {
+        uint256 jTokenCount = jTokens.length;
+        JTokenBalances[] memory res = new JTokenBalances[](jTokenCount);
+        for (uint256 i = 0; i < jTokenCount; i++) {
+            res[i] = jTokenBalancesStored(jTokens[i], account);
         }
         return res;
     }

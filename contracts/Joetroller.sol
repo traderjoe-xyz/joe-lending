@@ -932,7 +932,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
             }
             vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
 
-            // Pre-joeute a conversion factor from tokens -> ether (normalized price value)
+            // Pre-compute a conversion factor from tokens -> ether (normalized price value)
             vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
 
             // sumCollateral += tokensToDenom * jTokenBalance

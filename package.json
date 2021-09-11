@@ -1,9 +1,16 @@
 {
-  "name": "compound-protocol",
-  "version": "0.2.1",
-  "description": "The Compound Money Market",
+  "name": "@traderjoe-xyz/lending",
+  "version": "0.0.0",
+  "description": "Banker Joe Lending Protocol",
   "main": "index.js",
+  "files": [
+    "abi",
+    "artifacts",
+    "contracts",
+    "deployments"
+  ],
   "scripts": {
+    "build": "hardhat compile",
     "compile": "./script/compile",
     "console": "if node -v | grep -E \"v(12|13)\" > /dev/null; then flags=\"-n --experimental-repl-await\"; fi; npx $flags saddle console",
     "coverage": "./script/coverage",
@@ -16,8 +23,8 @@
     "rinkeby:deploy": "hardhat --network rinkeby deploy",
     "avalanche:deploy": "hardhat --network avalanche deploy"
   },
-  "repository": "git@github.com:compound-finance/compound-protocol.git",
-  "author": "Compound Finance",
+  "repository": "git@github.com:traderjoe-xyz/joe-lending.git",
+  "author": "Trader Joe",
   "license": "UNLICENSED",
   "devDependencies": {
     "bignumber.js": "9.0.0",
