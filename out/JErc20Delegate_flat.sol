@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.5.16;
 
 /**
@@ -9,11 +11,11 @@ contract InterestRateModel {
     bool public constant isInterestRateModel = true;
 
     /**
-     * @notice Calculates the current borrow interest rate per block
+     * @notice Calculates the current borrow interest rate per sec
      * @param cash The total amount of cash the market has
      * @param borrows The total amount of borrows the market has outstanding
      * @param reserves The total amnount of reserves the market has
-     * @return The borrow rate per block (as a percentage, and scaled by 1e18)
+     * @return The borrow rate per sec (as a percentage, and scaled by 1e18)
      */
     function getBorrowRate(
         uint256 cash,
@@ -22,12 +24,12 @@ contract InterestRateModel {
     ) external view returns (uint256);
 
     /**
-     * @notice Calculates the current supply interest rate per block
+     * @notice Calculates the current supply interest rate per sec
      * @param cash The total amount of cash the market has
      * @param borrows The total amount of borrows the market has outstanding
      * @param reserves The total amnount of reserves the market has
      * @param reserveFactorMantissa The current reserve factor the market has
-     * @return The supply rate per block (as a percentage, and scaled by 1e18)
+     * @return The supply rate per sec (as a percentage, and scaled by 1e18)
      */
     function getSupplyRate(
         uint256 cash,
@@ -36,6 +38,8 @@ contract InterestRateModel {
         uint256 reserveFactorMantissa
     ) external view returns (uint256);
 }
+
+
 
 
 interface ERC3156FlashBorrowerInterface {
@@ -72,14 +76,26 @@ interface ERC3156FlashBorrowerInterface {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 contract PriceOracle {
     /**
-     * @notice Get the underlying price of a cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @notice Get the underlying price of a jToken asset
+     * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18).
      *  Zero means the price is unavailable.
      */
-    function getUnderlyingPrice(CToken cToken) external view returns (uint256);
+    function getUnderlyingPrice(JToken jToken) external view returns (uint256);
 }
 
 
@@ -97,15 +113,15 @@ contract UnitrollerAdminStorage {
     /**
      * @notice Active brains of Unitroller
      */
-    address public comptrollerImplementation;
+    address public joetrollerImplementation;
 
     /**
      * @notice Pending brains of Unitroller
      */
-    address public pendingComptrollerImplementation;
+    address public pendingJoetrollerImplementation;
 }
 
-contract ComptrollerV1Storage is UnitrollerAdminStorage {
+contract JoetrollerV1Storage is UnitrollerAdminStorage {
     /**
      * @notice Oracle which gives the price of any given asset
      */
@@ -124,7 +140,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     /**
      * @notice Per-account mapping of "assets you are in"
      */
-    mapping(address => CToken[]) public accountAssets;
+    mapping(address => JToken[]) public accountAssets;
 
     enum Version {
         VANILLA,
@@ -143,12 +159,12 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
         uint256 collateralFactorMantissa;
         /// @notice Per-market mapping of "accounts in this asset"
         mapping(address => bool) accountMembership;
-        /// @notice CToken version
+        /// @notice JToken version
         Version version;
     }
 
     /**
-     * @notice Official mapping of cTokens -> Market metadata
+     * @notice Official mapping of jTokens -> Market metadata
      * @dev Used e.g. to determine if a market is supported
      */
     mapping(address => Market) public markets;
@@ -166,44 +182,19 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     mapping(address => bool) public mintGuardianPaused;
     mapping(address => bool) public borrowGuardianPaused;
 
-    struct CompMarketState {
-        /// @notice The market's last updated compBorrowIndex or compSupplyIndex
-        uint224 index;
-        /// @notice The block number the index was last updated at
-        uint32 block;
-    }
-
     /// @notice A list of all markets
-    CToken[] public allMarkets;
-
-    /// @notice The portion of compRate that each market currently receives
-    mapping(address => uint256) public compSpeeds;
-
-    /// @notice The COMP market supply state for each market
-    mapping(address => CompMarketState) public compSupplyState;
-
-    /// @notice The COMP market borrow state for each market
-    mapping(address => CompMarketState) public compBorrowState;
-
-    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
-    mapping(address => mapping(address => uint256)) public compSupplierIndex;
-
-    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
-    mapping(address => mapping(address => uint256)) public compBorrowerIndex;
-
-    /// @notice The COMP accrued but not yet transferred to each user
-    mapping(address => uint256) public compAccrued;
+    JToken[] public allMarkets;
 
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
-    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
+    // @notice Borrow caps enforced by borrowAllowed for each jToken address. Defaults to zero which corresponds to unlimited borrowing.
     mapping(address => uint256) public borrowCaps;
 
     // @notice The supplyCapGuardian can set supplyCaps to any number for any market. Lowering the supply cap could disable supplying to the given market.
     address public supplyCapGuardian;
 
-    // @notice Supply caps enforced by mintAllowed for each cToken address. Defaults to zero which corresponds to unlimited supplying.
+    // @notice Supply caps enforced by mintAllowed for each jToken address. Defaults to zero which corresponds to unlimited supplying.
     mapping(address => uint256) public supplyCaps;
 
     // @notice creditLimits allowed specific protocols to borrow and repay without collateral.
@@ -212,70 +203,70 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     // @notice flashloanGuardianPaused can pause flash loan as a safety mechanism.
     mapping(address => bool) public flashloanGuardianPaused;
 
-    /// @notice liquidityMining the liquidity mining module that handles the LM rewards distribution.
-    address public liquidityMining;
+    // @notice rewardDistributor The module that handles reward distribution.
+    address payable public rewardDistributor;
 }
 
 
-contract ComptrollerInterface {
-    /// @notice Indicator that this is a Comptroller contract (for inspection)
-    bool public constant isComptroller = true;
+contract JoetrollerInterface {
+    /// @notice Indicator that this is a Joetroller contract (for inspection)
+    bool public constant isJoetroller = true;
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata cTokens) external returns (uint256[] memory);
+    function enterMarkets(address[] calldata jTokens) external returns (uint256[] memory);
 
-    function exitMarket(address cToken) external returns (uint256);
+    function exitMarket(address jToken) external returns (uint256);
 
     /*** Policy Hooks ***/
 
     function mintAllowed(
-        address cToken,
+        address jToken,
         address minter,
         uint256 mintAmount
     ) external returns (uint256);
 
     function mintVerify(
-        address cToken,
+        address jToken,
         address minter,
         uint256 mintAmount,
         uint256 mintTokens
     ) external;
 
     function redeemAllowed(
-        address cToken,
+        address jToken,
         address redeemer,
         uint256 redeemTokens
     ) external returns (uint256);
 
     function redeemVerify(
-        address cToken,
+        address jToken,
         address redeemer,
         uint256 redeemAmount,
         uint256 redeemTokens
     ) external;
 
     function borrowAllowed(
-        address cToken,
+        address jToken,
         address borrower,
         uint256 borrowAmount
     ) external returns (uint256);
 
     function borrowVerify(
-        address cToken,
+        address jToken,
         address borrower,
         uint256 borrowAmount
     ) external;
 
     function repayBorrowAllowed(
-        address cToken,
+        address jToken,
         address payer,
         address borrower,
         uint256 repayAmount
     ) external returns (uint256);
 
     function repayBorrowVerify(
-        address cToken,
+        address jToken,
         address payer,
         address borrower,
         uint256 repayAmount,
@@ -283,16 +274,16 @@ contract ComptrollerInterface {
     ) external;
 
     function liquidateBorrowAllowed(
-        address cTokenBorrowed,
-        address cTokenCollateral,
+        address jTokenBorrowed,
+        address jTokenCollateral,
         address liquidator,
         address borrower,
         uint256 repayAmount
     ) external returns (uint256);
 
     function liquidateBorrowVerify(
-        address cTokenBorrowed,
-        address cTokenCollateral,
+        address jTokenBorrowed,
+        address jTokenCollateral,
         address liquidator,
         address borrower,
         uint256 repayAmount,
@@ -300,30 +291,30 @@ contract ComptrollerInterface {
     ) external;
 
     function seizeAllowed(
-        address cTokenCollateral,
-        address cTokenBorrowed,
+        address jTokenCollateral,
+        address jTokenBorrowed,
         address liquidator,
         address borrower,
         uint256 seizeTokens
     ) external returns (uint256);
 
     function seizeVerify(
-        address cTokenCollateral,
-        address cTokenBorrowed,
+        address jTokenCollateral,
+        address jTokenBorrowed,
         address liquidator,
         address borrower,
         uint256 seizeTokens
     ) external;
 
     function transferAllowed(
-        address cToken,
+        address jToken,
         address src,
         address dst,
         uint256 transferTokens
     ) external returns (uint256);
 
     function transferVerify(
-        address cToken,
+        address jToken,
         address src,
         address dst,
         uint256 transferTokens
@@ -332,19 +323,19 @@ contract ComptrollerInterface {
     /*** Liquidity/Liquidation Calculations ***/
 
     function liquidateCalculateSeizeTokens(
-        address cTokenBorrowed,
-        address cTokenCollateral,
+        address jTokenBorrowed,
+        address jTokenCollateral,
         uint256 repayAmount
     ) external view returns (uint256, uint256);
 }
 
-interface ComptrollerInterfaceExtension {
-    function checkMembership(address account, CToken cToken) external view returns (bool);
+interface JoetrollerInterfaceExtension {
+    function checkMembership(address account, JToken jToken) external view returns (bool);
 
-    function updateCTokenVersion(address cToken, ComptrollerV1Storage.Version version) external;
+    function updateJTokenVersion(address jToken, JoetrollerV1Storage.Version version) external;
 
     function flashloanAllowed(
-        address cToken,
+        address jToken,
         address receiver,
         uint256 amount,
         bytes calldata params
@@ -357,7 +348,9 @@ interface ComptrollerInterfaceExtension {
 
 
 
-contract CTokenStorage {
+
+
+contract JTokenStorage {
     /**
      * @dev Guard variable for re-entrancy checks
      */
@@ -379,7 +372,7 @@ contract CTokenStorage {
     uint8 public decimals;
 
     /**
-     * @notice Maximum borrow rate that can ever be applied (.0005% / block)
+     * @notice Maximum borrow rate that can ever be applied (.0005% / sec)
      */
 
     uint256 internal constant borrowRateMaxMantissa = 0.0005e16;
@@ -400,9 +393,9 @@ contract CTokenStorage {
     address payable public pendingAdmin;
 
     /**
-     * @notice Contract which oversees inter-cToken operations
+     * @notice Contract which oversees inter-jToken operations
      */
-    ComptrollerInterface public comptroller;
+    JoetrollerInterface public joetroller;
 
     /**
      * @notice Model which tells what the current interest rate should be
@@ -410,7 +403,7 @@ contract CTokenStorage {
     InterestRateModel public interestRateModel;
 
     /**
-     * @notice Initial exchange rate used when minting the first CTokens (used when totalSupply = 0)
+     * @notice Initial exchange rate used when minting the first JTokens (used when totalSupply = 0)
      */
     uint256 internal initialExchangeRateMantissa;
 
@@ -420,9 +413,9 @@ contract CTokenStorage {
     uint256 public reserveFactorMantissa;
 
     /**
-     * @notice Block number that interest was last accrued at
+     * @notice Block timestamp that interest was last accrued at
      */
-    uint256 public accrualBlockNumber;
+    uint256 public accrualBlockTimestamp;
 
     /**
      * @notice Accumulator of the total earned interest rate since the opening of the market
@@ -470,9 +463,9 @@ contract CTokenStorage {
     mapping(address => BorrowSnapshot) internal accountBorrows;
 }
 
-contract CErc20Storage {
+contract JErc20Storage {
     /**
-     * @notice Underlying asset for this CToken
+     * @notice Underlying asset for this JToken
      */
     address public underlying;
 
@@ -482,14 +475,14 @@ contract CErc20Storage {
     address public implementation;
 }
 
-contract CSupplyCapStorage {
+contract JSupplyCapStorage {
     /**
-     * @notice Internal cash counter for this CToken. Should equal underlying.balanceOf(address(this)) for CERC20.
+     * @notice Internal cash counter for this JToken. Should equal underlying.balanceOf(address(this)) for CERC20.
      */
     uint256 public internalCash;
 }
 
-contract CCollateralCapStorage {
+contract JCollateralCapStorage {
     /**
      * @notice Total number of tokens used as collateral in circulation.
      */
@@ -507,18 +500,18 @@ contract CCollateralCapStorage {
     mapping(address => bool) public isCollateralTokenInit;
 
     /**
-     * @notice Collateral cap for this CToken, zero for no cap.
+     * @notice Collateral cap for this JToken, zero for no cap.
      */
     uint256 public collateralCap;
 }
 
 /*** Interface ***/
 
-contract CTokenInterface is CTokenStorage {
+contract JTokenInterface is JTokenStorage {
     /**
-     * @notice Indicator that this is a CToken contract (for inspection)
+     * @notice Indicator that this is a JToken contract (for inspection)
      */
-    bool public constant isCToken = true;
+    bool public constant isJToken = true;
 
     /*** Market Events ***/
 
@@ -560,7 +553,7 @@ contract CTokenInterface is CTokenStorage {
         address liquidator,
         address borrower,
         uint256 repayAmount,
-        address cTokenCollateral,
+        address jTokenCollateral,
         uint256 seizeTokens
     );
 
@@ -577,9 +570,9 @@ contract CTokenInterface is CTokenStorage {
     event NewAdmin(address oldAdmin, address newAdmin);
 
     /**
-     * @notice Event emitted when comptroller is changed
+     * @notice Event emitted when joetroller is changed
      */
-    event NewComptroller(ComptrollerInterface oldComptroller, ComptrollerInterface newComptroller);
+    event NewJoetroller(JoetrollerInterface oldJoetroller, JoetrollerInterface newJoetroller);
 
     /**
      * @notice Event emitted when interestRateModel is changed
@@ -644,9 +637,9 @@ contract CTokenInterface is CTokenStorage {
             uint256
         );
 
-    function borrowRatePerBlock() external view returns (uint256);
+    function borrowRatePerSecond() external view returns (uint256);
 
-    function supplyRatePerBlock() external view returns (uint256);
+    function supplyRatePerSecond() external view returns (uint256);
 
     function totalBorrowsCurrent() external returns (uint256);
 
@@ -674,7 +667,7 @@ contract CTokenInterface is CTokenStorage {
 
     function _acceptAdmin() external returns (uint256);
 
-    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint256);
+    function _setJoetroller(JoetrollerInterface newJoetroller) public returns (uint256);
 
     function _setReserveFactor(uint256 newReserveFactorMantissa) external returns (uint256);
 
@@ -683,7 +676,7 @@ contract CTokenInterface is CTokenStorage {
     function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint256);
 }
 
-contract CErc20Interface is CErc20Storage {
+contract JErc20Interface is JErc20Storage {
     /*** User Interface ***/
 
     function mint(uint256 mintAmount) external returns (uint256);
@@ -699,13 +692,13 @@ contract CErc20Interface is CErc20Storage {
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
-        CTokenInterface cTokenCollateral
+        JTokenInterface jTokenCollateral
     ) external returns (uint256);
 
     function _addReserves(uint256 addAmount) external returns (uint256);
 }
 
-contract CWrappedNativeInterface is CErc20Interface {
+contract JWrappedNativeInterface is JErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
@@ -730,7 +723,7 @@ contract CWrappedNativeInterface is CErc20Interface {
 
     function repayBorrowNative() external payable returns (uint256);
 
-    function liquidateBorrowNative(address borrower, CTokenInterface cTokenCollateral)
+    function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
         external
         payable
         returns (uint256);
@@ -745,7 +738,7 @@ contract CWrappedNativeInterface is CErc20Interface {
     function _addReservesNative() external payable returns (uint256);
 }
 
-contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
+contract JCapableErc20Interface is JErc20Interface, JSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
@@ -763,7 +756,7 @@ contract CCapableErc20Interface is CErc20Interface, CSupplyCapStorage {
     function gulp() external;
 }
 
-contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapStorage {
+contract JCollateralCapErc20Interface is JCapableErc20Interface, JCollateralCapStorage {
     /*** Admin Events ***/
 
     /**
@@ -794,7 +787,7 @@ contract CCollateralCapErc20Interface is CCapableErc20Interface, CCollateralCapS
     function _setCollateralCap(uint256 newCollateralCap) external;
 }
 
-contract CDelegatorInterface {
+contract JDelegatorInterface {
     /**
      * @notice Emitted when implementation is changed
      */
@@ -813,7 +806,7 @@ contract CDelegatorInterface {
     ) public;
 }
 
-contract CDelegateInterface {
+contract JDelegateInterface {
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @dev Should revert if any issues arise which make it unfit for delegation
@@ -844,11 +837,13 @@ interface IFlashloanReceiver {
 
 
 
-contract ComptrollerErrorReporter {
+
+
+contract JoetrollerErrorReporter {
     enum Error {
         NO_ERROR,
         UNAUTHORIZED,
-        COMPTROLLER_MISMATCH,
+        JOETROLLER_MISMATCH,
         INSUFFICIENT_SHORTFALL,
         INSUFFICIENT_LIQUIDITY,
         INVALID_CLOSE_FACTOR,
@@ -923,8 +918,8 @@ contract TokenErrorReporter {
         NO_ERROR,
         UNAUTHORIZED,
         BAD_INPUT,
-        COMPTROLLER_REJECTION,
-        COMPTROLLER_CALCULATION_ERROR,
+        JOETROLLER_REJECTION,
+        JOETROLLER_CALCULATION_ERROR,
         INTEREST_RATE_MODEL_ERROR,
         INVALID_ACCOUNT_PAIR,
         INVALID_CLOSE_AMOUNT_REQUESTED,
@@ -952,27 +947,27 @@ contract TokenErrorReporter {
         BORROW_CASH_NOT_AVAILABLE,
         BORROW_FRESHNESS_CHECK,
         BORROW_MARKET_NOT_LISTED,
-        BORROW_COMPTROLLER_REJECTION,
+        BORROW_JOETROLLER_REJECTION,
         LIQUIDATE_ACCRUE_BORROW_INTEREST_FAILED,
         LIQUIDATE_ACCRUE_COLLATERAL_INTEREST_FAILED,
         LIQUIDATE_COLLATERAL_FRESHNESS_CHECK,
-        LIQUIDATE_COMPTROLLER_REJECTION,
-        LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED,
+        LIQUIDATE_JOETROLLER_REJECTION,
+        LIQUIDATE_JOETROLLER_CALCULATE_AMOUNT_SEIZE_FAILED,
         LIQUIDATE_CLOSE_AMOUNT_IS_UINT_MAX,
         LIQUIDATE_CLOSE_AMOUNT_IS_ZERO,
         LIQUIDATE_FRESHNESS_CHECK,
         LIQUIDATE_LIQUIDATOR_IS_BORROWER,
         LIQUIDATE_REPAY_BORROW_FRESH_FAILED,
-        LIQUIDATE_SEIZE_COMPTROLLER_REJECTION,
+        LIQUIDATE_SEIZE_JOETROLLER_REJECTION,
         LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER,
         LIQUIDATE_SEIZE_TOO_MUCH,
         MINT_ACCRUE_INTEREST_FAILED,
-        MINT_COMPTROLLER_REJECTION,
+        MINT_JOETROLLER_REJECTION,
         MINT_FRESHNESS_CHECK,
         MINT_TRANSFER_IN_FAILED,
         MINT_TRANSFER_IN_NOT_POSSIBLE,
         REDEEM_ACCRUE_INTEREST_FAILED,
-        REDEEM_COMPTROLLER_REJECTION,
+        REDEEM_JOETROLLER_REJECTION,
         REDEEM_FRESHNESS_CHECK,
         REDEEM_TRANSFER_OUT_NOT_POSSIBLE,
         REDUCE_RESERVES_ACCRUE_INTEREST_FAILED,
@@ -981,12 +976,12 @@ contract TokenErrorReporter {
         REDUCE_RESERVES_FRESH_CHECK,
         REDUCE_RESERVES_VALIDATION,
         REPAY_BORROW_ACCRUE_INTEREST_FAILED,
-        REPAY_BORROW_COMPTROLLER_REJECTION,
+        REPAY_BORROW_JOETROLLER_REJECTION,
         REPAY_BORROW_FRESHNESS_CHECK,
         REPAY_BORROW_TRANSFER_IN_NOT_POSSIBLE,
         SET_COLLATERAL_FACTOR_OWNER_CHECK,
         SET_COLLATERAL_FACTOR_VALIDATION,
-        SET_COMPTROLLER_OWNER_CHECK,
+        SET_JOETROLLER_OWNER_CHECK,
         SET_INTEREST_RATE_MODEL_ACCRUE_INTEREST_FAILED,
         SET_INTEREST_RATE_MODEL_FRESH_CHECK,
         SET_INTEREST_RATE_MODEL_OWNER_CHECK,
@@ -997,7 +992,7 @@ contract TokenErrorReporter {
         SET_RESERVE_FACTOR_ADMIN_CHECK,
         SET_RESERVE_FACTOR_FRESH_CHECK,
         SET_RESERVE_FACTOR_BOUNDS_CHECK,
-        TRANSFER_COMPTROLLER_REJECTION,
+        TRANSFER_JOETROLLER_REJECTION,
         TRANSFER_NOT_ALLOWED,
         ADD_RESERVES_ACCRUE_INTEREST_FAILED,
         ADD_RESERVES_FRESH_CHECK,
@@ -1032,6 +1027,10 @@ contract TokenErrorReporter {
         return uint256(err);
     }
 }
+
+
+
+
 
 
 
@@ -1581,6 +1580,8 @@ contract Exponential is CarefulMath {
 
 
 
+
+
 /**
  * @title ERC 20 Token Standard Interface
  *  https://eips.ethereum.org/EIPS/eip-20
@@ -1647,6 +1648,8 @@ interface EIP20Interface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
+
+
 
 
 
@@ -1725,14 +1728,14 @@ interface EIP20NonStandardInterface {
 
 
 /**
- * @title Compound's CToken Contract
- * @notice Abstract base for CTokens
+ * @title Compound's JToken Contract
+ * @notice Abstract base for JTokens
  * @author Compound
  */
-contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
+contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     /**
      * @notice Initialize the money market
-     * @param comptroller_ The address of the Comptroller
+     * @param joetroller_ The address of the Joetroller
      * @param interestRateModel_ The address of the interest rate model
      * @param initialExchangeRateMantissa_ The initial exchange rate, scaled by 1e18
      * @param name_ EIP-20 name of this token
@@ -1740,7 +1743,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
      * @param decimals_ EIP-20 decimal precision of this token
      */
     function initialize(
-        ComptrollerInterface comptroller_,
+        JoetrollerInterface joetroller_,
         InterestRateModel interestRateModel_,
         uint256 initialExchangeRateMantissa_,
         string memory name_,
@@ -1748,21 +1751,21 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         uint8 decimals_
     ) public {
         require(msg.sender == admin, "only admin may initialize the market");
-        require(accrualBlockNumber == 0 && borrowIndex == 0, "market may only be initialized once");
+        require(accrualBlockTimestamp == 0 && borrowIndex == 0, "market may only be initialized once");
 
         // Set initial exchange rate
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
         require(initialExchangeRateMantissa > 0, "initial exchange rate must be greater than zero.");
 
-        // Set the comptroller
-        uint256 err = _setComptroller(comptroller_);
-        require(err == uint256(Error.NO_ERROR), "setting comptroller failed");
+        // Set the joetroller
+        uint256 err = _setJoetroller(joetroller_);
+        require(err == uint256(Error.NO_ERROR), "setting joetroller failed");
 
-        // Initialize block number and borrow index (block number mocks depend on comptroller being set)
-        accrualBlockNumber = getBlockNumber();
+        // Initialize block timestamp and borrow index (block timestamp mocks depend on joetroller being set)
+        accrualBlockTimestamp = getBlockTimestamp();
         borrowIndex = mantissaOne;
 
-        // Set the interest rate model (depends on block number / borrow index)
+        // Set the interest rate model (depends on block timestamp / borrow index)
         err = _setInterestRateModelFresh(interestRateModel_);
         require(err == uint256(Error.NO_ERROR), "setting interest rate model failed");
 
@@ -1846,7 +1849,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Get a snapshot of the account's balances, and the cached exchange rate
-     * @dev This is used by comptroller to more efficiently perform liquidity checks.
+     * @dev This is used by joetroller to more efficiently perform liquidity checks.
      * @param account Address of the account to snapshot
      * @return (possible error, token balance, borrow balance, exchange rate mantissa)
      */
@@ -1860,42 +1863,42 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             uint256
         )
     {
-        uint256 cTokenBalance = getCTokenBalanceInternal(account);
+        uint256 jTokenBalance = getJTokenBalanceInternal(account);
         uint256 borrowBalance = borrowBalanceStoredInternal(account);
         uint256 exchangeRateMantissa = exchangeRateStoredInternal();
 
-        return (uint256(Error.NO_ERROR), cTokenBalance, borrowBalance, exchangeRateMantissa);
+        return (uint256(Error.NO_ERROR), jTokenBalance, borrowBalance, exchangeRateMantissa);
     }
 
     /**
-     * @dev Function to simply retrieve block number
+     * @dev Function to simply retrieve block timestamp 
      *  This exists mainly for inheriting test contracts to stub this result.
      */
-    function getBlockNumber() internal view returns (uint256) {
+    function getBlockTimestamp() internal view returns (uint256) {
         return block.timestamp;
     }
 
     /**
-     * @notice Returns the current per-block borrow interest rate for this cToken
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec borrow interest rate for this jToken
+     * @return The borrow interest rate per sec, scaled by 1e18
      */
-    function borrowRatePerBlock() external view returns (uint256) {
+    function borrowRatePerSecond() external view returns (uint256) {
         return interestRateModel.getBorrowRate(getCashPrior(), totalBorrows, totalReserves);
     }
 
     /**
-     * @notice Returns the current per-block supply interest rate for this cToken
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the current per-sec supply interest rate for this jToken
+     * @return The supply interest rate per sec, scaled by 1e18
      */
-    function supplyRatePerBlock() external view returns (uint256) {
+    function supplyRatePerSecond() external view returns (uint256) {
         return interestRateModel.getSupplyRate(getCashPrior(), totalBorrows, totalReserves, reserveFactorMantissa);
     }
 
     /**
-     * @notice Returns the estimated per-block borrow interest rate for this cToken after some change
-     * @return The borrow interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-sec borrow interest rate for this jToken after some change
+     * @return The borrow interest rate per sec, scaled by 1e18
      */
-    function estimateBorrowRatePerBlockAfterChange(uint256 change, bool repay) external view returns (uint256) {
+    function estimateBorrowRatePerSecondAfterChange(uint256 change, bool repay) external view returns (uint256) {
         uint256 cashPriorNew;
         uint256 totalBorrowsNew;
 
@@ -1910,10 +1913,10 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Returns the estimated per-block supply interest rate for this cToken after some change
-     * @return The supply interest rate per block, scaled by 1e18
+     * @notice Returns the estimated per-sec supply interest rate for this jToken after some change
+     * @return The supply interest rate per sec, scaled by 1e18
      */
-    function estimateSupplyRatePerBlockAfterChange(uint256 change, bool repay) external view returns (uint256) {
+    function estimateSupplyRatePerSecondAfterChange(uint256 change, bool repay) external view returns (uint256) {
         uint256 cashPriorNew;
         uint256 totalBorrowsNew;
 
@@ -1990,7 +1993,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Calculates the exchange rate from the underlying to the CToken
+     * @notice Calculates the exchange rate from the underlying to the JToken
      * @dev This function does not accrue interest before calculating the exchange rate
      * @return Calculated exchange rate scaled by 1e18
      */
@@ -1999,7 +2002,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Calculates the exchange rate from the underlying to the CToken
+     * @notice Calculates the exchange rate from the underlying to the JToken
      * @dev This function does not accrue interest before calculating the exchange rate
      * @return calculated exchange rate scaled by 1e18
      */
@@ -2024,7 +2027,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Get cash balance of this cToken in the underlying asset
+     * @notice Get cash balance of this jToken in the underlying asset
      * @return The quantity of underlying asset owned by this contract
      */
     function getCash() external view returns (uint256) {
@@ -2033,16 +2036,16 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed block
-     *   up to the current block and writes new checkpoint to storage.
+     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     *   up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
-        /* Remember the initial block number */
-        uint256 currentBlockNumber = getBlockNumber();
-        uint256 accrualBlockNumberPrior = accrualBlockNumber;
+        /* Remember the initial block timestamp */
+        uint256 currentBlockTimestamp = getBlockTimestamp();
+        uint256 accrualBlockTimestampPrior = accrualBlockTimestamp;
 
         /* Short-circuit accumulating 0 interest */
-        if (accrualBlockNumberPrior == currentBlockNumber) {
+        if (accrualBlockTimestampPrior == currentBlockTimestamp) {
             return uint256(Error.NO_ERROR);
         }
 
@@ -2056,19 +2059,19 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         uint256 borrowRateMantissa = interestRateModel.getBorrowRate(cashPrior, borrowsPrior, reservesPrior);
         require(borrowRateMantissa <= borrowRateMaxMantissa, "borrow rate is absurdly high");
 
-        /* Calculate the number of blocks elapsed since the last accrual */
-        uint256 blockDelta = sub_(currentBlockNumber, accrualBlockNumberPrior);
+        /* Calculate the number of seconds elapsed since the last accrual */
+        uint256 timestampDelta = sub_(currentBlockTimestamp, accrualBlockTimestampPrior);
 
         /*
          * Calculate the interest accumulated into borrows and reserves and the new index:
-         *  simpleInterestFactor = borrowRate * blockDelta
+         *  simpleInterestFactor = borrowRate * timestampDelta
          *  interestAccumulated = simpleInterestFactor * totalBorrows
          *  totalBorrowsNew = interestAccumulated + totalBorrows
          *  totalReservesNew = interestAccumulated * reserveFactor + totalReserves
          *  borrowIndexNew = simpleInterestFactor * borrowIndex + borrowIndex
          */
 
-        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockDelta);
+        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), timestampDelta);
         uint256 interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
         uint256 totalBorrowsNew = add_(interestAccumulated, borrowsPrior);
         uint256 totalReservesNew = mul_ScalarTruncateAddUInt(
@@ -2083,7 +2086,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         // (No safe failures beyond this point)
 
         /* We write the previously calculated values into storage */
-        accrualBlockNumber = currentBlockNumber;
+        accrualBlockTimestamp = currentBlockTimestamp;
         borrowIndex = borrowIndexNew;
         totalBorrows = totalBorrowsNew;
         totalReserves = totalReservesNew;
@@ -2095,7 +2098,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Sender supplies assets into the market and receives cTokens in exchange
+     * @notice Sender supplies assets into the market and receives jTokens in exchange
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -2112,9 +2115,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Sender redeems cTokens in exchange for the underlying asset
+     * @notice Sender redeems jTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
-     * @param redeemTokens The number of cTokens to redeem into underlying
+     * @param redeemTokens The number of jTokens to redeem into underlying
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -2129,9 +2132,9 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
+     * @notice Sender redeems jTokens in exchange for a specified amount of underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
-     * @param redeemAmount The amount of underlying to receive from redeeming cTokens
+     * @param redeemAmount The amount of underlying to receive from redeeming jTokens
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -2180,22 +2183,22 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         bool isNative
     ) internal returns (uint256) {
         /* Fail if borrow not allowed */
-        uint256 allowed = comptroller.borrowAllowed(address(this), borrower, borrowAmount);
+        uint256 allowed = joetroller.borrowAllowed(address(this), borrower, borrowAmount);
         if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.BORROW_COMPTROLLER_REJECTION, allowed);
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.BORROW_JOETROLLER_REJECTION, allowed);
         }
 
         /*
          * Return if borrowAmount is zero.
-         * Put behind `borrowAllowed` for accuring potential COMP rewards.
+         * Put behind `borrowAllowed` for accuring potential JOE rewards.
          */
         if (borrowAmount == 0) {
             accountBorrows[borrower].interestIndex = borrowIndex;
             return uint256(Error.NO_ERROR);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.BORROW_FRESHNESS_CHECK);
         }
 
@@ -2221,8 +2224,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         /*
          * We invoke doTransferOut for the borrower and the borrowAmount.
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
-         *  On success, the cToken borrowAmount less of cash.
+         *  Note: The jToken must handle variations between ERC-20 and ETH underlying.
+         *  On success, the jToken borrowAmount less of cash.
          *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
          */
         doTransferOut(borrower, borrowAmount, isNative);
@@ -2237,7 +2240,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         /* We call the defense hook */
         // unused function
-        // comptroller.borrowVerify(address(this), borrower, borrowAmount);
+        // joetroller.borrowVerify(address(this), borrower, borrowAmount);
 
         return uint256(Error.NO_ERROR);
     }
@@ -2284,25 +2287,25 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         bool isNative
     ) internal returns (uint256, uint256) {
         /* Fail if repayBorrow not allowed */
-        uint256 allowed = comptroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
+        uint256 allowed = joetroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
             return (
-                failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REPAY_BORROW_COMPTROLLER_REJECTION, allowed),
+                failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed),
                 0
             );
         }
 
         /*
          * Return if repayAmount is zero.
-         * Put behind `repayBorrowAllowed` for accuring potential COMP rewards.
+         * Put behind `repayBorrowAllowed` for accuring potential JOE rewards.
          */
         if (repayAmount == 0) {
             accountBorrows[borrower].interestIndex = borrowIndex;
             return (uint256(Error.NO_ERROR), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.REPAY_BORROW_FRESHNESS_CHECK), 0);
         }
 
@@ -2327,8 +2330,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         /*
          * We call doTransferIn for the payer and the repayAmount
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
-         *  On success, the cToken holds an additional repayAmount of cash.
+         *  Note: The jToken must handle variations between ERC-20 and ETH underlying.
+         *  On success, the jToken holds an additional repayAmount of cash.
          *  doTransferIn reverts if anything goes wrong, since we can't be sure if side effects occurred.
          *   it returns the amount actually transferred, in case of a fee.
          */
@@ -2352,7 +2355,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         /* We call the defense hook */
         // unused function
-        // comptroller.repayBorrowVerify(address(this), payer, borrower, vars.actualRepayAmount, vars.borrowerIndex);
+        // joetroller.repayBorrowVerify(address(this), payer, borrower, vars.actualRepayAmount, vars.borrowerIndex);
 
         return (uint256(Error.NO_ERROR), vars.actualRepayAmount);
     }
@@ -2360,16 +2363,16 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
-     * @param borrower The borrower of this cToken to be liquidated
+     * @param borrower The borrower of this jToken to be liquidated
      * @param repayAmount The amount of the underlying borrowed asset to repay
-     * @param cTokenCollateral The market in which to seize collateral from the borrower
+     * @param jTokenCollateral The market in which to seize collateral from the borrower
      * @param isNative The amount is in native or not
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
      */
     function liquidateBorrowInternal(
         address borrower,
         uint256 repayAmount,
-        CTokenInterface cTokenCollateral,
+        JTokenInterface jTokenCollateral,
         bool isNative
     ) internal nonReentrant returns (uint256, uint256) {
         uint256 error = accrueInterest();
@@ -2378,22 +2381,22 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return (fail(Error(error), FailureInfo.LIQUIDATE_ACCRUE_BORROW_INTEREST_FAILED), 0);
         }
 
-        error = cTokenCollateral.accrueInterest();
+        error = jTokenCollateral.accrueInterest();
         if (error != uint256(Error.NO_ERROR)) {
             // accrueInterest emits logs on errors, but we still want to log the fact that an attempted liquidation failed
             return (fail(Error(error), FailureInfo.LIQUIDATE_ACCRUE_COLLATERAL_INTEREST_FAILED), 0);
         }
 
         // liquidateBorrowFresh emits borrow-specific logs on errors, so we don't need to
-        return liquidateBorrowFresh(msg.sender, borrower, repayAmount, cTokenCollateral, isNative);
+        return liquidateBorrowFresh(msg.sender, borrower, repayAmount, jTokenCollateral, isNative);
     }
 
     /**
      * @notice The liquidator liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
-     * @param borrower The borrower of this cToken to be liquidated
+     * @param borrower The borrower of this jToken to be liquidated
      * @param liquidator The address repaying the borrow and seizing collateral
-     * @param cTokenCollateral The market in which to seize collateral from the borrower
+     * @param jTokenCollateral The market in which to seize collateral from the borrower
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @param isNative The amount is in native or not
      * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
@@ -2402,28 +2405,28 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         address liquidator,
         address borrower,
         uint256 repayAmount,
-        CTokenInterface cTokenCollateral,
+        JTokenInterface jTokenCollateral,
         bool isNative
     ) internal returns (uint256, uint256) {
         /* Fail if liquidate not allowed */
-        uint256 allowed = comptroller.liquidateBorrowAllowed(
+        uint256 allowed = joetroller.liquidateBorrowAllowed(
             address(this),
-            address(cTokenCollateral),
+            address(jTokenCollateral),
             liquidator,
             borrower,
             repayAmount
         );
         if (allowed != 0) {
-            return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.LIQUIDATE_COMPTROLLER_REJECTION, allowed), 0);
+            return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.LIQUIDATE_JOETROLLER_REJECTION, allowed), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.LIQUIDATE_FRESHNESS_CHECK), 0);
         }
 
-        /* Verify cTokenCollateral market's block number equals current block number */
-        if (cTokenCollateral.accrualBlockNumber() != getBlockNumber()) {
+        /* Verify jTokenCollateral market's block timestamp equals current block timestamp */
+        if (jTokenCollateral.accrualBlockTimestamp() != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.LIQUIDATE_COLLATERAL_FRESHNESS_CHECK), 0);
         }
 
@@ -2458,44 +2461,44 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         // (No safe failures beyond this point)
 
         /* We calculate the number of collateral tokens that will be seized */
-        (uint256 amountSeizeError, uint256 seizeTokens) = comptroller.liquidateCalculateSeizeTokens(
+        (uint256 amountSeizeError, uint256 seizeTokens) = joetroller.liquidateCalculateSeizeTokens(
             address(this),
-            address(cTokenCollateral),
+            address(jTokenCollateral),
             actualRepayAmount
         );
-        require(amountSeizeError == uint256(Error.NO_ERROR), "LIQUIDATE_COMPTROLLER_CALCULATE_AMOUNT_SEIZE_FAILED");
+        require(amountSeizeError == uint256(Error.NO_ERROR), "LIQUIDATE_JOETROLLER_CALCULATE_AMOUNT_SEIZE_FAILED");
 
         /* Revert if borrower collateral token balance < seizeTokens */
-        require(cTokenCollateral.balanceOf(borrower) >= seizeTokens, "LIQUIDATE_SEIZE_TOO_MUCH");
+        require(jTokenCollateral.balanceOf(borrower) >= seizeTokens, "LIQUIDATE_SEIZE_TOO_MUCH");
 
         // If this is also the collateral, run seizeInternal to avoid re-entrancy, otherwise make an external call
         uint256 seizeError;
-        if (address(cTokenCollateral) == address(this)) {
+        if (address(jTokenCollateral) == address(this)) {
             seizeError = seizeInternal(address(this), liquidator, borrower, seizeTokens);
         } else {
-            seizeError = cTokenCollateral.seize(liquidator, borrower, seizeTokens);
+            seizeError = jTokenCollateral.seize(liquidator, borrower, seizeTokens);
         }
 
         /* Revert if seize tokens fails (since we cannot be sure of side effects) */
         require(seizeError == uint256(Error.NO_ERROR), "token seizure failed");
 
         /* We emit a LiquidateBorrow event */
-        emit LiquidateBorrow(liquidator, borrower, actualRepayAmount, address(cTokenCollateral), seizeTokens);
+        emit LiquidateBorrow(liquidator, borrower, actualRepayAmount, address(jTokenCollateral), seizeTokens);
 
         /* We call the defense hook */
         // unused function
-        // comptroller.liquidateBorrowVerify(address(this), address(cTokenCollateral), liquidator, borrower, actualRepayAmount, seizeTokens);
+        // joetroller.liquidateBorrowVerify(address(this), address(jTokenCollateral), liquidator, borrower, actualRepayAmount, seizeTokens);
 
         return (uint256(Error.NO_ERROR), actualRepayAmount);
     }
 
     /**
      * @notice Transfers collateral tokens (this market) to the liquidator.
-     * @dev Will fail unless called by another cToken during the process of liquidation.
-     *  Its absolutely critical to use msg.sender as the borrowed cToken and not a parameter.
+     * @dev Will fail unless called by another jToken during the process of liquidation.
+     *  Its absolutely critical to use msg.sender as the borrowed jToken and not a parameter.
      * @param liquidator The account receiving seized collateral
      * @param borrower The account having collateral seized
-     * @param seizeTokens The number of cTokens to seize
+     * @param seizeTokens The number of jTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function seize(
@@ -2560,25 +2563,25 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Sets a new comptroller for the market
-     * @dev Admin function to set a new comptroller
+     * @notice Sets a new joetroller for the market
+     * @dev Admin function to set a new joetroller
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _setComptroller(ComptrollerInterface newComptroller) public returns (uint256) {
+    function _setJoetroller(JoetrollerInterface newJoetroller) public returns (uint256) {
         // Check caller is admin
         if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_COMPTROLLER_OWNER_CHECK);
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_JOETROLLER_OWNER_CHECK);
         }
 
-        ComptrollerInterface oldComptroller = comptroller;
-        // Ensure invoke comptroller.isComptroller() returns true
-        require(newComptroller.isComptroller(), "marker method returned false");
+        JoetrollerInterface oldJoetroller = joetroller;
+        // Ensure invoke joetroller.isJoetroller() returns true
+        require(newJoetroller.isJoetroller(), "marker method returned false");
 
-        // Set market's comptroller to newComptroller
-        comptroller = newComptroller;
+        // Set market's joetroller to newJoetroller
+        joetroller = newJoetroller;
 
-        // Emit NewComptroller(oldComptroller, newComptroller)
-        emit NewComptroller(oldComptroller, newComptroller);
+        // Emit NewJoetroller(oldJoetroller, newJoetroller)
+        emit NewJoetroller(oldJoetroller, newJoetroller);
 
         return uint256(Error.NO_ERROR);
     }
@@ -2609,8 +2612,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_RESERVE_FACTOR_ADMIN_CHECK);
         }
 
-        // Verify market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // Verify market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_RESERVE_FACTOR_FRESH_CHECK);
         }
 
@@ -2657,8 +2660,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.ADD_RESERVES_FRESH_CHECK), actualAddAmount);
         }
 
@@ -2668,8 +2671,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
         /*
          * We call doTransferIn for the caller and the addAmount
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
-         *  On success, the cToken holds an additional addAmount of cash.
+         *  Note: The jToken must handle variations between ERC-20 and ETH underlying.
+         *  On success, the jToken holds an additional addAmount of cash.
          *  doTransferIn reverts if anything goes wrong, since we can't be sure if side effects occurred.
          *  it returns the amount actually transferred, in case of a fee.
          */
@@ -2718,8 +2721,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.REDUCE_RESERVES_ADMIN_CHECK);
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDUCE_RESERVES_FRESH_CHECK);
         }
 
@@ -2743,7 +2746,7 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
         totalReserves = totalReservesNew;
 
         // doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
-        // Restrict reducing reserves in native token. Implementations except `CWrappedNative` won't use parameter `isNative`.
+        // Restrict reducing reserves in native token. Implementations except `JWrappedNative` won't use parameter `isNative`.
         doTransferOut(admin, reduceAmount, true);
 
         emit ReservesReduced(admin, reduceAmount, totalReservesNew);
@@ -2782,8 +2785,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_INTEREST_RATE_MODEL_OWNER_CHECK);
         }
 
-        // We fail gracefully unless market's block number equals current block number
-        if (accrualBlockNumber != getBlockNumber()) {
+        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_INTEREST_RATE_MODEL_FRESH_CHECK);
         }
 
@@ -2844,13 +2847,13 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     ) internal returns (uint256);
 
     /**
-     * @notice Get the account's cToken balances
+     * @notice Get the account's jToken balances
      */
-    function getCTokenBalanceInternal(address account) internal view returns (uint256);
+    function getJTokenBalanceInternal(address account) internal view returns (uint256);
 
     /**
-     * @notice User supplies assets into the market and receives cTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @notice User supplies assets into the market and receives jTokens in exchange
+     * @dev Assumes interest has already been accrued up to the current timestamp
      */
     function mintFresh(
         address minter,
@@ -2859,8 +2862,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
     ) internal returns (uint256, uint256);
 
     /**
-     * @notice User redeems cTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block
+     * @notice User redeems jTokens in exchange for the underlying asset
+     * @dev Assumes interest has already been accrued up to the current timestamp 
      */
     function redeemFresh(
         address payable redeemer,
@@ -2871,8 +2874,8 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Transfers collateral tokens (this market) to the liquidator.
-     * @dev Called only during an in-kind liquidation, or by liquidateBorrow during the liquidation of another CToken.
-     *  Its absolutely critical to use msg.sender as the seizer cToken and not a parameter.
+     * @dev Called only during an in-kind liquidation, or by liquidateBorrow during the liquidation of another JToken.
+     *  Its absolutely critical to use msg.sender as the seizer jToken and not a parameter.
      */
     function seizeInternal(
         address seizerToken,
@@ -2896,15 +2899,15 @@ contract CToken is CTokenInterface, Exponential, TokenErrorReporter {
 
 
 /**
- * @title Compound's CErc20 Contract
- * @notice CTokens which wrap an EIP-20 underlying
+ * @title Compound's JErc20 Contract
+ * @notice JTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract CErc20 is CToken, CErc20Interface {
+contract JErc20 is JToken, JErc20Interface {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
-     * @param comptroller_ The address of the Comptroller
+     * @param joetroller_ The address of the Joetroller
      * @param interestRateModel_ The address of the interest rate model
      * @param initialExchangeRateMantissa_ The initial exchange rate, scaled by 1e18
      * @param name_ ERC-20 name of this token
@@ -2913,15 +2916,15 @@ contract CErc20 is CToken, CErc20Interface {
      */
     function initialize(
         address underlying_,
-        ComptrollerInterface comptroller_,
+        JoetrollerInterface joetroller_,
         InterestRateModel interestRateModel_,
         uint256 initialExchangeRateMantissa_,
         string memory name_,
         string memory symbol_,
         uint8 decimals_
     ) public {
-        // CToken initialize does the bulk of the work
-        super.initialize(comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
+        // JToken initialize does the bulk of the work
+        super.initialize(joetroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
         // Set underlying and sanity check it
         underlying = underlying_;
@@ -2931,7 +2934,7 @@ contract CErc20 is CToken, CErc20Interface {
     /*** User Interface ***/
 
     /**
-     * @notice Sender supplies assets into the market and receives cTokens in exchange
+     * @notice Sender supplies assets into the market and receives jTokens in exchange
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
@@ -2942,9 +2945,9 @@ contract CErc20 is CToken, CErc20Interface {
     }
 
     /**
-     * @notice Sender redeems cTokens in exchange for the underlying asset
+     * @notice Sender redeems jTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
-     * @param redeemTokens The number of cTokens to redeem into underlying
+     * @param redeemTokens The number of jTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint256 redeemTokens) external returns (uint256) {
@@ -2952,7 +2955,7 @@ contract CErc20 is CToken, CErc20Interface {
     }
 
     /**
-     * @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
+     * @notice Sender redeems jTokens in exchange for a specified amount of underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
@@ -2983,17 +2986,17 @@ contract CErc20 is CToken, CErc20Interface {
     /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
-     * @param borrower The borrower of this cToken to be liquidated
+     * @param borrower The borrower of this jToken to be liquidated
      * @param repayAmount The amount of the underlying borrowed asset to repay
-     * @param cTokenCollateral The market in which to seize collateral from the borrower
+     * @param jTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
-        CTokenInterface cTokenCollateral
+        JTokenInterface jTokenCollateral
     ) external returns (uint256) {
-        (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, cTokenCollateral, false);
+        (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, jTokenCollateral, false);
         return err;
     }
 
@@ -3117,9 +3120,9 @@ contract CErc20 is CToken, CErc20Interface {
         uint256 tokens
     ) internal returns (uint256) {
         /* Fail if transfer not allowed */
-        uint256 allowed = comptroller.transferAllowed(address(this), src, dst, tokens);
+        uint256 allowed = joetroller.transferAllowed(address(this), src, dst, tokens);
         if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.TRANSFER_COMPTROLLER_REJECTION, allowed);
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.TRANSFER_JOETROLLER_REJECTION, allowed);
         }
 
         /* Do not allow self-transfers */
@@ -3148,16 +3151,16 @@ contract CErc20 is CToken, CErc20Interface {
         emit Transfer(src, dst, tokens);
 
         // unused function
-        // comptroller.transferVerify(address(this), src, dst, tokens);
+        // joetroller.transferVerify(address(this), src, dst, tokens);
 
         return uint256(Error.NO_ERROR);
     }
 
     /**
-     * @notice Get the account's cToken balances
+     * @notice Get the account's jToken balances
      * @param account The address of the account
      */
-    function getCTokenBalanceInternal(address account) internal view returns (uint256) {
+    function getJTokenBalanceInternal(address account) internal view returns (uint256) {
         return accountTokens[account];
     }
 
@@ -3168,8 +3171,8 @@ contract CErc20 is CToken, CErc20Interface {
     }
 
     /**
-     * @notice User supplies assets into the market and receives cTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current block
+     * @notice User supplies assets into the market and receives jTokens in exchange
+     * @dev Assumes interest has already been accrued up to the current timestamp 
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -3181,21 +3184,21 @@ contract CErc20 is CToken, CErc20Interface {
         bool isNative
     ) internal returns (uint256, uint256) {
         /* Fail if mint not allowed */
-        uint256 allowed = comptroller.mintAllowed(address(this), minter, mintAmount);
+        uint256 allowed = joetroller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
-            return (failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.MINT_COMPTROLLER_REJECTION, allowed), 0);
+            return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.MINT_JOETROLLER_REJECTION, allowed), 0);
         }
 
         /*
          * Return if mintAmount is zero.
-         * Put behind `mintAllowed` for accuring potential COMP rewards.
+         * Put behind `mintAllowed` for accuring potential JOE rewards.
          */
         if (mintAmount == 0) {
             return (uint256(Error.NO_ERROR), 0);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.MINT_FRESHNESS_CHECK), 0);
         }
 
@@ -3209,22 +3212,22 @@ contract CErc20 is CToken, CErc20Interface {
 
         /*
          *  We call `doTransferIn` for the minter and the mintAmount.
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
+         *  Note: The jToken must handle variations between ERC-20 and ETH underlying.
          *  `doTransferIn` reverts if anything goes wrong, since we can't be sure if
          *  side-effects occurred. The function returns the amount actually transferred,
-         *  in case of a fee. On success, the cToken holds an additional `actualMintAmount`
+         *  in case of a fee. On success, the jToken holds an additional `actualMintAmount`
          *  of cash.
          */
         vars.actualMintAmount = doTransferIn(minter, mintAmount, isNative);
 
         /*
-         * We get the current exchange rate and calculate the number of cTokens to be minted:
+         * We get the current exchange rate and calculate the number of jTokens to be minted:
          *  mintTokens = actualMintAmount / exchangeRate
          */
         vars.mintTokens = div_ScalarByExpTruncate(vars.actualMintAmount, Exp({mantissa: vars.exchangeRateMantissa}));
 
         /*
-         * We calculate the new total supply of cTokens and minter token balance, checking for overflow:
+         * We calculate the new total supply of jTokens and minter token balance, checking for overflow:
          *  totalSupply = totalSupply + mintTokens
          *  accountTokens[minter] = accountTokens[minter] + mintTokens
          */
@@ -3237,7 +3240,7 @@ contract CErc20 is CToken, CErc20Interface {
 
         /* We call the defense hook */
         // unused function
-        // comptroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
+        // joetroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
 
         return (uint256(Error.NO_ERROR), vars.actualMintAmount);
     }
@@ -3251,11 +3254,11 @@ contract CErc20 is CToken, CErc20Interface {
     }
 
     /**
-     * @notice User redeems cTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current block. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
+     * @notice User redeems jTokens in exchange for the underlying asset
+     * @dev Assumes interest has already been accrued up to the current timestamp. Only one of redeemTokensIn or redeemAmountIn may be non-zero and it would do nothing if both are zero.
      * @param redeemer The address of the account which is redeeming the tokens
-     * @param redeemTokensIn The number of cTokens to redeem into underlying
-     * @param redeemAmountIn The number of underlying tokens to receive from redeeming cTokens
+     * @param redeemTokensIn The number of jTokens to redeem into underlying
+     * @param redeemAmountIn The number of underlying tokens to receive from redeeming jTokens
      * @param isNative The amount is in native or not
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -3292,21 +3295,21 @@ contract CErc20 is CToken, CErc20Interface {
         }
 
         /* Fail if redeem not allowed */
-        uint256 allowed = comptroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
+        uint256 allowed = joetroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
         if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.REDEEM_COMPTROLLER_REJECTION, allowed);
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REDEEM_JOETROLLER_REJECTION, allowed);
         }
 
         /*
          * Return if redeemTokensIn and redeemAmountIn are zero.
-         * Put behind `redeemAllowed` for accuring potential COMP rewards.
+         * Put behind `redeemAllowed` for accuring potential JOE rewards.
          */
         if (redeemTokensIn == 0 && redeemAmountIn == 0) {
             return uint256(Error.NO_ERROR);
         }
 
-        /* Verify market's block number equals current block number */
-        if (accrualBlockNumber != getBlockNumber()) {
+        /* Verify market's block timestamp equals current block timestamp */
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK);
         }
 
@@ -3329,8 +3332,8 @@ contract CErc20 is CToken, CErc20Interface {
 
         /*
          * We invoke doTransferOut for the redeemer and the redeemAmount.
-         *  Note: The cToken must handle variations between ERC-20 and ETH underlying.
-         *  On success, the cToken has redeemAmount less of cash.
+         *  Note: The jToken must handle variations between ERC-20 and ETH underlying.
+         *  On success, the jToken has redeemAmount less of cash.
          *  doTransferOut reverts if anything goes wrong, since we can't be sure if side effects occurred.
          */
         doTransferOut(redeemer, vars.redeemAmount, isNative);
@@ -3344,19 +3347,19 @@ contract CErc20 is CToken, CErc20Interface {
         emit Redeem(redeemer, vars.redeemAmount, vars.redeemTokens);
 
         /* We call the defense hook */
-        comptroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
+        joetroller.redeemVerify(address(this), redeemer, vars.redeemAmount, vars.redeemTokens);
 
         return uint256(Error.NO_ERROR);
     }
 
     /**
      * @notice Transfers collateral tokens (this market) to the liquidator.
-     * @dev Called only during an in-kind liquidation, or by liquidateBorrow during the liquidation of another CToken.
-     *  Its absolutely critical to use msg.sender as the seizer cToken and not a parameter.
-     * @param seizerToken The contract seizing the collateral (i.e. borrowed cToken)
+     * @dev Called only during an in-kind liquidation, or by liquidateBorrow during the liquidation of another JToken.
+     *  Its absolutely critical to use msg.sender as the seizer jToken and not a parameter.
+     * @param seizerToken The contract seizing the collateral (i.e. borrowed jToken)
      * @param liquidator The account receiving seized collateral
      * @param borrower The account having collateral seized
-     * @param seizeTokens The number of cTokens to seize
+     * @param seizeTokens The number of jTokens to seize
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function seizeInternal(
@@ -3366,14 +3369,14 @@ contract CErc20 is CToken, CErc20Interface {
         uint256 seizeTokens
     ) internal returns (uint256) {
         /* Fail if seize not allowed */
-        uint256 allowed = comptroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
+        uint256 allowed = joetroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
-            return failOpaque(Error.COMPTROLLER_REJECTION, FailureInfo.LIQUIDATE_SEIZE_COMPTROLLER_REJECTION, allowed);
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.LIQUIDATE_SEIZE_JOETROLLER_REJECTION, allowed);
         }
 
         /*
          * Return if seizeTokens is zero.
-         * Put behind `seizeAllowed` for accuring potential COMP rewards.
+         * Put behind `seizeAllowed` for accuring potential JOE rewards.
          */
         if (seizeTokens == 0) {
             return uint256(Error.NO_ERROR);
@@ -3397,7 +3400,7 @@ contract CErc20 is CToken, CErc20Interface {
 
         /* We call the defense hook */
         // unused function
-        // comptroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
+        // joetroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
 
         return uint256(Error.NO_ERROR);
     }
@@ -3405,11 +3408,11 @@ contract CErc20 is CToken, CErc20Interface {
 
 
 /**
- * @title Compound's CErc20Delegate Contract
- * @notice CTokens which wrap an EIP-20 underlying and are delegated to
+ * @title Compound's JErc20Delegate Contract
+ * @notice JTokens which wrap an EIP-20 underlying and are delegated to
  * @author Compound
  */
-contract CErc20Delegate is CErc20, CDelegateInterface {
+contract JErc20Delegate is JErc20, JDelegateInterface {
     /**
      * @notice Construct an empty delegate
      */
