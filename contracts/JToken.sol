@@ -131,17 +131,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Get the underlying balance of the `owner`
-     * @dev This does not accrues interest in a transaction
-     * @param owner The address of the account to query
-     * @return The amount of underlying owned by `owner`
-     */
-    function balanceOfUnderlyingStored(address owner) external view returns (uint256) {
-        Exp memory exchangeRate = Exp({mantissa: exchangeRateStored()});
-        return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
-    }
-
-    /**
      * @notice Get a snapshot of the account's balances, and the cached exchange rate
      * @dev This is used by joetroller to more efficiently perform liquidity checks.
      * @param account Address of the account to snapshot
