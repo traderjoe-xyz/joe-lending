@@ -73,7 +73,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     function initialize() public {
       require(!initialized, "RewardDistributor already initialized");
-      setJoetroller(msg.sender);
+      joetroller = Joetroller(msg.sender);
       initialized = true;
     }
 
