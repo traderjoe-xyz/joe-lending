@@ -244,6 +244,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param supplier The supplier to be rewarded
      */
     function updateAndDistributeSupplierRewardsForToken(address jToken, address supplier) external {
+        require(adminOrInitializing(), "only admin can update and distribute supplier rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardSupplyIndex(rewardType, jToken);
             distributeSupplierReward(rewardType, jToken, supplier);
@@ -257,6 +258,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      */
     function updateAndDistributeBorrowerRewardsForToken(address jToken, address borrower, Exp calldata marketBorrowIndex)
     external {
+        require(adminOrInitializing(), "only admin can update and distribute borrower rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
             distributeBorrowerReward(rewardType, jToken, borrower, marketBorrowIndex);
