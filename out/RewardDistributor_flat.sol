@@ -3152,6 +3152,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param supplier The supplier to be rewarded
      */
     function updateAndDistributeSupplierRewardsForToken(address jToken, address supplier) external {
+        require(adminOrInitializing(), "only admin can update and distribute supplier rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardSupplyIndex(rewardType, jToken);
             distributeSupplierReward(rewardType, jToken, supplier);
@@ -3165,6 +3166,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      */
     function updateAndDistributeBorrowerRewardsForToken(address jToken, address borrower, Exp calldata marketBorrowIndex)
     external {
+        require(adminOrInitializing(), "only admin can update and distribute borrower rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
             distributeBorrowerReward(rewardType, jToken, borrower, marketBorrowIndex);
@@ -4371,7 +4373,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
             }
             vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
 
-            // Pre-joeute a conversion factor from tokens -> ether (normalized price value)
+            // Pre-compute a conversion factor from tokens -> ether (normalized price value)
             vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate), vars.oraclePrice);
 
             // sumCollateral += tokensToDenom * jTokenBalance
@@ -4844,5 +4846,4 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     }
 
 }
-
 
