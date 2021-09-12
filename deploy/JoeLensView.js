@@ -3,11 +3,12 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy("JoeLens", {
+  await deploy("JoeLensView", {
     from: deployer,
+    args: ["jETH"],
     log: true,
     deterministicDeployment: false,
   });
 };
 
-module.exports.tags = ["JoeLens"];
+module.exports.tags = ["JoeLensView"];
