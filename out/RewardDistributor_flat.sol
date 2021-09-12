@@ -2976,12 +2976,12 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     bool private initialized;
 
     constructor() public {
+      admin = msg.sender;
     }
 
     function initialize() public {
       require(!initialized, "RewardDistributor already initialized");
-      admin = msg.sender;
-      setJoetroller(msg.sender);
+      joetroller = Joetroller(msg.sender);
       initialized = true;
     }
 
@@ -4846,4 +4846,5 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     }
 
 }
+
 
