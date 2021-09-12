@@ -1840,17 +1840,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Get the underlying balance of the `owner`
-     * @dev This does not accrues interest in a transaction
-     * @param owner The address of the account to query
-     * @return The amount of underlying owned by `owner`
-     */
-    function balanceOfUnderlyingStored(address owner) external view returns (uint256) {
-        Exp memory exchangeRate = Exp({mantissa: exchangeRateStored()});
-        return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
-    }
-
-    /**
      * @notice Get a snapshot of the account's balances, and the cached exchange rate
      * @dev This is used by joetroller to more efficiently perform liquidity checks.
      * @param account Address of the account to snapshot
@@ -5420,6 +5409,19 @@ contract JoeLensView is Exponential {
         uint256 borrowCap;
     }
 
+    function jTokenMetadataAll(JToken[] calldata jTokens) external view returns (JTokenMetadata[] memory) {
+        uint256 jTokenCount = jTokens.length;
+        require(jTokenCount > 0, "invalid input");
+        JTokenMetadata[] memory res = new JTokenMetadata[](jTokenCount);
+        Joetroller joetroller = Joetroller(address(jTokens[0].joetroller()));
+        PriceOracle priceOracle = joetroller.oracle();
+        for (uint256 i = 0; i < jTokenCount; i++) {
+            require(address(joetroller) == address(jTokens[i].joetroller()), "mismatch joetroller");
+            res[i] = jTokenMetadataInternal(jTokens[i], joetroller, priceOracle);
+        }
+        return res;
+    }
+
     function jTokenMetadata(JToken jToken) public view returns (JTokenMetadata memory) {
         Joetroller joetroller = Joetroller(address(jToken.joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
@@ -5485,12 +5487,12 @@ contract JoeLensView is Exponential {
 
     struct JTokenBalances {
         address jToken;
-        uint256 supplyBalance; // Same as collateral balance - the number of jTokens held
+        uint256 jTokenBalance; // Same as collateral balance - the number of jTokens held
+        uint256 balanceOfUnderlyingStored; // Balance of underlying asset supplied by. Accrue interest is not called.
         uint256 supplyValueUSD;
         uint256 collateralValueUSD; // This is supplyValueUSD multiplied by collateral factor
         uint256 borrowBalanceStored; // Borrow balance without accruing interest
         uint256 borrowValueUSD;
-        uint256 balanceOfUnderlyingStored; // Balance of underlying asset supplied by. Accrue interest is not called.
         uint256 underlyingTokenBalance; // Underlying balance current held in user's wallet
         uint256 underlyingTokenAllowance;
         bool collateralEnabled;
@@ -5526,11 +5528,11 @@ contract JoeLensView is Exponential {
         }
 
         uint256 exchangeRateStored;
-        (, vars.supplyBalance, vars.borrowBalanceStored, exchangeRateStored) =
+        (, vars.jTokenBalance, vars.borrowBalanceStored, exchangeRateStored) =
           jToken.getAccountSnapshot(account);
 
         Exp memory exchangeRate = Exp({mantissa: exchangeRateStored});
-        vars.balanceOfUnderlyingStored = mul_ScalarTruncate(exchangeRate, vars.supplyBalance);
+        vars.balanceOfUnderlyingStored = mul_ScalarTruncate(exchangeRate, vars.jTokenBalance);
         PriceOracle priceOracle = joetroller.oracle();
         uint256 underlyingPrice = priceOracle.getUnderlyingPrice(jToken);
 
