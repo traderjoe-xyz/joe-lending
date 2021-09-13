@@ -44,7 +44,7 @@
     "eth-saddle": "^0.1.21",
     "ethereum-waffle": "^3.4.0",
     "ethereumjs-abi": "^0.6.8",
-    "ethers": "^5.4.4",
+    "ethers": "^5.0.7",
     "hardhat": "^2.6.0",
     "hardhat-abi-exporter": "^2.2.1",
     "hardhat-contract-sizer": "^2.0.3",
