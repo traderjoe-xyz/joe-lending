@@ -279,10 +279,6 @@ module.exports = {
     overwrite: false,
     runOnCompile: true,
   },
-  typechain: {
-    outDir: "types",
-    target: "ethers-v5",
-  },
   watcher: {
     compile: {
       tasks: ["compile"],
