@@ -1,6 +1,6 @@
 {
   "name": "@traderjoe-xyz/lending",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Banker Joe Lending Protocol",
   "main": "index.js",
   "files": [
