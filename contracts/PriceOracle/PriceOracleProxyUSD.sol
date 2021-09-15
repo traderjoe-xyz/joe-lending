@@ -138,7 +138,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param underlyingPriceMantissa The new price for the underling asset
      */
     function _setUnderlyingPrice(JToken jToken, uint underlyingPriceMantissa) external {
-        require(msg.sender == admin, "only the admin may set the underlying price"); 
+        require(msg.sender == admin, "only the admin may set the underlying price");
         address asset = address(JErc20(address(jToken)).underlying());
         prices[asset] = underlyingPriceMantissa;
     }
