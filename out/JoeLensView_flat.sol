@@ -3456,7 +3456,7 @@ contract RewardDistributorStorage {
     /// @notice The JOE/AVAX market borrow state for each market
     mapping(uint8 => mapping(address => RewardMarketState)) public rewardBorrowState;
 
-    /// @notice The JOE/AVAX borrow index for each market for each supplier as of the last time they accrued reward 
+    /// @notice The JOE/AVAX borrow index for each market for each supplier as of the last time they accrued reward
     mapping(uint8 => mapping(address => mapping(address => uint256))) public rewardSupplierIndex;
 
     /// @notice The JOE/AVAX borrow index for each market for each borrower as of the last time they accrued reward
@@ -3489,12 +3489,12 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     bool private initialized;
 
     constructor() public {
+      admin = msg.sender;
     }
 
     function initialize() public {
       require(!initialized, "RewardDistributor already initialized");
-      admin = msg.sender;
-      setJoetroller(msg.sender);
+      joetroller = Joetroller(msg.sender);
       initialized = true;
     }
 
@@ -3512,14 +3512,14 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param rewardSpeed New reward speed for market
      */
     function _setRewardSpeed(uint8 rewardType, JToken jToken, uint rewardSpeed) public {
-        require(rewardType <= 1, "rewardType is invalid"); 
+        require(rewardType <= 1, "rewardType is invalid");
         require(adminOrInitializing(), "only admin can set reward speed");
         setRewardSpeedInternal(rewardType, jToken, rewardSpeed);
     }
 
     /**
      * @notice Set JOE/AVAX speed for a single market
-     * @param rewardType  0: JOE, 1: AVAX 
+     * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose speed to update
      * @param newSpeed New JOE or AVAX speed for market
      */
@@ -3532,7 +3532,6 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
         } else if (newSpeed != 0) {
             // Add the JOE market
-            
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
             if (rewardSupplyState[rewardType][address(jToken)].index == 0 &&
@@ -3560,11 +3559,11 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /**
      * @notice Accrue JOE/AVAX to the market by updating the supply index
-     * @param rewardType  0: JOE, 1: AVAX 
+     * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose supply index to update
      */
     function updateRewardSupplyIndex(uint8 rewardType, address jToken) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
+        require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
         uint supplySpeed = rewardSpeeds[rewardType][jToken];
         uint blockTimestamp = getBlockTimestamp();
@@ -3585,11 +3584,11 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /**
      * @notice Accrue JOE/AVAX to the market by updating the borrow index
-     * @param rewardType  0: JOE, 1: AVAX 
+     * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose borrow index to update
      */
     function updateRewardBorrowIndex(uint8 rewardType, address jToken, Exp memory marketBorrowIndex) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
+        require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
         uint borrowSpeed = rewardSpeeds[rewardType][jToken];
         uint blockTimestamp = getBlockTimestamp();
@@ -3610,16 +3609,15 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /**
      * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
-     * @param rewardType  0: JOE, 1: AVAX 
+     * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market in which the supplier is interacting
      * @param supplier The address of the supplier to distribute JOE/AVAX to
      */
     function distributeSupplierReward(uint8 rewardType, address jToken, address supplier) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
+        require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
         Double memory supplyIndex = Double({mantissa: supplyState.index});
-        Double memory supplierIndex = Double({mantissa:
-                                             rewardSupplierIndex[rewardType][jToken][supplier]});
+        Double memory supplierIndex = Double({mantissa: rewardSupplierIndex[rewardType][jToken][supplier]});
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
@@ -3637,16 +3635,15 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /**
      * @notice Calculate JOE/AVAX accrued by a borrower and possibly transfer it to them
      * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.
-     * @param rewardType  0: JOE, 1: AVAX 
+     * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market in which the borrower is interacting
      * @param borrower The address of the borrower to distribute JOE/AVAX to
      */
     function distributeBorrowerReward(uint8 rewardType, address jToken, address borrower, Exp memory marketBorrowIndex) internal {
-        require(rewardType <= 1, "rewardType is invalid"); 
+        require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
         Double memory borrowIndex = Double({mantissa: borrowState.index});
-        Double memory borrowerIndex = Double({mantissa:
-                                             rewardBorrowerIndex[rewardType][jToken][borrower]});
+        Double memory borrowerIndex = Double({mantissa: rewardBorrowerIndex[rewardType][jToken][borrower]});
         rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex.mantissa;
 
         if (borrowerIndex.mantissa > 0) {
@@ -3665,6 +3662,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param supplier The supplier to be rewarded
      */
     function updateAndDistributeSupplierRewardsForToken(address jToken, address supplier) external {
+        require(adminOrInitializing(), "only admin can update and distribute supplier rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardSupplyIndex(rewardType, jToken);
             distributeSupplierReward(rewardType, jToken, supplier);
@@ -3678,6 +3676,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      */
     function updateAndDistributeBorrowerRewardsForToken(address jToken, address borrower, Exp calldata marketBorrowIndex)
     external {
+        require(adminOrInitializing(), "only admin can update and distribute borrower rewards");
         for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
             updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
             distributeBorrowerReward(rewardType, jToken, borrower, marketBorrowIndex);
@@ -3700,7 +3699,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param jTokens The list of markets to claim JOE/AVAX in
      */
     function claimReward(uint8 rewardType, address payable holder, JToken[] memory jTokens) public {
-        address payable [] memory holders = new address payable[](1);
+        address payable[] memory holders = new address payable[](1);
         holders[0] = holder;
         claimReward(rewardType, holders, jTokens, true, true);
     }
@@ -3780,15 +3779,15 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Set the JOE token address
      */
     function setJoeAddress(address newJoeAddress) public {
-        require(msg.sender == admin);
+        require(msg.sender == admin, "only admin can set JOE");
         joeAddress = newJoeAddress;
     }
-    
+
     /**
      * @notice Set the Joetroller address
      */
     function setJoetroller(address _joetroller) public {
-        require(msg.sender == admin);
+        require(msg.sender == admin, "only admin can set Joetroller");
         joetroller = Joetroller(_joetroller);
     }
 
@@ -3796,14 +3795,14 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Set the admin
      */
     function setAdmin(address _newAdmin) public {
-      require(msg.sender == admin);
+      require(msg.sender == admin, "only admin can set admin");
       admin = _newAdmin;
     }
 
     /**
      * @notice payable function needed to receive AVAX
      */
-    function () payable external {
+    function () external payable {
     }
 
     function getBlockTimestamp() public view returns (uint256) {
@@ -5383,7 +5382,6 @@ contract JoeLensView is Exponential {
     }
 
     /*** Market info functions ***/
-  
     struct JTokenMetadata {
         address jToken;
         uint256 exchangeRateStored;
@@ -5498,8 +5496,8 @@ contract JoeLensView is Exponential {
         bool collateralEnabled;
     }
 
-    function jTokenBalancesAll(JToken[] calldata jTokens, address payable account)
-        external view
+    function jTokenBalancesAll(JToken[] memory jTokens, address account)
+        public view
         returns (JTokenBalances[] memory)
     {
         uint256 jTokenCount = jTokens.length;
@@ -5510,7 +5508,7 @@ contract JoeLensView is Exponential {
         return res;
     }
 
-    function jTokenBalances(JToken jToken, address payable account) public view returns (JTokenBalances memory) {
+    function jTokenBalances(JToken jToken, address account) public view returns (JTokenBalances memory) {
         JTokenBalances memory vars;
         Joetroller joetroller = Joetroller(address(jToken.joetroller()));
 
@@ -5528,8 +5526,7 @@ contract JoeLensView is Exponential {
         }
 
         uint256 exchangeRateStored;
-        (, vars.jTokenBalance, vars.borrowBalanceStored, exchangeRateStored) =
-          jToken.getAccountSnapshot(account);
+        (, vars.jTokenBalance, vars.borrowBalanceStored, exchangeRateStored) = jToken.getAccountSnapshot(account);
 
         Exp memory exchangeRate = Exp({mantissa: exchangeRateStored});
         vars.balanceOfUnderlyingStored = mul_ScalarTruncate(exchangeRate, vars.jTokenBalance);
@@ -5554,13 +5551,31 @@ contract JoeLensView is Exponential {
         JToken[] markets;
         uint256 liquidity;
         uint256 shortfall;
+        uint256 totalCollateralValueUSD;
+        uint256 totalBorrowValueUSD;
+        uint256 healthFactor;
     }
 
     function getAccountLimits(Joetroller joetroller, address account) public view returns (AccountLimits memory) {
-        (uint256 errorCode, uint256 liquidity, uint256 shortfall) = joetroller.getAccountLiquidity(account);
-        require(errorCode == 0);
+        AccountLimits memory vars;
+        uint256 errorCode;
 
-        return AccountLimits({markets: joetroller.getAssetsIn(account), liquidity: liquidity, shortfall: shortfall});
+        (errorCode, vars.liquidity, vars.shortfall) = joetroller.getAccountLiquidity(account);
+        require(errorCode == 0, "Can't get account liquidity");
+
+        vars.markets = joetroller.getAssetsIn(account);
+        JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, account);
+        for (uint256 i = 0; i < jTokenBalancesList.length; i++) {
+          vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD,
+                                              jTokenBalancesList[i].collateralValueUSD);
+          vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
+        }
+
+        Exp memory totalBorrows = Exp({ mantissa: vars.totalBorrowValueUSD });
+
+        vars.healthFactor = div_(vars.totalCollateralValueUSD, totalBorrows);
+
+        return vars;
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
