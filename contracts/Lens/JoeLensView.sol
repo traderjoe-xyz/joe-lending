@@ -22,11 +22,10 @@ interface JJTokenInterface {
  * @notice This is a version of JoeLens that only contains view functions.
  */
 contract JoeLensView is Exponential {
-
     string public nativeSymbol;
 
     constructor(string memory _nativeSymbol) public {
-      nativeSymbol = _nativeSymbol;
+        nativeSymbol = _nativeSymbol;
     }
 
     /*** Market info functions ***/
@@ -144,10 +143,7 @@ contract JoeLensView is Exponential {
         bool collateralEnabled;
     }
 
-    function jTokenBalancesAll(JToken[] memory jTokens, address account)
-        public view
-        returns (JTokenBalances[] memory)
-    {
+    function jTokenBalancesAll(JToken[] memory jTokens, address account) public view returns (JTokenBalances[] memory) {
         uint256 jTokenCount = jTokens.length;
         JTokenBalances[] memory res = new JTokenBalances[](jTokenCount);
         for (uint256 i = 0; i < jTokenCount; i++) {
@@ -183,13 +179,13 @@ contract JoeLensView is Exponential {
 
         (, uint256 collateralFactorMantissa, ) = joetroller.markets(address(jToken));
 
-        Exp memory supplyValueInUnderlying = Exp({ mantissa: vars.balanceOfUnderlyingStored });
+        Exp memory supplyValueInUnderlying = Exp({mantissa: vars.balanceOfUnderlyingStored});
         vars.supplyValueUSD = mul_ScalarTruncate(supplyValueInUnderlying, underlyingPrice);
 
-        Exp memory collateralFactor = Exp({ mantissa: collateralFactorMantissa });
+        Exp memory collateralFactor = Exp({mantissa: collateralFactorMantissa});
         vars.collateralValueUSD = mul_ScalarTruncate(collateralFactor, vars.supplyValueUSD);
 
-        Exp memory borrowBalance = Exp({ mantissa: vars.borrowBalanceStored });
+        Exp memory borrowBalance = Exp({mantissa: vars.borrowBalanceStored});
         vars.borrowValueUSD = mul_ScalarTruncate(borrowBalance, underlyingPrice);
 
         return vars;
@@ -214,12 +210,11 @@ contract JoeLensView is Exponential {
         vars.markets = joetroller.getAssetsIn(account);
         JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, account);
         for (uint256 i = 0; i < jTokenBalancesList.length; i++) {
-          vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD,
-                                              jTokenBalancesList[i].collateralValueUSD);
-          vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
+            vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD, jTokenBalancesList[i].collateralValueUSD);
+            vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
         }
 
-        Exp memory totalBorrows = Exp({ mantissa: vars.totalBorrowValueUSD });
+        Exp memory totalBorrows = Exp({mantissa: vars.totalBorrowValueUSD});
 
         vars.healthFactor = div_(vars.totalCollateralValueUSD, totalBorrows);
 

@@ -10,31 +10,38 @@ import "../EIP20Interface.sol";
 
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
+
     function description() external view returns (string memory);
+
     function version() external view returns (uint256);
 
     // getRoundData and latestRoundData should both raise "No data present"
     // if they do not have data to report, instead of returning unset values
     // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId) external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 
-    function latestRoundData() external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 }
 
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
-
     /// @notice Fallback price feed - not used
     mapping(address => uint256) internal prices;
 
@@ -59,13 +66,13 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(JToken jToken) public view returns (uint) {
+    function getUnderlyingPrice(JToken jToken) public view returns (uint256) {
         address jTokenAddress = address(jToken);
 
         AggregatorV3Interface aggregator = aggregators[jTokenAddress];
         if (address(aggregator) != address(0)) {
-            uint price = getPriceFromChainlink(aggregator);
-            uint underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
+            uint256 price = getPriceFromChainlink(aggregator);
+            uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
             return mul_(price, 10**(18 - underlyingDecimals));
         }
 
@@ -81,12 +88,12 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param aggregator The ChainLink aggregator to get the price of
      * @return The price
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint) {
-        ( , int price, , , ) = aggregator.latestRoundData();
+    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
+        (, int256 price, , , ) = aggregator.latestRoundData();
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
+        return mul_(uint256(price), 10**(18 - uint256(aggregator.decimals())));
     }
 
     /*** Admin or guardian functions ***/
@@ -123,7 +130,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(jTokenAddresses.length == sources.length, "mismatched data");
-        for (uint i = 0; i < jTokenAddresses.length; i++) {
+        for (uint256 i = 0; i < jTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
             }
@@ -137,7 +144,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param jToken The jToken to get underlying asset from
      * @param underlyingPriceMantissa The new price for the underling asset
      */
-    function _setUnderlyingPrice(JToken jToken, uint underlyingPriceMantissa) external {
+    function _setUnderlyingPrice(JToken jToken, uint256 underlyingPriceMantissa) external {
         require(msg.sender == admin, "only the admin may set the underlying price");
         address asset = address(JErc20(address(jToken)).underlying());
         prices[asset] = underlyingPriceMantissa;
@@ -148,7 +155,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param asset The address of the underlying asset
      * @param price The new price of the asset
      */
-    function setDirectPrice(address asset, uint price) external {
+    function setDirectPrice(address asset, uint256 price) external {
         require(msg.sender == admin, "only the admin may set the direct price");
         prices[asset] = price;
     }
