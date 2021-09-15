@@ -30,7 +30,6 @@ contract JoeLensView is Exponential {
     }
 
     /*** Market info functions ***/
-  
     struct JTokenMetadata {
         address jToken;
         uint256 exchangeRateStored;
@@ -145,8 +144,8 @@ contract JoeLensView is Exponential {
         bool collateralEnabled;
     }
 
-    function jTokenBalancesAll(JToken[] calldata jTokens, address payable account)
-        external view
+    function jTokenBalancesAll(JToken[] memory jTokens, address account)
+        public view
         returns (JTokenBalances[] memory)
     {
         uint256 jTokenCount = jTokens.length;
@@ -157,7 +156,7 @@ contract JoeLensView is Exponential {
         return res;
     }
 
-    function jTokenBalances(JToken jToken, address payable account) public view returns (JTokenBalances memory) {
+    function jTokenBalances(JToken jToken, address account) public view returns (JTokenBalances memory) {
         JTokenBalances memory vars;
         Joetroller joetroller = Joetroller(address(jToken.joetroller()));
 
@@ -175,8 +174,7 @@ contract JoeLensView is Exponential {
         }
 
         uint256 exchangeRateStored;
-        (, vars.jTokenBalance, vars.borrowBalanceStored, exchangeRateStored) =
-          jToken.getAccountSnapshot(account);
+        (, vars.jTokenBalance, vars.borrowBalanceStored, exchangeRateStored) = jToken.getAccountSnapshot(account);
 
         Exp memory exchangeRate = Exp({mantissa: exchangeRateStored});
         vars.balanceOfUnderlyingStored = mul_ScalarTruncate(exchangeRate, vars.jTokenBalance);
@@ -201,13 +199,31 @@ contract JoeLensView is Exponential {
         JToken[] markets;
         uint256 liquidity;
         uint256 shortfall;
+        uint256 totalCollateralValueUSD;
+        uint256 totalBorrowValueUSD;
+        uint256 healthFactor;
     }
 
     function getAccountLimits(Joetroller joetroller, address account) public view returns (AccountLimits memory) {
-        (uint256 errorCode, uint256 liquidity, uint256 shortfall) = joetroller.getAccountLiquidity(account);
-        require(errorCode == 0);
+        AccountLimits memory vars;
+        uint256 errorCode;
 
-        return AccountLimits({markets: joetroller.getAssetsIn(account), liquidity: liquidity, shortfall: shortfall});
+        (errorCode, vars.liquidity, vars.shortfall) = joetroller.getAccountLiquidity(account);
+        require(errorCode == 0, "Can't get account liquidity");
+
+        vars.markets = joetroller.getAssetsIn(account);
+        JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, account);
+        for (uint256 i = 0; i < jTokenBalancesList.length; i++) {
+          vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD,
+                                              jTokenBalancesList[i].collateralValueUSD);
+          vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
+        }
+
+        Exp memory totalBorrows = Exp({ mantissa: vars.totalBorrowValueUSD });
+
+        vars.healthFactor = div_(vars.totalCollateralValueUSD, totalBorrows);
+
+        return vars;
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
