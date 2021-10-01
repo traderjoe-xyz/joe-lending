@@ -73,7 +73,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     uint256 internal constant collateralFactorMaxMantissa = 0.9e18; // 0.9
 
     constructor() public {
-      admin = msg.sender;
+        admin = msg.sender;
     }
 
     /**
@@ -233,7 +233,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     }
 
     /**
-     * @notice Return a specific market is listed or not
+     * @notice Return whether a specific market is listed or not
      * @param jTokenAddress The address of the asset to be checked
      * @return Whether or not the market is listed
      */
@@ -322,13 +322,12 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
     ) external returns (uint256) {
         uint256 allowed = redeemAllowedInternal(jToken, redeemer, redeemTokens);
         if (allowed != uint256(Error.NO_ERROR)) {
-          return allowed;
+            return allowed;
         }
-        
+
         // Keep the flywheel going
         RewardDistributor(rewardDistributor).updateAndDistributeSupplierRewardsForToken(jToken, redeemer);
         return uint256(Error.NO_ERROR);
-
     }
 
     function redeemAllowedInternal(
@@ -443,7 +442,6 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
             return uint256(Error.INSUFFICIENT_LIQUIDITY);
         }
 
-
         // Keep the flywheel going
         Exp memory borrowIndex = Exp({mantissa: JToken(jToken).borrowIndex()});
         RewardDistributor(rewardDistributor).updateAndDistributeBorrowerRewardsForToken(jToken, borrower, borrowIndex);
@@ -477,7 +475,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @notice Checks if the account should be allowed to repay a borrow in the given market
      * @param jToken The market to verify the repay against
      * @param payer The account which would repay the asset
-     * @param borrower The account which would borrowed the asset
+     * @param borrower The account which borrowed the asset
      * @param repayAmount The amount of the underlying asset the account would repay
      * @return 0 if the repay is allowed, otherwise a semi-opaque error code (See ErrorReporter.sol)
      */
@@ -692,7 +690,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         // Currently the only consideration is whether or not
         //  the src is allowed to redeem this many tokens
         uint256 allowed = redeemAllowedInternal(jToken, src, transferTokens);
-        if (allowed != uint(Error.NO_ERROR)) {
+        if (allowed != uint256(Error.NO_ERROR)) {
             return allowed;
         }
 
@@ -916,7 +914,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
                 return (Error.SNAPSHOT_ERROR, 0, 0);
             }
 
-            // Unlike joeound protocol, getUnderlyingPrice is relatively expensive because we use ChainLink as our primary price feed.
+            // Unlike compound protocol, getUnderlyingPrice is relatively expensive because we use ChainLink as our primary price feed.
             // If user has no supply / borrow balance on this asset, and user is not redeeming / borrowing this asset, skip it.
             if (vars.jTokenBalance == 0 && vars.borrowBalance == 0 && asset != jTokenModify) {
                 continue;
@@ -1020,20 +1018,19 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
 
     function _setRewardDistributor(address payable newRewardDistributor) public returns (uint256) {
         if (msg.sender != admin) {
-          return uint256(Error.UNAUTHORIZED);
+            return uint256(Error.UNAUTHORIZED);
         }
-        (bool success, ) = newRewardDistributor.call.value(0)(
-                              abi.encodeWithSignature("initialize()", 0)
-                           );
+        (bool success, ) = newRewardDistributor.call.value(0)(abi.encodeWithSignature("initialize()", 0));
         if (!success) {
-          return uint256(Error.REJECTION);
+            return uint256(Error.REJECTION);
         }
-        
+
         address oldRewardDistributor = rewardDistributor;
         rewardDistributor = newRewardDistributor;
 
         return uint256(Error.NO_ERROR);
     }
+
     /**
      * @notice Sets a new price oracle for the joetroller
      * @dev Admin function to set a new price oracle
@@ -1372,7 +1369,6 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         return msg.sender == admin || msg.sender == joetrollerImplementation;
     }
 
-
     /*** Reward distribution functions ***/
 
     /**
@@ -1380,7 +1376,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @param holder The address to claim JOE/AVAX for
      */
     function claimReward(uint8 rewardType, address payable holder) public {
-       RewardDistributor(rewardDistributor).claimReward(rewardType, holder);
+        RewardDistributor(rewardDistributor).claimReward(rewardType, holder);
     }
 
     /**
@@ -1388,7 +1384,11 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @param holder The address to claim JOE/AVAX for
      * @param jTokens The list of markets to claim JOE/AVAX in
      */
-    function claimReward(uint8 rewardType, address payable holder, JToken[] memory jTokens) public {
+    function claimReward(
+        uint8 rewardType,
+        address payable holder,
+        JToken[] memory jTokens
+    ) public {
         RewardDistributor(rewardDistributor).claimReward(rewardType, holder, jTokens);
     }
 
@@ -1400,8 +1400,13 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @param borrowers Whether or not to claim JOE/AVAX earned by borrowing
      * @param suppliers Whether or not to claim JOE/AVAX earned by supplying
      */
-    function claimReward(uint8 rewardType, address payable[] memory holders, JToken[] memory jTokens, bool borrowers, bool suppliers) public payable {
+    function claimReward(
+        uint8 rewardType,
+        address payable[] memory holders,
+        JToken[] memory jTokens,
+        bool borrowers,
+        bool suppliers
+    ) public payable {
         RewardDistributor(rewardDistributor).claimReward(rewardType, holders, jTokens, borrowers, suppliers);
     }
-
 }

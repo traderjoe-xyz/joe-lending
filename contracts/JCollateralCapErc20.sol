@@ -145,9 +145,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
      */
     function maxFlashLoan() external view returns (uint256) {
         uint256 amount = 0;
-        if (
-            JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")
-        ) {
+        if (JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")) {
             amount = getCashPrior();
         }
         return amount;
@@ -505,7 +503,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
             // If the collateral cap is set but the remaining cap is not enough for this user,
             // give the remaining parts to the user.
             uint256 gap = sub_(collateralCap, totalCollateralTokens);
-            totalCollateralTokens = add_(totalCollateralTokens, gap);
+            totalCollateralTokens = collateralCap;
             accountCollateralTokens[account] = add_(accountCollateralTokens[account], gap);
 
             emit UserCollateralChanged(account, accountCollateralTokens[account]);
@@ -544,7 +542,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not

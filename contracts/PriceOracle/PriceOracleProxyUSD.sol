@@ -73,12 +73,17 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
         if (address(aggregator) != address(0)) {
             uint256 price = getPriceFromChainlink(aggregator);
             uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
-            return mul_(price, 10**(18 - underlyingDecimals));
+            if (underlyingDecimals <= 18) {
+                return mul_(price, 10**(18 - underlyingDecimals));
+            }
+            return div_(price, 10**(underlyingDecimals - 18));
         }
 
         address asset = address(JErc20(jTokenAddress).underlying());
 
-        return prices[asset];
+        uint256 price = prices[asset];
+        require(price > 0, "invalid price");
+        return price;
     }
 
     /*** Internal fucntions ***/
