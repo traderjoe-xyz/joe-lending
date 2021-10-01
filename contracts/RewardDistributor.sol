@@ -73,7 +73,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     );
 
     /// @notice Emitted when JOE is granted by admin
-    event JoeGranted(address recipient, uint256 amount);
+    event RewardGranted(uint8 rewardType, address recipient, uint256 amount);
 
     bool private initialized;
 
@@ -415,7 +415,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         require(adminOrInitializing(), "only admin can grant joe");
         uint256 amountLeft = grantRewardInternal(rewardType, recipient, amount);
         require(amountLeft == 0, "insufficient joe for grant");
-        emit JoeGranted(recipient, amount);
+        emit RewardGranted(rewardType, recipient, amount);
     }
 
     /**
