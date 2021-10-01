@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.5.16;
-import "./CCollateralCapErc20.sol";
-import "./CErc20.sol";
-import "./Comptroller.sol";
+import "./JCollateralCapErc20.sol";
+import "./JErc20.sol";
+import "./Joetroller.sol";
 
 interface CERC20Interface {
     function underlying() external view returns (address);
@@ -11,14 +11,14 @@ interface CERC20Interface {
 
 contract FlashloanLender is ERC3156FlashLenderInterface {
     /**
-     * @notice underlying token to cToken mapping
+     * @notice underlying token to jToken mapping
      */
-    mapping(address => address) public underlyingToCToken;
+    mapping(address => address) public underlyingToJToken;
 
     /**
-     * @notice C.R.E.A.M. comptroller address
+     * @notice C.R.E.A.M. joetroller address
      */
-    address payable public comptroller;
+    address payable public joetroller;
 
     address public owner;
 
@@ -30,25 +30,25 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
         _;
     }
 
-    constructor(address payable _comptroller, address _owner) public {
-        comptroller = _comptroller;
+    constructor(address payable _joetroller, address _owner) public {
+        joetroller = _joetroller;
         owner = _owner;
         initialiseUnderlyingMapping();
     }
 
     function maxFlashLoan(address token) external view returns (uint256) {
-        address cToken = underlyingToCToken[token];
+        address jToken = underlyingToJToken[token];
         uint256 amount = 0;
-        if (cToken != address(0)) {
-            amount = CCollateralCapErc20(cToken).maxFlashLoan();
+        if (jToken != address(0)) {
+            amount = JCollateralCapErc20(jToken).maxFlashLoan();
         }
         return amount;
     }
 
     function flashFee(address token, uint256 amount) external view returns (uint256) {
-        address cToken = underlyingToCToken[token];
-        require(cToken != address(0), "cannot find cToken of this underlying in the mapping");
-        return CCollateralCapErc20(cToken).flashFee(amount);
+        address jToken = underlyingToJToken[token];
+        require(jToken != address(0), "cannot find jToken of this underlying in the mapping");
+        return JCollateralCapErc20(jToken).flashFee(amount);
     }
 
     function flashLoan(
@@ -57,27 +57,27 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
         uint256 amount,
         bytes calldata data
     ) external returns (bool) {
-        address cToken = underlyingToCToken[token];
-        require(cToken != address(0), "cannot find cToken of this underlying in the mapping");
-        return CCollateralCapErc20(cToken).flashLoan(receiver, msg.sender, amount, data);
+        address jToken = underlyingToJToken[token];
+        require(jToken != address(0), "cannot find jToken of this underlying in the mapping");
+        return JCollateralCapErc20(jToken).flashLoan(receiver, msg.sender, amount, data);
     }
 
-    function updateUnderlyingMapping(CToken[] calldata cTokens) external onlyOwner returns (bool) {
-        uint256 cTokenLength = cTokens.length;
-        for (uint256 i = 0; i < cTokenLength; i++) {
-            CToken cToken = cTokens[i];
-            address underlying = CErc20(address(cToken)).underlying();
-            underlyingToCToken[underlying] = address(cToken);
+    function updateUnderlyingMapping(JToken[] calldata jTokens) external onlyOwner returns (bool) {
+        uint256 jTokenLength = jTokens.length;
+        for (uint256 i = 0; i < jTokenLength; i++) {
+            JToken jToken = jTokens[i];
+            address underlying = JErc20(address(jToken)).underlying();
+            underlyingToJToken[underlying] = address(jToken);
         }
         return true;
     }
 
-    function removeUnderlyingMapping(CToken[] calldata cTokens) external onlyOwner returns (bool) {
-        uint256 cTokenLength = cTokens.length;
-        for (uint256 i = 0; i < cTokenLength; i++) {
-            CToken cToken = cTokens[i];
-            address underlying = CErc20(address(cToken)).underlying();
-            underlyingToCToken[underlying] = address(0);
+    function removeUnderlyingMapping(JToken[] calldata jTokens) external onlyOwner returns (bool) {
+        uint256 jTokenLength = jTokens.length;
+        for (uint256 i = 0; i < jTokenLength; i++) {
+            JToken jToken = jTokens[i];
+            address underlying = JErc20(address(jToken)).underlying();
+            underlyingToJToken[underlying] = address(0);
         }
         return true;
     }
@@ -89,15 +89,15 @@ contract FlashloanLender is ERC3156FlashLenderInterface {
     }
 
     function initialiseUnderlyingMapping() internal {
-        CToken[] memory cTokens = Comptroller(comptroller).getAllMarkets();
-        uint256 cTokenLength = cTokens.length;
-        for (uint256 i = 0; i < cTokenLength; i++) {
-            CToken cToken = cTokens[i];
-            if (compareStrings(cToken.symbol(), "crETH")) {
+        JToken[] memory jTokens = Joetroller(joetroller).getAllMarkets();
+        uint256 jTokenLength = jTokens.length;
+        for (uint256 i = 0; i < jTokenLength; i++) {
+            JToken jToken = jTokens[i];
+            if (compareStrings(jToken.symbol(), "crETH")) {
                 continue;
             }
-            address underlying = CErc20(address(cToken)).underlying();
-            underlyingToCToken[underlying] = address(cToken);
+            address underlying = JErc20(address(jToken)).underlying();
+            underlyingToJToken[underlying] = address(jToken);
         }
     }
 }

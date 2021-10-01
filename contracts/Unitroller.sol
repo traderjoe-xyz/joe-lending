@@ -3,21 +3,21 @@
 pragma solidity ^0.5.16;
 
 import "./ErrorReporter.sol";
-import "./ComptrollerStorage.sol";
+import "./JoetrollerStorage.sol";
 
 /**
- * @title ComptrollerCore
- * @dev Storage for the comptroller is at this address, while execution is delegated to the `comptrollerImplementation`.
- * CTokens should reference this contract as their comptroller.
+ * @title JoetrollerCore
+ * @dev Storage for the joetroller is at this address, while execution is delegated to the `joetrollerImplementation`.
+ * JTokens should reference this contract as their joetroller.
  */
-contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
+contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
     /**
-     * @notice Emitted when pendingComptrollerImplementation is changed
+     * @notice Emitted when pendingJoetrollerImplementation is changed
      */
     event NewPendingImplementation(address oldPendingImplementation, address newPendingImplementation);
 
     /**
-     * @notice Emitted when pendingComptrollerImplementation is accepted, which means comptroller implementation is updated
+     * @notice Emitted when pendingJoetrollerImplementation is accepted, which means joetroller implementation is updated
      */
     event NewImplementation(address oldImplementation, address newImplementation);
 
@@ -42,36 +42,36 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
         }
 
-        address oldPendingImplementation = pendingComptrollerImplementation;
+        address oldPendingImplementation = pendingJoetrollerImplementation;
 
-        pendingComptrollerImplementation = newPendingImplementation;
+        pendingJoetrollerImplementation = newPendingImplementation;
 
-        emit NewPendingImplementation(oldPendingImplementation, pendingComptrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
 
         return uint256(Error.NO_ERROR);
     }
 
     /**
-     * @notice Accepts new implementation of comptroller. msg.sender must be pendingImplementation
+     * @notice Accepts new implementation of joetroller. msg.sender must be pendingImplementation
      * @dev Admin function for new implementation to accept it's role as implementation
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _acceptImplementation() public returns (uint256) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
-        if (msg.sender != pendingComptrollerImplementation || pendingComptrollerImplementation == address(0)) {
+        if (msg.sender != pendingJoetrollerImplementation || pendingJoetrollerImplementation == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
         }
 
         // Save current values for inclusion in log
-        address oldImplementation = comptrollerImplementation;
-        address oldPendingImplementation = pendingComptrollerImplementation;
+        address oldImplementation = joetrollerImplementation;
+        address oldPendingImplementation = pendingJoetrollerImplementation;
 
-        comptrollerImplementation = pendingComptrollerImplementation;
+        joetrollerImplementation = pendingJoetrollerImplementation;
 
-        pendingComptrollerImplementation = address(0);
+        pendingJoetrollerImplementation = address(0);
 
-        emit NewImplementation(oldImplementation, comptrollerImplementation);
-        emit NewPendingImplementation(oldPendingImplementation, pendingComptrollerImplementation);
+        emit NewImplementation(oldImplementation, joetrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -106,8 +106,8 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function _acceptAdmin() public returns (uint256) {
-        // Check caller is pendingAdmin and pendingAdmin ≠ address(0)
-        if (msg.sender != pendingAdmin || msg.sender == address(0)) {
+        // Check caller is pendingAdmin
+        if (msg.sender != pendingAdmin) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_ADMIN_PENDING_ADMIN_CHECK);
         }
 
@@ -134,7 +134,7 @@ contract Unitroller is UnitrollerAdminStorage, ComptrollerErrorReporter {
      */
     function() external payable {
         // delegate all other functions to current implementation
-        (bool success, ) = comptrollerImplementation.delegatecall(msg.data);
+        (bool success, ) = joetrollerImplementation.delegatecall(msg.data);
 
         assembly {
             let free_mem_ptr := mload(0x40)

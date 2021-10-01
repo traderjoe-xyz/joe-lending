@@ -2,55 +2,48 @@
 
 pragma solidity ^0.5.16;
 
-import "../CErc20.sol";
-import "../CToken.sol";
+import "../JErc20.sol";
+import "../JToken.sol";
 import "./PriceOracle.sol";
 import "../Exponential.sol";
 import "../EIP20Interface.sol";
 
-interface V1PriceOracleInterface {
-    function assetPrices(address asset) external view returns (uint);
-}
-
-interface CurveSwapInterface {
-    function get_virtual_price() external view returns (uint256);
-}
-
-interface YVaultInterface {
-    function getPricePerFullShare() external view returns (uint256);
-}
-
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
+
     function description() external view returns (string memory);
+
     function version() external view returns (uint256);
 
     // getRoundData and latestRoundData should both raise "No data present"
     // if they do not have data to report, instead of returning unset values
     // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId) external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 
-    function latestRoundData() external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 }
 
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
-    /// @notice ChainLink aggregator base, currently support USD and ETH
-    enum AggregatorBase {
-        USD,
-        ETH
-    }
+    /// @notice Fallback price feed - not used
+    mapping(address => uint256) internal prices;
 
     /// @notice Admin address
     address public admin;
@@ -58,58 +51,39 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     /// @notice Guardian address
     address public guardian;
 
-    struct AggregatorInfo {
-        /// @notice The source address of the aggregator
-        AggregatorV3Interface source;
-
-        /// @notice The aggregator base
-        AggregatorBase base;
-    }
-
     /// @notice Chainlink Aggregators
-    mapping(address => AggregatorInfo) public aggregators;
-
-    /// @notice Mapping of crToken to y-vault token
-    mapping(address => address) public yVaults;
-
-    /// @notice Mapping of crToken to curve swap
-    mapping(address => address) public curveSwap;
-
-    /// @notice The v1 price oracle, maintain by CREAM
-    V1PriceOracleInterface public v1PriceOracle;
-
-    AggregatorV3Interface public ethUsdAggregator;
+    mapping(address => AggregatorV3Interface) public aggregators;
 
     /**
      * @param admin_ The address of admin to set aggregators
-     * @param v1PriceOracle_ The v1 price oracle
      */
-    constructor(address admin_, address v1PriceOracle_, address ethUsdAggregator_) public {
+    constructor(address admin_) public {
         admin = admin_;
-        v1PriceOracle = V1PriceOracleInterface(v1PriceOracle_);
-        ethUsdAggregator = AggregatorV3Interface(ethUsdAggregator_);
     }
 
     /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @notice Get the underlying price of a listed jToken asset
+     * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(CToken cToken) public view returns (uint) {
-        address cTokenAddress = address(cToken);
+    function getUnderlyingPrice(JToken jToken) public view returns (uint256) {
+        address jTokenAddress = address(jToken);
 
-        AggregatorInfo memory aggregatorInfo = aggregators[cTokenAddress];
-        if (address(aggregatorInfo.source) != address(0)) {
-            uint price = getPriceFromChainlink(aggregatorInfo.source);
-            if (aggregatorInfo.base == AggregatorBase.ETH) {
-                // Convert the price to USD based if it's ETH based.
-                price = mul_(price, Exp({mantissa: getPriceFromChainlink(ethUsdAggregator)}));
+        AggregatorV3Interface aggregator = aggregators[jTokenAddress];
+        if (address(aggregator) != address(0)) {
+            uint256 price = getPriceFromChainlink(aggregator);
+            uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
+            if (underlyingDecimals <= 18) {
+                return mul_(price, 10**(18 - underlyingDecimals));
             }
-            uint underlyingDecimals = EIP20Interface(CErc20(cTokenAddress).underlying()).decimals();
-            return mul_(price, 10**(18 - underlyingDecimals));
+            return div_(price, 10**(underlyingDecimals - 18));
         }
 
-        return getPriceFromV1(cTokenAddress);
+        address asset = address(JErc20(jTokenAddress).underlying());
+
+        uint256 price = prices[asset];
+        require(price > 0, "invalid price");
+        return price;
     }
 
     /*** Internal fucntions ***/
@@ -119,27 +93,17 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param aggregator The ChainLink aggregator to get the price of
      * @return The price
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint) {
-        ( , int price, , , ) = aggregator.latestRoundData();
+    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
+        (, int256 price, , , ) = aggregator.latestRoundData();
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
-    }
-
-    /**
-     * @notice Get price from v1 price oracle
-     * @param cTokenAddress The CToken address
-     * @return The price
-     */
-    function getPriceFromV1(address cTokenAddress) internal view returns (uint) {
-        address underlying = CErc20(cTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
+        return mul_(uint256(price), 10**(18 - uint256(aggregator.decimals())));
     }
 
     /*** Admin or guardian functions ***/
 
-    event AggregatorUpdated(address cTokenAddress, address source, AggregatorBase base);
+    event AggregatorUpdated(address jTokenAddress, address source);
     event SetGuardian(address guardian);
     event SetAdmin(address admin);
 
@@ -164,20 +128,40 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     }
 
     /**
-     * @notice Set ChainLink aggregators for multiple cTokens
-     * @param cTokenAddresses The list of cTokens
+     * @notice Set ChainLink aggregators for multiple jTokens
+     * @param jTokenAddresses The list of jTokens
      * @param sources The list of ChainLink aggregator sources
-     * @param bases The list of ChainLink aggregator bases
      */
-    function _setAggregators(address[] calldata cTokenAddresses, address[] calldata sources, AggregatorBase[] calldata bases) external {
+    function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
-        require(cTokenAddresses.length == sources.length && cTokenAddresses.length == bases.length, "mismatched data");
-        for (uint i = 0; i < cTokenAddresses.length; i++) {
+        require(jTokenAddresses.length == sources.length, "mismatched data");
+        for (uint256 i = 0; i < jTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
             }
-            aggregators[cTokenAddresses[i]] = AggregatorInfo({source: AggregatorV3Interface(sources[i]), base: bases[i]});
-            emit AggregatorUpdated(cTokenAddresses[i], sources[i], bases[i]);
+            aggregators[jTokenAddresses[i]] = AggregatorV3Interface(sources[i]);
+            emit AggregatorUpdated(jTokenAddresses[i], sources[i]);
         }
+    }
+
+    /**
+     * @notice Set the price of underlying asset
+     * @param jToken The jToken to get underlying asset from
+     * @param underlyingPriceMantissa The new price for the underling asset
+     */
+    function _setUnderlyingPrice(JToken jToken, uint256 underlyingPriceMantissa) external {
+        require(msg.sender == admin, "only the admin may set the underlying price");
+        address asset = address(JErc20(address(jToken)).underlying());
+        prices[asset] = underlyingPriceMantissa;
+    }
+
+    /**
+     * @notice Set the price of the underlying asset directly
+     * @param asset The address of the underlying asset
+     * @param price The new price of the asset
+     */
+    function setDirectPrice(address asset, uint256 price) external {
+        require(msg.sender == admin, "only the admin may set the direct price");
+        prices[asset] = price;
     }
 }

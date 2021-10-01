@@ -7,7 +7,7 @@ require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("hardhat-spdx-license-identifier");
 require("hardhat-watcher");
-// require("solidity-coverage");
+require("hardhat-contract-sizer");
 
 const { HardhatUserConfig } = require("hardhat/types");
 const { removeConsoleLog } = require("hardhat-preprocessor");
@@ -278,10 +278,6 @@ module.exports = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  },
-  typechain: {
-    outDir: "types",
-    target: "ethers-v5",
   },
   watcher: {
     compile: {
