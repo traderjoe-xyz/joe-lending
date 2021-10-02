@@ -18,7 +18,18 @@ interface JJTokenInterface {
     function claimJoe(address) external returns (uint256);
 }
 
+/**
+ * @notice This is a version of JoeLens that contains write transactions.
+ * @dev Call these functions as dry-run transactions for the frontend.
+ */
 contract JoeLens is Exponential {
+    string public nativeSymbol;
+
+    constructor(string memory _nativeSymbol) public {
+        nativeSymbol = _nativeSymbol;
+    }
+
+    /*** Market info functions ***/
     struct JTokenMetadata {
         address jToken;
         uint256 exchangeRateCurrent;
@@ -44,6 +55,25 @@ contract JoeLens is Exponential {
         uint256 borrowCap;
     }
 
+    function jTokenMetadataAll(JToken[] calldata jTokens) external returns (JTokenMetadata[] memory) {
+        uint256 jTokenCount = jTokens.length;
+        require(jTokenCount > 0, "invalid input");
+        JTokenMetadata[] memory res = new JTokenMetadata[](jTokenCount);
+        Joetroller joetroller = Joetroller(address(jTokens[0].joetroller()));
+        PriceOracle priceOracle = joetroller.oracle();
+        for (uint256 i = 0; i < jTokenCount; i++) {
+            require(address(joetroller) == address(jTokens[i].joetroller()), "mismatch joetroller");
+            res[i] = jTokenMetadataInternal(jTokens[i], joetroller, priceOracle);
+        }
+        return res;
+    }
+
+    function jTokenMetadata(JToken jToken) public returns (JTokenMetadata memory) {
+        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
+        PriceOracle priceOracle = joetroller.oracle();
+        return jTokenMetadataInternal(jToken, joetroller, priceOracle);
+    }
+
     function jTokenMetadataInternal(
         JToken jToken,
         Joetroller joetroller,
@@ -58,7 +88,7 @@ contract JoeLens is Exponential {
         uint256 collateralCap;
         uint256 totalCollateralTokens;
 
-        if (compareStrings(jToken.symbol(), "jAVAX")) {
+        if (compareStrings(jToken.symbol(), nativeSymbol)) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {
@@ -99,75 +129,22 @@ contract JoeLens is Exponential {
             });
     }
 
-    function jTokenMetadata(JToken jToken) public returns (JTokenMetadata memory) {
-        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
-        PriceOracle priceOracle = joetroller.oracle();
-        return jTokenMetadataInternal(jToken, joetroller, priceOracle);
-    }
-
-    function jTokenMetadataAll(JToken[] calldata jTokens) external returns (JTokenMetadata[] memory) {
-        uint256 jTokenCount = jTokens.length;
-        require(jTokenCount > 0, "invalid input");
-        JTokenMetadata[] memory res = new JTokenMetadata[](jTokenCount);
-        Joetroller joetroller = Joetroller(address(jTokens[0].joetroller()));
-        PriceOracle priceOracle = joetroller.oracle();
-        for (uint256 i = 0; i < jTokenCount; i++) {
-            require(address(joetroller) == address(jTokens[i].joetroller()), "mismatch joetroller");
-            res[i] = jTokenMetadataInternal(jTokens[i], joetroller, priceOracle);
-        }
-        return res;
-    }
+    /*** Account JToken info functions ***/
 
     struct JTokenBalances {
         address jToken;
-        uint256 balanceOf;
-        uint256 borrowBalanceCurrent;
-        uint256 balanceOfUnderlying;
-        uint256 tokenBalance;
-        uint256 tokenAllowance;
+        uint256 jTokenBalance; // Same as collateral balance - the number of jTokens held
+        uint256 balanceOfUnderlyingCurrent; // Balance of underlying asset supplied by. Accrue interest is not called.
+        uint256 supplyValueUSD;
+        uint256 collateralValueUSD; // This is supplyValueUSD multiplied by collateral factor
+        uint256 borrowBalanceCurrent; // Borrow balance without accruing interest
+        uint256 borrowValueUSD;
+        uint256 underlyingTokenBalance; // Underlying balance current held in user's wallet
+        uint256 underlyingTokenAllowance;
         bool collateralEnabled;
-        uint256 collateralBalance;
-        uint256 nativeTokenBalance;
     }
 
-    function jTokenBalances(JToken jToken, address payable account) public returns (JTokenBalances memory) {
-        bool collateralEnabled = Joetroller(address(jToken.joetroller())).checkMembership(account, jToken);
-        uint256 tokenBalance;
-        uint256 tokenAllowance;
-        uint256 collateralBalance;
-
-        if (compareStrings(jToken.symbol(), "jAVAX")) {
-            tokenBalance = account.balance;
-            tokenAllowance = account.balance;
-        } else {
-            JErc20 jErc20 = JErc20(address(jToken));
-            EIP20Interface underlying = EIP20Interface(jErc20.underlying());
-            tokenBalance = underlying.balanceOf(account);
-            tokenAllowance = underlying.allowance(account, address(jToken));
-        }
-
-        if (collateralEnabled) {
-            (, collateralBalance, , ) = jToken.getAccountSnapshot(account);
-        }
-
-        return
-            JTokenBalances({
-                jToken: address(jToken),
-                balanceOf: jToken.balanceOf(account),
-                borrowBalanceCurrent: jToken.borrowBalanceCurrent(account),
-                balanceOfUnderlying: jToken.balanceOfUnderlying(account),
-                tokenBalance: tokenBalance,
-                tokenAllowance: tokenAllowance,
-                collateralEnabled: collateralEnabled,
-                collateralBalance: collateralBalance,
-                nativeTokenBalance: account.balance
-            });
-    }
-
-    function jTokenBalancesAll(JToken[] calldata jTokens, address payable account)
-        external
-        returns (JTokenBalances[] memory)
-    {
+    function jTokenBalancesAll(JToken[] memory jTokens, address account) public returns (JTokenBalances[] memory) {
         uint256 jTokenCount = jTokens.length;
         JTokenBalances[] memory res = new JTokenBalances[](jTokenCount);
         for (uint256 i = 0; i < jTokenCount; i++) {
@@ -176,33 +153,92 @@ contract JoeLens is Exponential {
         return res;
     }
 
+    function jTokenBalances(JToken jToken, address account) public returns (JTokenBalances memory) {
+        JTokenBalances memory vars;
+        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
+
+        vars.jToken = address(jToken);
+        vars.collateralEnabled = joetroller.checkMembership(account, jToken);
+
+        if (compareStrings(jToken.symbol(), nativeSymbol)) {
+            vars.underlyingTokenBalance = account.balance;
+            vars.underlyingTokenAllowance = account.balance;
+        } else {
+            JErc20 jErc20 = JErc20(address(jToken));
+            EIP20Interface underlying = EIP20Interface(jErc20.underlying());
+            vars.underlyingTokenBalance = underlying.balanceOf(account);
+            vars.underlyingTokenAllowance = underlying.allowance(account, address(jToken));
+        }
+
+        (, vars.jTokenBalance, , ) = jToken.getAccountSnapshot(account);
+        vars.borrowBalanceCurrent = jToken.borrowBalanceCurrent(account);
+
+        vars.balanceOfUnderlyingCurrent = jToken.balanceOfUnderlying(account);
+        PriceOracle priceOracle = joetroller.oracle();
+        uint256 underlyingPrice = priceOracle.getUnderlyingPrice(jToken);
+
+        (, uint256 collateralFactorMantissa, ) = joetroller.markets(address(jToken));
+
+        Exp memory supplyValueInUnderlying = Exp({mantissa: vars.balanceOfUnderlyingCurrent});
+        vars.supplyValueUSD = mul_ScalarTruncate(supplyValueInUnderlying, underlyingPrice);
+
+        Exp memory collateralFactor = Exp({mantissa: collateralFactorMantissa});
+        vars.collateralValueUSD = mul_ScalarTruncate(collateralFactor, vars.supplyValueUSD);
+
+        Exp memory borrowBalance = Exp({mantissa: vars.borrowBalanceCurrent});
+        vars.borrowValueUSD = mul_ScalarTruncate(borrowBalance, underlyingPrice);
+
+        return vars;
+    }
+
     struct AccountLimits {
         JToken[] markets;
         uint256 liquidity;
         uint256 shortfall;
+        uint256 totalCollateralValueUSD;
+        uint256 totalBorrowValueUSD;
+        uint256 healthFactor;
     }
 
     function getAccountLimits(Joetroller joetroller, address account) public returns (AccountLimits memory) {
-        (uint256 errorCode, uint256 liquidity, uint256 shortfall) = joetroller.getAccountLiquidity(account);
-        require(errorCode == 0);
+        AccountLimits memory vars;
+        uint256 errorCode;
 
-        return AccountLimits({markets: joetroller.getAssetsIn(account), liquidity: liquidity, shortfall: shortfall});
+        (errorCode, vars.liquidity, vars.shortfall) = joetroller.getAccountLiquidity(account);
+        require(errorCode == 0, "Can't get account liquidity");
+
+        vars.markets = joetroller.getAssetsIn(account);
+        JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, account);
+        for (uint256 i = 0; i < jTokenBalancesList.length; i++) {
+            vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD, jTokenBalancesList[i].collateralValueUSD);
+            vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
+        }
+
+        Exp memory totalBorrows = Exp({mantissa: vars.totalBorrowValueUSD});
+
+        vars.healthFactor = vars.totalBorrowValueUSD > 0 ? div_(vars.totalCollateralValueUSD, totalBorrows) : 0;
+
+        return vars;
     }
 
-    function getClaimableJoeRewards(
-        JJTokenInterface[] calldata jTokens,
+    function getClaimableRewards(
+        uint8 rewardType,
+        address joetroller,
         address joe,
-        address account
-    ) external returns (uint256[] memory) {
-        uint256 jTokenCount = jTokens.length;
-        uint256[] memory rewards = new uint256[](jTokenCount);
-        for (uint256 i = 0; i < jTokenCount; i++) {
+        address payable account
+    ) external returns (uint256) {
+        require(rewardType <= 1, "rewardType is invalid");
+        if (rewardType == 0) {
             uint256 balanceBefore = EIP20Interface(joe).balanceOf(account);
-            jTokens[i].claimJoe(account);
+            Joetroller(joetroller).claimReward(0, account);
             uint256 balanceAfter = EIP20Interface(joe).balanceOf(account);
-            rewards[i] = sub_(balanceAfter, balanceBefore);
+            return sub_(balanceAfter, balanceBefore);
+        } else if (rewardType == 1) {
+            uint256 balanceBefore = account.balance;
+            Joetroller(joetroller).claimReward(1, account);
+            uint256 balanceAfter = account.balance;
+            return sub_(balanceAfter, balanceBefore);
         }
-        return rewards;
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
