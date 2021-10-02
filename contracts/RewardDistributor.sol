@@ -302,6 +302,96 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /*** User functions ***/
 
+    function pendingReward(uint8 rewardType, address account) external view returns (uint256) {
+        require(rewardType <= 1, "rewardType is invalid");
+        uint256 pendingReward;
+
+        // Loop through all markets
+        JToken[] memory jTokens = joetroller.getAllMarkets();
+        for (uint256 i = 0; i < jTokens.length; i++) {
+            address jToken = address(jTokens[i]);
+            require(joetroller.isMarketListed(address(jToken)), "market must be listed");
+
+            uint256 pendingSupplyRewards = getPendingSupplierRewardsForToken(rewardType, jToken, account);
+            pendingReward = add_(pendingReward, pendingSupplyRewards);
+
+            uint256 pendingBorrowRewards = getPendingBorrowerRewardsForToken(rewardType, jToken, account);
+            pendingReward = add_(pendingReward, pendingBorrowRewards);
+        }
+        return pendingReward;
+    }
+
+    function getPendingSupplierRewardsForToken(
+        uint8 rewardType,
+        address jToken,
+        address account
+    ) private view returns (uint256) {
+        Double memory supplyIndex = getLatestSupplyRewardIndex(rewardType, jToken);
+        Double memory supplierIndex = Double({mantissa: rewardSupplierIndex[rewardType][jToken][account]});
+        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
+            supplierIndex.mantissa = rewardInitialIndex;
+        }
+
+        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
+        uint256 supplierTokens = JToken(jToken).balanceOf(account);
+        uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
+        uint256 supplierAccrued = add_(rewardAccrued[rewardType][account], supplierDelta);
+        return supplierAccrued;
+    }
+
+    function getLatestSupplyRewardIndex(uint8 rewardType, address jToken) private view returns (Double memory) {
+        // Calculate supplier rewards
+        RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
+        uint256 supplySpeed = rewardSpeeds[rewardType][jToken];
+        uint256 blockTimestamp = getBlockTimestamp();
+        uint256 supplyDeltaTimestamps = sub_(blockTimestamp, uint256(supplyState.timestamp));
+        Double memory supplyIndex = Double({mantissa: supplyState.index});
+
+        if (supplyDeltaTimestamps > 0 && supplySpeed > 0) {
+            uint256 supplyTokens = JToken(jToken).totalSupply();
+            uint256 rewardAccrued = mul_(supplyDeltaTimestamps, supplySpeed);
+            Double memory ratio = supplyTokens > 0 ? fraction(rewardAccrued, supplyTokens) : Double({mantissa: 0});
+            supplyIndex = add_(supplyIndex, ratio);
+        }
+        return supplyIndex;
+    }
+
+    function getPendingBorrowerRewardsForToken(
+        uint8 rewardType,
+        address jToken,
+        address account
+    ) private view returns (uint256) {
+        Double memory borrowIndex = getLatestBorrowRewardIndex(rewardType, jToken);
+        Double memory borrowerIndex = Double({mantissa: rewardBorrowerIndex[rewardType][jToken][account]});
+        Exp memory marketBorrowIndex = Exp({mantissa: JToken(jToken).borrowIndex()});
+
+        if (borrowerIndex.mantissa > 0) {
+            Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
+            uint256 borrowerAmount = div_(JToken(jToken).borrowBalanceStored(account), marketBorrowIndex);
+            uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
+            uint256 borrowerAccrued = add_(rewardAccrued[rewardType][account], borrowerDelta);
+            return borrowerAccrued;
+        }
+    }
+
+    function getLatestBorrowRewardIndex(uint8 rewardType, address jToken) private view returns (Double memory) {
+        // Calculate borrower rewards
+        RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
+        uint256 borrowSpeed = rewardSpeeds[rewardType][jToken];
+        uint256 blockTimestamp = getBlockTimestamp();
+        uint256 borrowDeltaTimestamps = sub_(blockTimestamp, uint256(borrowState.timestamp));
+        Exp memory marketBorrowIndex = Exp({mantissa: JToken(jToken).borrowIndex()});
+        Double memory borrowIndex = Double({mantissa: borrowState.index});
+
+        if (borrowDeltaTimestamps > 0 && borrowSpeed > 0) {
+            uint256 borrowAmount = div_(JToken(jToken).totalBorrows(), marketBorrowIndex);
+            uint256 rewardAccrued = mul_(borrowDeltaTimestamps, borrowSpeed);
+            Double memory ratio = borrowAmount > 0 ? fraction(rewardAccrued, borrowAmount) : Double({mantissa: 0});
+            borrowIndex = add_(borrowIndex, ratio);
+        }
+        return borrowIndex;
+    }
+
     /**
      * @notice Claim all the JOE/AVAX accrued by holder in all markets
      * @param holder The address to claim JOE/AVAX for
