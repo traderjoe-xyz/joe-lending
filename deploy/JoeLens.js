@@ -5,6 +5,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   await deploy("JoeLens", {
     from: deployer,
+    args: ["jETH"],
     log: true,
     deterministicDeployment: false,
   });
