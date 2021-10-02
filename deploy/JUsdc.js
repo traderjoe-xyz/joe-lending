@@ -10,10 +10,10 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     from: deployer,
     log: true,
     deterministicDeployment: false,
-    contract: "JErc20Delegate",
+    contract: "JCollateralCapErc20Delegate",
   });
 
-  const cUsdcDelegate = await ethers.getContract("JUsdcDelegate");
+  const jUsdcDelegate = await ethers.getContract("JUsdcDelegate");
 
   const interestRateModel = await ethers.getContract("TripleSlopeRateModel");
 
@@ -28,36 +28,36 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
       "jUSDC",
       "8",
       deployer,
-      cUsdcDelegate.address,
+      jUsdcDelegate.address,
       "0x",
     ],
     log: true,
     deterministicDeployment: false,
-    contract: "JErc20Delegator",
+    contract: "JCollateralCapErc20Delegator",
     gasLimit: 4000000,
   });
   await deployment.receipt;
-  const cUsdcDelegator = await ethers.getContract("JUsdcDelegator");
+  const jUsdcDelegator = await ethers.getContract("JUsdcDelegator");
 
   console.log("Supporting jUSDC market...");
-  await joetroller._supportMarket(cUsdcDelegator.address, 0, {
+  await joetroller._supportMarket(jUsdcDelegator.address, 1, {
     gasLimit: 4000000,
   });
 
   const collateralFactor = "0.75";
   console.log("Setting collateral factor ", collateralFactor);
   await joetroller._setCollateralFactor(
-    cUsdcDelegator.address,
+    jUsdcDelegator.address,
     ethers.utils.parseEther(collateralFactor),
     { gasLimit: 4000000 }
   );
 
   const reserveFactor = "0.20";
   console.log("Setting reserve factor ", reserveFactor);
-  await cUsdcDelegator._setReserveFactor(
+  await jUsdcDelegator._setReserveFactor(
     ethers.utils.parseEther(reserveFactor)
   );
 };
 
 module.exports.tags = ["jUSDC"];
-// module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];
+module.exports.dependencies = ["Joetroller", "TripleSlopeRateModel"];
