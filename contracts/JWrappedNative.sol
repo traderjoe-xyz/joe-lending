@@ -164,6 +164,27 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
     }
 
     /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
+        require(err == 0, "repay behalf failed");
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, msg.value, true);
+        require(err == 0, "repay behalf native failed");
+    }
+
+    /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
@@ -205,9 +226,7 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
      */
     function maxFlashLoan() external view returns (uint256) {
         uint256 amount = 0;
-        if (
-            JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")
-        ) {
+        if (JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")) {
             amount = getCashPrior();
         }
         return amount;
@@ -484,7 +503,7 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not

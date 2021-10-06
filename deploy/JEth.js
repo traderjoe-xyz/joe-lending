@@ -13,7 +13,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     log: true,
     deterministicDeployment: false,
   });
-  const cEthDelegate = await ethers.getContract("JWrappedNativeDelegate");
+  const jWrappedNativeDelegate = await ethers.getContract(
+    "JWrappedNativeDelegate"
+  );
 
   const deployment = await deploy("JWrappedNativeDelegator", {
     from: deployer,
@@ -26,24 +28,26 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
       "jETH",
       8,
       deployer,
-      cEthDelegate.address,
+      jWrappedNativeDelegate.address,
       "0x",
     ],
     log: true,
     deterministicDeployment: false,
   });
   await deployment.receipt;
-  const cEthDelegator = await ethers.getContract("JWrappedNativeDelegator");
+  const jWrappedNativeDelegator = await ethers.getContract(
+    "JWrappedNativeDelegator"
+  );
 
   console.log("Supporting jETH market...");
-  await joetroller._supportMarket(cEthDelegator.address, 2, {
+  await joetroller._supportMarket(jWrappedNativeDelegator.address, 2, {
     gasLimit: 4000000,
   });
 
   const collateralFactor = "0.75";
   console.log("Setting collateral factor ", collateralFactor);
   await joetroller._setCollateralFactor(
-    cEthDelegator.address,
+    jWrappedNativeDelegator.address,
     ethers.utils.parseEther(collateralFactor),
     {
       gasLimit: 4000000,
@@ -52,7 +56,9 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const reserveFactor = "0.20";
   console.log("Setting reserve factor ", reserveFactor);
-  await cEthDelegator._setReserveFactor(ethers.utils.parseEther(reserveFactor));
+  await jWrappedNativeDelegator._setReserveFactor(
+    ethers.utils.parseEther(reserveFactor)
+  );
 };
 
 module.exports.tags = ["jETH"];

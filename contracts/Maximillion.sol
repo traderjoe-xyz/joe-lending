@@ -40,10 +40,10 @@ contract Maximillion {
         uint256 received = msg.value;
         uint256 borrows = jAvax_.borrowBalanceCurrent(borrower);
         if (received > borrows) {
-            jAvax_.repayBorrowNative.value(borrows)();
+            jAvax_.repayBorrowBehalfNative.value(borrows)(borrower);
             msg.sender.transfer(received - borrows);
         } else {
-            jAvax_.repayBorrowNative.value(received)();
+            jAvax_.repayBorrowBehalfNative.value(received)(borrower);
         }
     }
 }

@@ -724,6 +724,8 @@ contract JErc20Interface is JErc20Storage {
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
 
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
+
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
@@ -757,6 +759,8 @@ contract JWrappedNativeInterface is JErc20Interface {
     function borrowNative(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrowNative() external payable returns (uint256);
+
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256);
 
     function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
         external
@@ -1010,6 +1014,7 @@ contract TokenErrorReporter {
         REDUCE_RESERVES_CASH_NOT_AVAILABLE,
         REDUCE_RESERVES_FRESH_CHECK,
         REDUCE_RESERVES_VALIDATION,
+        REPAY_BEHALF_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_JOETROLLER_REJECTION,
         REPAY_BORROW_FRESHNESS_CHECK,
@@ -1906,7 +1911,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @dev Function to simply retrieve block timestamp 
+     * @dev Function to simply retrieve block timestamp
      *  This exists mainly for inheriting test contracts to stub this result.
      */
     function getBlockTimestamp() internal view returns (uint256) {
@@ -2071,7 +2076,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     * @dev This calculates interest accrued from the last checkpointed timestamp
      *   up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
@@ -2296,6 +2301,27 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         return repayBorrowFresh(msg.sender, msg.sender, repayAmount, isNative);
     }
 
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @param isNative The amount is in native or not
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     */
+    function repayBorrowBehalfInternal(
+        address borrower,
+        uint256 repayAmount,
+        bool isNative
+    ) internal nonReentrant returns (uint256, uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
+            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0);
+        }
+        // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
+        return repayBorrowFresh(msg.sender, borrower, repayAmount, isNative);
+    }
+
     struct RepayBorrowLocalVars {
         Error err;
         MathError mathErr;
@@ -2324,10 +2350,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         /* Fail if repayBorrow not allowed */
         uint256 allowed = joetroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
-            return (
-                failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed),
-                0
-            );
+            return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed), 0);
         }
 
         /*
@@ -2647,7 +2670,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_RESERVE_FACTOR_ADMIN_CHECK);
         }
 
-        // Verify market's block timestamp equals current block timestamp 
+        // Verify market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_RESERVE_FACTOR_FRESH_CHECK);
         }
@@ -2695,7 +2718,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.ADD_RESERVES_FRESH_CHECK), actualAddAmount);
         }
@@ -2756,7 +2779,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.REDUCE_RESERVES_ADMIN_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDUCE_RESERVES_FRESH_CHECK);
         }
@@ -2820,7 +2843,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_INTEREST_RATE_MODEL_OWNER_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_INTEREST_RATE_MODEL_FRESH_CHECK);
         }
@@ -2898,7 +2921,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User redeems jTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      */
     function redeemFresh(
         address payable redeemer,
@@ -3093,6 +3116,27 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
     }
 
     /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
+        require(err == 0, "repay behalf failed");
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, msg.value, true);
+        require(err == 0, "repay behalf native failed");
+    }
+
+    /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
@@ -3134,9 +3178,7 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
      */
     function maxFlashLoan() external view returns (uint256) {
         uint256 amount = 0;
-        if (
-            JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")
-        ) {
+        if (JoetrollerInterfaceExtension(address(joetroller)).flashloanAllowed(address(this), address(0), amount, "")) {
             amount = getCashPrior();
         }
         return amount;
@@ -3413,7 +3455,7 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -3676,10 +3718,10 @@ contract Maximillion {
         uint256 received = msg.value;
         uint256 borrows = jAvax_.borrowBalanceCurrent(borrower);
         if (received > borrows) {
-            jAvax_.repayBorrowNative.value(borrows)();
+            jAvax_.repayBorrowBehalfNative.value(borrows)(borrower);
             msg.sender.transfer(received - borrows);
         } else {
-            jAvax_.repayBorrowNative.value(received)();
+            jAvax_.repayBorrowBehalfNative.value(received)(borrower);
         }
     }
 }
