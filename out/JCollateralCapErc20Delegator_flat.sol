@@ -194,6 +194,7 @@ contract TokenErrorReporter {
         REDUCE_RESERVES_CASH_NOT_AVAILABLE,
         REDUCE_RESERVES_FRESH_CHECK,
         REDUCE_RESERVES_VALIDATION,
+        REPAY_BEHALF_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_JOETROLLER_REJECTION,
         REPAY_BORROW_FRESHNESS_CHECK,
@@ -1745,6 +1746,27 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         return repayBorrowFresh(msg.sender, msg.sender, repayAmount, isNative);
     }
 
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @param isNative The amount is in native or not
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     */
+    function repayBorrowBehalfInternal(
+        address borrower,
+        uint256 repayAmount,
+        bool isNative
+    ) internal nonReentrant returns (uint256, uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
+            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0);
+        }
+        // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
+        return repayBorrowFresh(msg.sender, borrower, repayAmount, isNative);
+    }
+
     struct RepayBorrowLocalVars {
         Error err;
         MathError mathErr;
@@ -2685,6 +2707,8 @@ contract JErc20Interface is JErc20Storage {
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
 
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
+
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
@@ -2718,6 +2742,8 @@ contract JWrappedNativeInterface is JErc20Interface {
     function borrowNative(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrowNative() external payable returns (uint256);
+
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256);
 
     function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
         external
@@ -2961,6 +2987,18 @@ contract JCollateralCapErc20Delegator is JTokenInterface, JCollateralCapErc20Int
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
+        repayAmount; // Shh
+        delegateAndReturn();
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        borrower;
         repayAmount; // Shh
         delegateAndReturn();
     }
