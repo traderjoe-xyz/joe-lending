@@ -216,7 +216,9 @@ contract JoeLens is Exponential {
 
         Exp memory totalBorrows = Exp({mantissa: vars.totalBorrowValueUSD});
 
-        vars.healthFactor = vars.totalBorrowValueUSD > 0 ? div_(vars.totalCollateralValueUSD, totalBorrows) : 0;
+        vars.healthFactor = vars.totalCollateralValueUSD == 0 ? 0 : vars.totalBorrowValueUSD > 0
+            ? div_(vars.totalCollateralValueUSD, totalBorrows)
+            : 100;
 
         return vars;
     }
