@@ -1300,6 +1300,8 @@ contract JErc20Interface is JErc20Storage {
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
 
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
+
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
@@ -1333,6 +1335,8 @@ contract JWrappedNativeInterface is JErc20Interface {
     function borrowNative(uint256 borrowAmount) external returns (uint256);
 
     function repayBorrowNative() external payable returns (uint256);
+
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256);
 
     function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
         external
@@ -1586,6 +1590,7 @@ contract TokenErrorReporter {
         REDUCE_RESERVES_CASH_NOT_AVAILABLE,
         REDUCE_RESERVES_FRESH_CHECK,
         REDUCE_RESERVES_VALIDATION,
+        REPAY_BEHALF_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_JOETROLLER_REJECTION,
         REPAY_BORROW_FRESHNESS_CHECK,
@@ -1863,7 +1868,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @dev Function to simply retrieve block timestamp 
+     * @dev Function to simply retrieve block timestamp
      *  This exists mainly for inheriting test contracts to stub this result.
      */
     function getBlockTimestamp() internal view returns (uint256) {
@@ -2028,7 +2033,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     * @dev This calculates interest accrued from the last checkpointed timestamp
      *   up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
@@ -2253,6 +2258,27 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         return repayBorrowFresh(msg.sender, msg.sender, repayAmount, isNative);
     }
 
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @param isNative The amount is in native or not
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     */
+    function repayBorrowBehalfInternal(
+        address borrower,
+        uint256 repayAmount,
+        bool isNative
+    ) internal nonReentrant returns (uint256, uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
+            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0);
+        }
+        // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
+        return repayBorrowFresh(msg.sender, borrower, repayAmount, isNative);
+    }
+
     struct RepayBorrowLocalVars {
         Error err;
         MathError mathErr;
@@ -2281,10 +2307,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         /* Fail if repayBorrow not allowed */
         uint256 allowed = joetroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
-            return (
-                failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed),
-                0
-            );
+            return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed), 0);
         }
 
         /*
@@ -2604,7 +2627,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_RESERVE_FACTOR_ADMIN_CHECK);
         }
 
-        // Verify market's block timestamp equals current block timestamp 
+        // Verify market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_RESERVE_FACTOR_FRESH_CHECK);
         }
@@ -2652,7 +2675,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.ADD_RESERVES_FRESH_CHECK), actualAddAmount);
         }
@@ -2713,7 +2736,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.REDUCE_RESERVES_ADMIN_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDUCE_RESERVES_FRESH_CHECK);
         }
@@ -2777,7 +2800,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_INTEREST_RATE_MODEL_OWNER_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_INTEREST_RATE_MODEL_FRESH_CHECK);
         }
@@ -2855,7 +2878,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User redeems jTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      */
     function redeemFresh(
         address payable redeemer,
@@ -2980,6 +3003,17 @@ contract JErc20 is JToken, JErc20Interface {
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
         (uint256 err, ) = repayBorrowInternal(repayAmount, false);
+        return err;
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
         return err;
     }
 
@@ -3172,7 +3206,7 @@ contract JErc20 is JToken, JErc20Interface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -3413,31 +3447,38 @@ contract JErc20 is JToken, JErc20Interface {
 
 interface AggregatorV3Interface {
     function decimals() external view returns (uint8);
+
     function description() external view returns (string memory);
+
     function version() external view returns (uint256);
 
     // getRoundData and latestRoundData should both raise "No data present"
     // if they do not have data to report, instead of returning unset values
     // which could be misinterpreted as actual reported values.
-    function getRoundData(uint80 _roundId) external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function getRoundData(uint80 _roundId)
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 
-    function latestRoundData() external view returns (
-        uint80 roundId,
-        int256 answer,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-    );
+    function latestRoundData()
+        external
+        view
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        );
 }
 
 contract PriceOracleProxyUSD is PriceOracle, Exponential {
-
     /// @notice Fallback price feed - not used
     mapping(address => uint256) internal prices;
 
@@ -3462,19 +3503,24 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param jToken The jToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
-    function getUnderlyingPrice(JToken jToken) public view returns (uint) {
+    function getUnderlyingPrice(JToken jToken) public view returns (uint256) {
         address jTokenAddress = address(jToken);
 
         AggregatorV3Interface aggregator = aggregators[jTokenAddress];
         if (address(aggregator) != address(0)) {
-            uint price = getPriceFromChainlink(aggregator);
-            uint underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
-            return mul_(price, 10**(18 - underlyingDecimals));
+            uint256 price = getPriceFromChainlink(aggregator);
+            uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
+            if (underlyingDecimals <= 18) {
+                return mul_(price, 10**(18 - underlyingDecimals));
+            }
+            return div_(price, 10**(underlyingDecimals - 18));
         }
 
         address asset = address(JErc20(jTokenAddress).underlying());
 
-        return prices[asset];
+        uint256 price = prices[asset];
+        require(price > 0, "invalid price");
+        return price;
     }
 
     /*** Internal fucntions ***/
@@ -3484,12 +3530,12 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param aggregator The ChainLink aggregator to get the price of
      * @return The price
      */
-    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint) {
-        ( , int price, , , ) = aggregator.latestRoundData();
+    function getPriceFromChainlink(AggregatorV3Interface aggregator) internal view returns (uint256) {
+        (, int256 price, , , ) = aggregator.latestRoundData();
         require(price > 0, "invalid price");
 
         // Extend the decimals to 1e18.
-        return mul_(uint(price), 10**(18 - uint(aggregator.decimals())));
+        return mul_(uint256(price), 10**(18 - uint256(aggregator.decimals())));
     }
 
     /*** Admin or guardian functions ***/
@@ -3526,7 +3572,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     function _setAggregators(address[] calldata jTokenAddresses, address[] calldata sources) external {
         require(msg.sender == admin || msg.sender == guardian, "only the admin or guardian may set the aggregators");
         require(jTokenAddresses.length == sources.length, "mismatched data");
-        for (uint i = 0; i < jTokenAddresses.length; i++) {
+        for (uint256 i = 0; i < jTokenAddresses.length; i++) {
             if (sources[i] != address(0)) {
                 require(msg.sender == admin, "guardian may only clear the aggregator");
             }
@@ -3540,8 +3586,8 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param jToken The jToken to get underlying asset from
      * @param underlyingPriceMantissa The new price for the underling asset
      */
-    function _setUnderlyingPrice(JToken jToken, uint underlyingPriceMantissa) external {
-        require(msg.sender == admin, "only the admin may set the underlying price"); 
+    function _setUnderlyingPrice(JToken jToken, uint256 underlyingPriceMantissa) external {
+        require(msg.sender == admin, "only the admin may set the underlying price");
         address asset = address(JErc20(address(jToken)).underlying());
         prices[asset] = underlyingPriceMantissa;
     }
@@ -3551,7 +3597,7 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @param asset The address of the underlying asset
      * @param price The new price of the asset
      */
-    function setDirectPrice(address asset, uint price) external {
+    function setDirectPrice(address asset, uint256 price) external {
         require(msg.sender == admin, "only the admin may set the direct price");
         prices[asset] = price;
     }

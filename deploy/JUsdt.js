@@ -1,8 +1,8 @@
-const DAI = new Map();
-DAI.set("43114", "0xd586e7f844cea2f87f50152665bcbc2c279d8d70");
+const USDT = new Map();
+USDT.set("43114", "0xc7198437980c041c805a1edcba50c1ce5db95118");
 
-const DAI_PRICE_FEED = new Map();
-DAI_PRICE_FEED.set("43114", "0x51D7180edA2260cc4F6e4EebB82FEF5c3c2B8300");
+const USDT_PRICE_FEED = new Map();
+USDT_PRICE_FEED.set("43114", "0xEBE676ee90Fe1112671f19b6B7459bC678B67e8a");
 
 module.exports = async function ({
   getChainId,
@@ -13,8 +13,8 @@ module.exports = async function ({
 
   const { deployer } = await getNamedAccounts();
   const chainId = await getChainId();
-  if (!DAI.has(chainId)) {
-    throw Error("No DAI on this chain");
+  if (!USDT.has(chainId)) {
+    throw Error("No USDT on this chain");
   }
 
   const Joetroller = await ethers.getContract("Joetroller");
@@ -23,26 +23,26 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  await deploy("JDaiDelegate", {
+  await deploy("JUsdtDelegate", {
     from: deployer,
     log: true,
     deterministicDeployment: false,
     contract: "JCollateralCapErc20Delegate",
   });
-  const jDaiDelegate = await ethers.getContract("JDaiDelegate");
+  const jUsdtDelegate = await ethers.getContract("JUsdtDelegate");
 
-  const deployment = await deploy("JDaiDelegator", {
+  const deployment = await deploy("JUsdtDelegator", {
     from: deployer,
     args: [
-      DAI.get(chainId),
+      USDT.get(chainId),
       joetroller.address,
       interestRateModel.address,
-      ethers.utils.parseUnits("2", 26).toString(),
-      "Banker Joe DAI",
-      "jDAI",
+      ethers.utils.parseUnits("2", 14).toString(),
+      "Banker Joe USD Tether",
+      "jUSDT",
       8,
       deployer,
-      jDaiDelegate.address,
+      jUsdtDelegate.address,
       "0x",
     ],
     log: true,
@@ -50,33 +50,35 @@ module.exports = async function ({
     contract: "JCollateralCapErc20Delegator",
   });
   await deployment.receipt;
-  const jDaiDelegator = await ethers.getContract("JDaiDelegator");
+  const jUsdtDelegator = await ethers.getContract("JUsdtDelegator");
 
-  console.log("Supporting jDAI market...");
-  await joetroller._supportMarket(jDaiDelegator.address, 1, {
+  console.log("Supporting jUSDT market...");
+  await joetroller._supportMarket(jUsdtDelegator.address, 1, {
     gasLimit: 2000000,
   });
 
   const priceOracle = await ethers.getContract("PriceOracleProxyUSD");
-  console.log("Setting price feed source for jDAI");
+  console.log("Setting price feed source for jUSDT");
   await priceOracle._setAggregators(
-    [jDaiDelegator.address],
-    [DAI_PRICE_FEED.get(chainId)]
+    [jUsdtDelegator.address],
+    [USDT_PRICE_FEED.get(chainId)]
   );
 
   const collateralFactor = "0.80";
   console.log("Setting collateral factor ", collateralFactor);
   await joetroller._setCollateralFactor(
-    jDaiDelegator.address,
+    jUsdtDelegator.address,
     ethers.utils.parseEther(collateralFactor)
   );
 
   const reserveFactor = "0.15";
   console.log("Setting reserve factor ", reserveFactor);
-  await jDaiDelegator._setReserveFactor(ethers.utils.parseEther(reserveFactor));
+  await jUsdtDelegator._setReserveFactor(
+    ethers.utils.parseEther(reserveFactor)
+  );
 };
 
-module.exports.tags = ["jDAI"];
+module.exports.tags = ["jUSDT"];
 module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",

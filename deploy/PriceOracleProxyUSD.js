@@ -8,8 +8,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     args: [deployer],
     log: true,
     deterministicDeployment: false,
-    gasLimit: 4000000,
   });
 };
 
-module.exports.tags = ["Oracle"];
+module.exports.tags = ["PriceOracle"];
