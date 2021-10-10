@@ -25,8 +25,11 @@ contract RewardDistributorStorage {
         uint32 timestamp;
     }
 
-    /// @notice The portion of reward rate that each market currently receives
-    mapping(uint8 => mapping(address => uint256)) public rewardSpeeds;
+    /// @notice The portion of supply reward rate that each market currently receives
+    mapping(uint8 => mapping(address => uint256)) public rewardSupplySpeeds;
+
+    /// @notice The portion of borrow reward rate that each market currently receives
+    mapping(uint8 => mapping(address => uint256)) public rewardBorrowSpeeds;
 
     /// @notice The JOE/AVAX market supply state for each market
     mapping(uint8 => mapping(address => RewardMarketState)) public rewardSupplyState;
@@ -51,8 +54,11 @@ contract RewardDistributorStorage {
 }
 
 contract RewardDistributor is RewardDistributorStorage, Exponential {
-    /// @notice Emitted when a new reward speed is calculated for a market
-    event RewardSpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
+    /// @notice Emitted when a new reward supply speed is calculated for a market
+    event RewardSupplySpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
+
+    /// @notice Emitted when a new reward borrow speed is calculated for a market
+    event RewardBorrowSpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
 
     /// @notice Emitted when JOE/AVAX is distributed to a supplier
     event DistributedSupplierReward(
@@ -102,12 +108,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      */
     function _setRewardSpeed(
         uint8 rewardType,
-        JToken jToken,
-        uint256 rewardSpeed
+        JToken[] memory jTokens,
+        uint256[] memory rewardSupplySpeeds,
+        uint256[] memory rewardBorrowSpeeds
     ) public {
         require(rewardType <= 1, "rewardType is invalid");
         require(adminOrInitializing(), "only admin can set reward speed");
-        setRewardSpeedInternal(rewardType, jToken, rewardSpeed);
+        uint256 numTokens = jTokens.length;
+        for (uint256 i = 0; i < numTokens; i++) {
+            setRewardSpeedInternal(rewardType, jTokens[i], rewardSupplySpeeds[i], rewardBorrowSpeeds[i]);
+        }
     }
 
     /**
@@ -119,27 +129,17 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     function setRewardSpeedInternal(
         uint8 rewardType,
         JToken jToken,
-        uint256 newSpeed
+        uint256 newSupplySpeed,
+        uint256 newBorrowSpeed
     ) internal {
-        uint256 currentRewardSpeed = rewardSpeeds[rewardType][address(jToken)];
-        if (currentRewardSpeed != 0) {
+        // Handle new supply speeed
+        uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
+        if (currentRewardSupplySpeed != 0) {
             // note that JOE speed could be set to 0 to halt liquidity rewards for a market
-            Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
             updateRewardSupplyIndex(rewardType, address(jToken));
-            updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
-        } else if (newSpeed != 0) {
+        } else if (newSupplySpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
-
-            if (
-                rewardSupplyState[rewardType][address(jToken)].index == 0 &&
-                rewardSupplyState[rewardType][address(jToken)].timestamp == 0
-            ) {
-                rewardSupplyState[rewardType][address(jToken)] = RewardMarketState({
-                    index: rewardInitialIndex,
-                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
-                });
-            }
 
             if (
                 rewardBorrowState[rewardType][address(jToken)].index == 0 &&
@@ -152,9 +152,35 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             }
         }
 
-        if (currentRewardSpeed != newSpeed) {
-            rewardSpeeds[rewardType][address(jToken)] = newSpeed;
-            emit RewardSpeedUpdated(rewardType, jToken, newSpeed);
+        if (currentRewardSupplySpeed != newSupplySpeed) {
+            rewardSpeeds[rewardType][address(jToken)] = newSupplySpeed;
+            emit RewardSupplySpeedUpdated(rewardType, jToken, newSupplySpeed);
+        }
+
+        // Handle new borrow speed
+        uint256 currentRewardBorrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];
+        if (currentRewardBorrowSpeed != 0) {
+            // note that JOE speed could be set to 0 to halt liquidity rewards for a market
+            Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
+            updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
+        } else if (newBorrowSpeed != 0) {
+            // Add the JOE market
+            require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
+
+            if (
+                rewardBorrowState[rewardType][address(jToken)].index == 0 &&
+                rewardBorrowState[rewardType][address(jToken)].timestamp == 0
+            ) {
+                rewardBorrowState[rewardType][address(jToken)] = RewardMarketState({
+                    index: rewardInitialIndex,
+                    timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
+                });
+            }
+        }
+
+        if (currentRewardBorrowSpeed != newBorrowSpeed) {
+            rewardBorrowSpeeds[rewardType][address(jToken)] = newBorrowSpeed;
+            emit RewardBorrowSpeedUpdated(rewardType, jToken, newBorrowSpeed);
         }
     }
 
