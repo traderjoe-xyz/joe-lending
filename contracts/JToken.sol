@@ -955,7 +955,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
         }
 
-        // Check newReserveFactor ≤ maxReserveFactor
         if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
             return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
         }
