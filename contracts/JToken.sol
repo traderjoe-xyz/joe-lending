@@ -888,7 +888,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @notice Accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -927,6 +927,43 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         reserveFactorMantissa = newReserveFactorMantissa;
 
         emit NewReserveFactor(oldReserveFactorMantissa, newReserveFactorMantissa);
+
+        return uint256(Error.NO_ERROR);
+    }
+
+    /**
+     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
+     * @dev Admin function to accrue interest and set a new collateral seize share
+     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
+     */
+    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
+        }
+        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
+    }
+
+    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
+        }
+
+        // Verify market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
+            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
+        }
+
+        // Check newReserveFactor ≤ maxReserveFactor
+        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
+            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
+        }
+
+        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
+        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
+
+        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
 
         return uint256(Error.NO_ERROR);
     }
