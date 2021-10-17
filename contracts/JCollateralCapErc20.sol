@@ -731,9 +731,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
         /*
          * We only deallocate collateral tokens if the redeemer needs to redeem them.
          */
-        if (collateralTokens > 0) {
-            decreaseUserCollateralInternal(redeemer, collateralTokens);
-        }
+        decreaseUserCollateralInternal(redeemer, collateralTokens);
 
         /* We emit a Transfer event, and a Redeem event */
         emit Transfer(redeemer, address(this), vars.redeemTokens);
