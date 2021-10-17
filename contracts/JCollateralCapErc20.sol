@@ -782,6 +782,12 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
+        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: protocolSeizeShareMantissa}));
+        uint256 liquidatorSeizeTokens = sub_(seizeTokens, protocolSeizeTokens);
+
+        uint256 exchangeRateMantissa = exchangeRateStoredInternal();
+        uint256 protocolSeizeAmount = mul_ScalarTruncate(Exp({mantissa: exchangeRateMantissa}), protocolSeizeTokens);
+
         /*
          * We calculate the new borrower and liquidator token balances and token collateral balances, failing on underflow/overflow:
          *  accountTokens[borrower] = accountTokens[borrower] - seizeTokens
@@ -790,14 +796,17 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
          *  accountCollateralTokens[liquidator] = accountCollateralTokens[liquidator] + seizeTokens
          */
         accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
+        accountTokens[liquidator] = add_(accountTokens[liquidator], liquidatorSeizeTokens);
         accountCollateralTokens[borrower] = sub_(accountCollateralTokens[borrower], seizeTokens);
-        accountCollateralTokens[liquidator] = add_(accountCollateralTokens[liquidator], seizeTokens);
+        accountCollateralTokens[liquidator] = add_(accountCollateralTokens[liquidator], liquidatorSeizeTokens);
+        totalReserves = add_(totalReserves, protocolSeizeAmount);
+        totalSupply = sub_(totalSupply, protocolSeizeTokens);
 
-        /* Emit a Transfer, UserCollateralChanged events */
+        /* Emit a Transfer, UserCollateralChanged and ReservesAdded events */
         emit Transfer(borrower, liquidator, seizeTokens);
         emit UserCollateralChanged(borrower, accountCollateralTokens[borrower]);
         emit UserCollateralChanged(liquidator, accountCollateralTokens[liquidator]);
+        emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
 
         /* We call the defense hook */
         // unused function
