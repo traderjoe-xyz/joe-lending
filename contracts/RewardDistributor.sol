@@ -108,16 +108,13 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      */
     function _setRewardSpeed(
         uint8 rewardType,
-        JToken[] memory jTokens,
-        uint256[] memory rewardSupplySpeeds,
-        uint256[] memory rewardBorrowSpeeds
+        JToken jTokens,
+        uint256 rewardSupplySpeed,
+        uint256 rewardBorrowSpeed
     ) public {
         require(rewardType <= 1, "rewardType is invalid");
         require(adminOrInitializing(), "only admin can set reward speed");
-        uint256 numTokens = jTokens.length;
-        for (uint256 i = 0; i < numTokens; i++) {
-            setRewardSpeedInternal(rewardType, jTokens[i], rewardSupplySpeeds[i], rewardBorrowSpeeds[i]);
-        }
+        setRewardSpeedInternal(rewardType, jToken, rewardSupplySpeed, rewardBorrowSpeed);
     }
 
     /**
@@ -142,10 +139,10 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
             if (
-                rewardBorrowState[rewardType][address(jToken)].index == 0 &&
-                rewardBorrowState[rewardType][address(jToken)].timestamp == 0
+                rewardSupplyState[rewardType][address(jToken)].index == 0 &&
+                rewardSupplyState[rewardType][address(jToken)].timestamp == 0
             ) {
-                rewardBorrowState[rewardType][address(jToken)] = RewardMarketState({
+                rewardSupplyState[rewardType][address(jToken)] = RewardMarketState({
                     index: rewardInitialIndex,
                     timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
@@ -192,7 +189,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     function updateRewardSupplyIndex(uint8 rewardType, address jToken) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
-        uint256 supplySpeed = rewardSpeeds[rewardType][jToken];
+        uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
         uint256 blockTimestamp = getBlockTimestamp();
         uint256 deltaTimestamps = sub_(blockTimestamp, uint256(supplyState.timestamp));
         if (deltaTimestamps > 0 && supplySpeed > 0) {
@@ -221,7 +218,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
-        uint256 borrowSpeed = rewardSpeeds[rewardType][jToken];
+        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
         uint256 blockTimestamp = getBlockTimestamp();
         uint256 deltaTimestamps = sub_(blockTimestamp, uint256(borrowState.timestamp));
         if (deltaTimestamps > 0 && borrowSpeed > 0) {
@@ -255,12 +252,10 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         Double memory supplierIndex = Double({mantissa: rewardSupplierIndex[rewardType][jToken][supplier]});
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
+        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa >= rewardInitialIndex) {
             supplierIndex.mantissa = rewardInitialIndex;
         }
 
-        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
-        uint256 supplierTokens = JToken(jToken).balanceOf(supplier);
         uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
         uint256 supplierAccrued = add_(rewardAccrued[rewardType][supplier], supplierDelta);
         rewardAccrued[rewardType][supplier] = supplierAccrued;
@@ -287,13 +282,15 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex.mantissa;
 
         if (borrowerIndex.mantissa > 0) {
-            Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
-            uint256 borrowerAmount = div_(JToken(jToken).borrowBalanceStored(borrower), marketBorrowIndex);
-            uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
-            uint256 borrowerAccrued = add_(rewardAccrued[rewardType][borrower], borrowerDelta);
-            rewardAccrued[rewardType][borrower] = borrowerAccrued;
-            emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerDelta, borrowIndex.mantissa);
+            borrowerIndex.mantissa = rewardInitialIndex;
         }
+
+        Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
+        uint256 borrowerAmount = div_(JToken(jToken).borrowBalanceStored(borrower), marketBorrowIndex);
+        uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
+        uint256 borrowerAccrued = add_(rewardAccrued[rewardType][borrower], borrowerDelta);
+        rewardAccrued[rewardType][borrower] = borrowerAccrued;
+        emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerDelta, borrowIndex.mantissa);
     }
 
     /**
@@ -408,6 +405,19 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address payable user,
         uint256 amount
     ) internal returns (uint256) {
+        JToken[] jTokens = joetroller.getAllMarkets();
+        for (uint256 i = 0; i < jTokens.length; i++) {
+            address market = address(jTokens[i]);
+
+            bool noOriginalSpeed = rewardBorrowSpeeds[reward][market] == 0;
+            bool invalidSupply = noOriginalSpeed && rewardSupplierIndex[rewardType][market][user] > 0;
+            bool invalidBorrow = noOriginalSpeed && rewrdBorrowerIndex[rewardType][market][user] > 0;
+
+            if (invalidSupply || invalidBorrow) {
+                return amount;
+            }
+        }
+
         if (rewardType == 0) {
             EIP20Interface joe = EIP20Interface(joeAddress);
             uint256 joeRemaining = joe.balanceOf(address(this));
