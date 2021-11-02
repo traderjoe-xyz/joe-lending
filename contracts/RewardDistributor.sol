@@ -104,11 +104,12 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Set JOE/AVAX speed for a single market
      * @param rewardType 0 = QI, 1 = AVAX
      * @param jToken The market whose reward speed to update
-     * @param rewardSpeed New reward speed for market
+     * @param rewardSupplySpeed New reward supply speed for market
+     * @param rewardBorrowSpeed New reward borrow speed for market
      */
     function _setRewardSpeed(
         uint8 rewardType,
-        JToken jTokens,
+        JToken jToken,
         uint256 rewardSupplySpeed,
         uint256 rewardBorrowSpeed
     ) public {
@@ -121,7 +122,8 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Set JOE/AVAX speed for a single market
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose speed to update
-     * @param newSpeed New JOE or AVAX speed for market
+     * @param newSupplySpeed New JOE or AVAX supply speed for market
+     * @param newBorrowSpeed New JOE or AVAX borrow speed for market
      */
     function setRewardSpeedInternal(
         uint8 rewardType,
@@ -150,7 +152,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         }
 
         if (currentRewardSupplySpeed != newSupplySpeed) {
-            rewardSpeeds[rewardType][address(jToken)] = newSupplySpeed;
+            rewardSupplySpeeds[rewardType][address(jToken)] = newSupplySpeed;
             emit RewardSupplySpeedUpdated(rewardType, jToken, newSupplySpeed);
         }
 
@@ -210,6 +212,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Accrue JOE/AVAX to the market by updating the borrow index
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose borrow index to update
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function updateRewardBorrowIndex(
         uint8 rewardType,
@@ -252,10 +255,12 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         Double memory supplierIndex = Double({mantissa: rewardSupplierIndex[rewardType][jToken][supplier]});
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
-        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa >= rewardInitialIndex) {
+        if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
             supplierIndex.mantissa = rewardInitialIndex;
         }
 
+        Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
+        uint256 supplierTokens = JToken(jToken).balanceOf(supplier);
         uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
         uint256 supplierAccrued = add_(rewardAccrued[rewardType][supplier], supplierDelta);
         rewardAccrued[rewardType][supplier] = supplierAccrued;
@@ -268,6 +273,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market in which the borrower is interacting
      * @param borrower The address of the borrower to distribute JOE/AVAX to
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function distributeBorrowerReward(
         uint8 rewardType,
@@ -310,6 +316,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Refactored function to calc and rewards accounts supplier rewards
      * @param jToken The market to verify the mint against
      * @param borrower Borrower to be rewarded
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function updateAndDistributeBorrowerRewardsForToken(
         address jToken,
@@ -335,6 +342,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /**
      * @notice Claim all the JOE/AVAX accrued by holder in the specified markets
+     * @param rewardType 0 = JOE, 1 = AVAX
      * @param holder The address to claim JOE/AVAX for
      * @param jTokens The list of markets to claim JOE/AVAX in
      */
@@ -396,28 +404,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /**
      * @notice Transfer JOE/AVAX to the user
      * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer all.
+     * @param rewardType 0 = JOE, 1 = AVAX.
      * @param user The address of the user to transfer JOE/AVAX to
      * @param amount The amount of JOE/AVAX to (possibly) transfer
      * @return The amount of JOE/AVAX which was NOT transferred to the user
      */
     function grantRewardInternal(
-        uint256 rewardType,
+        uint8 rewardType,
         address payable user,
         uint256 amount
     ) internal returns (uint256) {
-        JToken[] jTokens = joetroller.getAllMarkets();
-        for (uint256 i = 0; i < jTokens.length; i++) {
-            address market = address(jTokens[i]);
-
-            bool noOriginalSpeed = rewardBorrowSpeeds[reward][market] == 0;
-            bool invalidSupply = noOriginalSpeed && rewardSupplierIndex[rewardType][market][user] > 0;
-            bool invalidBorrow = noOriginalSpeed && rewrdBorrowerIndex[rewardType][market][user] > 0;
-
-            if (invalidSupply || invalidBorrow) {
-                return amount;
-            }
-        }
-
         if (rewardType == 0) {
             EIP20Interface joe = EIP20Interface(joeAddress);
             uint256 joeRemaining = joe.balanceOf(address(this));
@@ -440,6 +436,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /**
      * @notice Transfer JOE to the recipient
      * @dev Note: If there is not enough JOE, we do not perform the transfer all.
+     * @param rewardType 0 = JOE, 1 = AVAX
      * @param recipient The address of the recipient to transfer JOE to
      * @param amount The amount of JOE to (possibly) transfer
      */
