@@ -1,59 +1,68 @@
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { World } from './World';
-import { Invokation } from './Invokation';
-import { readFile } from './File';
-import { AbiItem } from 'web3-utils';
+import * as path from "path";
+import * as crypto from "crypto";
+import { World } from "./World";
+import { Invokation } from "./Invokation";
+import { readFile } from "./File";
+import { AbiItem } from "web3-utils";
 
 export interface Raw {
-  data: string
-  topics: string[]
+  data: string;
+  topics: string[];
 }
 
 export interface Event {
-  event: string
-  signature: string | null
-  address: string
-  returnValues: object
-  logIndex: number
-  transactionIndex: number
-  blockHash: string
-  blockNumber: number
-  raw: Raw
+  event: string;
+  signature: string | null;
+  address: string;
+  returnValues: object;
+  logIndex: number;
+  transactionIndex: number;
+  blockHash: string;
+  blockNumber: number;
+  raw: Raw;
 }
 
 export interface Contract {
-  address: string
-  _address: string
-  name: string
-  methods: any
-  _jsonInterface: AbiItem[]
-  constructorAbi?: string
-  getPastEvents: (event: string, options: { filter: object, fromBlock: number, toBlock: number | string }) => Event[]
+  address: string;
+  _address: string;
+  name: string;
+  methods: any;
+  _jsonInterface: AbiItem[];
+  constructorAbi?: string;
+  getPastEvents: (
+    event: string,
+    options: { filter: object; fromBlock: number; toBlock: number | string }
+  ) => Event[];
 }
 
 function randomAddress(): string {
-  return crypto.randomBytes(20).toString('hex');
+  return crypto.randomBytes(20).toString("hex");
 }
 
 class ContractStub {
   name: string;
-  test: boolean
+  test: boolean;
 
   constructor(name: string, test: boolean) {
     this.name = name;
     this.test = test;
   }
 
-  async deploy<T>(world: World, from: string, args: any[]): Promise<Invokation<T>> {
+  async deploy<T>(
+    world: World,
+    from: string,
+    args: any[]
+  ): Promise<Invokation<T>> {
     // XXXS Consider opts
-    // ( world.web3.currentProvider && typeof(world.web3.currentProvider) !== 'string' && world.web3.currentProvider.opts ) || 
+    // ( world.web3.currentProvider && typeof(world.web3.currentProvider) !== 'string' && world.web3.currentProvider.opts ) ||
     const opts = { from: from };
 
     let invokationOpts = world.getInvokationOpts(opts);
 
     const networkContractABI = await world.saddle.abi(this.name);
-    const constructorAbi = networkContractABI.find((x) => x.type === 'constructor');
+    const constructorAbi = networkContractABI.find(
+      (x) => x.type === "constructor"
+    );
     let inputs;
 
     if (constructorAbi) {
@@ -69,15 +78,23 @@ class ContractStub {
       if (world.dryRun) {
         let addr = randomAddress();
         console.log(`Dry run: Deploying ${this.name} at fake address ${addr}`);
-        contract = new world.web3.eth.Contract(<any>networkContractABI, addr)
+        contract = new world.web3.eth.Contract(<any>networkContractABI, addr);
         receipt = {
           blockNumber: -1,
           transactionHash: "0x",
-          events: {}
+          events: {},
         };
       } else {
-        ({ contract, receipt } = await world.saddle.deployFull(this.name, args, invokationOpts, world.web3));
-        contract.constructorAbi = world.web3.eth.abi.encodeParameters(inputs, args);;
+        ({ contract, receipt } = await world.saddle.deployFull(
+          this.name,
+          args,
+          invokationOpts,
+          world.web3
+        ));
+        contract.constructorAbi = world.web3.eth.abi.encodeParameters(
+          inputs,
+          args
+        );
       }
 
       return new Invokation<T>(contract, receipt, null, null);
@@ -90,7 +107,9 @@ class ContractStub {
     const networkContractABI = await world.saddle.abi(this.name);
 
     // XXXS unknown?
-    return <T><unknown>(new world.web3.eth.Contract(<any>networkContractABI, address));
+    return <T>(
+      (<unknown>new world.web3.eth.Contract(<any>networkContractABI, address))
+    );
   }
 }
 
@@ -108,17 +127,31 @@ export function setContractName(name: string, contract: Contract): Contract {
   return contract;
 }
 
-export async function getPastEvents(world: World, contract: Contract, name: string, event: string, filter: object = {}): Promise<Event[]> {
-  const block = world.getIn(['contractData', 'Blocks', name]);
+export async function getPastEvents(
+  world: World,
+  contract: Contract,
+  name: string,
+  event: string,
+  filter: object = {}
+): Promise<Event[]> {
+  const block = world.getIn(["contractData", "Blocks", name]);
   if (!block) {
     throw new Error(`Cannot get events when missing deploy block for ${name}`);
   }
 
-  return await contract.getPastEvents(event, { filter: filter, fromBlock: block, toBlock: 'latest' });
+  return await contract.getPastEvents(event, {
+    filter: filter,
+    fromBlock: block,
+    toBlock: "latest",
+  });
 }
 
-export async function decodeCall(world: World, contract: Contract, input: string): Promise<World> {
-  if (input.slice(0, 2) === '0x') {
+export async function decodeCall(
+  world: World,
+  contract: Contract,
+  input: string
+): Promise<World> {
+  if (input.slice(0, 2) === "0x") {
     input = input.slice(2);
   }
 
@@ -126,13 +159,15 @@ export async function decodeCall(world: World, contract: Contract, input: string
   let argsEncoded = input.slice(8);
 
   let funsMapped = contract._jsonInterface.reduce((acc, fun) => {
-    if (fun.type === 'function') {
-      let functionAbi = `${fun.name}(${(fun.inputs || []).map((i) => i.type).join(',')})`;
+    if (fun.type === "function") {
+      let functionAbi = `${fun.name}(${(fun.inputs || [])
+        .map((i) => i.type)
+        .join(",")})`;
       let sig = world.web3.utils.sha3(functionAbi).slice(2, 10);
 
       return {
         ...acc,
-        [sig]: fun
+        [sig]: fun,
       };
     } else {
       return acc;
@@ -142,7 +177,9 @@ export async function decodeCall(world: World, contract: Contract, input: string
   let abi = funsMapped[functionSignature];
 
   if (!abi) {
-    throw new Error(`Cannot find function matching signature ${functionSignature}`);
+    throw new Error(
+      `Cannot find function matching signature ${functionSignature}`
+    );
   }
 
   let decoded = world.web3.eth.abi.decodeParameters(abi.inputs, argsEncoded);
@@ -150,20 +187,25 @@ export async function decodeCall(world: World, contract: Contract, input: string
   const args = abi.inputs.map((input) => {
     return `${input.name}=${decoded[input.name]}`;
   });
-  world.printer.printLine(`\n${contract.name}.${abi.name}(\n\t${args.join("\n\t")}\n)`);
+  world.printer.printLine(
+    `\n${contract.name}.${abi.name}(\n\t${args.join("\n\t")}\n)`
+  );
 
   return world;
 }
 
 // XXXS Handle
-async function getNetworkContract(world: World, name: string): Promise<{ abi: any[], bin: string }> {
-  let basePath = world.basePath || ""
-  let network = world.network || ""
+async function getNetworkContract(
+  world: World,
+  name: string
+): Promise<{ abi: any[]; bin: string }> {
+  let basePath = world.basePath || "";
+  let network = world.network || "";
 
-  let pizath = (name, ext) => path.join(basePath, '.build', `contracts.json`);
+  let pizath = (name, ext) => path.join(basePath, ".build", `contracts.json`);
   let abi, bin;
-  if (network == 'coverage') {
-    let json = await readFile(world, pizath(name, 'json'), null, JSON.parse);
+  if (network == "coverage") {
+    let json = await readFile(world, pizath(name, "json"), null, JSON.parse);
     abi = json.abi;
     bin = json.bytecode.substr(2);
   } else {
@@ -173,35 +215,40 @@ async function getNetworkContract(world: World, name: string): Promise<{ abi: an
     bin = networkContract.bin;
   }
   if (!bin) {
-    throw new Error(`no bin for contract ${name} ${network}`)
+    throw new Error(`no bin for contract ${name} ${network}`);
   }
   return {
     abi: abi,
-    bin: bin
-  }
+    bin: bin,
+  };
 }
 
-export async function getNetworkContracts(world: World): Promise<{ networkContracts: object, version: string }> {
-  let basePath = world.basePath || ""
-  let network = world.network || ""
+export async function getNetworkContracts(
+  world: World
+): Promise<{ networkContracts: object; version: string }> {
+  let basePath = world.basePath || "";
+  let network = world.network || "";
 
-  let contractsPath = path.join(basePath, '.build', `contracts.json`)
+  let contractsPath = path.join(basePath, ".build", `contracts.json`);
   let fullContracts = await readFile(world, contractsPath, null, JSON.parse);
   let version = fullContracts.version;
-  let networkContracts = Object.entries(fullContracts.contracts).reduce((acc, [k, v]) => {
-    let [path, contractName] = k.split(':');
+  let networkContracts = Object.entries(fullContracts.contracts).reduce(
+    (acc, [k, v]) => {
+      let [path, contractName] = k.split(":");
 
-    return {
-      ...acc,
-      [contractName]: {
-        ...<object>v, /// XXXS TODO
-        path: path
-      }
-    };
-  }, {});
+      return {
+        ...acc,
+        [contractName]: {
+          ...(<object>v), /// XXXS TODO
+          path: path,
+        },
+      };
+    },
+    {}
+  );
 
   return {
     networkContracts,
-    version
+    version,
   };
 }

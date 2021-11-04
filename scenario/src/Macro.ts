@@ -1,21 +1,21 @@
-import {Event} from './Event';
+import { Event } from "./Event";
 
 interface Arg {
-  arg: any
-  def: any
-  splat: any
+  arg: any;
+  def: any;
+  splat: any;
 }
 
 interface Macro {
-  args: Arg[]
-  steps: Event
+  args: Arg[];
+  steps: Event;
 }
 
-type ArgMap = {[arg: string]: Event};
-type NamedArg = { argName: string, argValue: Event };
+type ArgMap = { [arg: string]: Event };
+type NamedArg = { argName: string; argValue: Event };
 type ArgValue = Event | NamedArg;
 
-export type Macros = {[eventName: string]: Macro};
+export type Macros = { [eventName: string]: Macro };
 
 export function expandEvent(macros: Macros, event: Event): Event[] {
   const [eventName, ...eventArgs] = event;
@@ -24,7 +24,7 @@ export function expandEvent(macros: Macros, event: Event): Event[] {
     let expanded = expandMacro(macros[<string>eventName], eventArgs);
 
     // Recursively expand steps
-    return expanded.map(event => expandEvent(macros, event)).flat();
+    return expanded.map((event) => expandEvent(macros, event)).flat();
   } else {
     return [event];
   }
@@ -38,21 +38,23 @@ function getArgValues(eventArgs: ArgValue[], macroArgs: Arg[]): ArgMap {
   let usedSplat: boolean = false;
 
   eventArgs.forEach((eventArg) => {
-    if (eventArg.hasOwnProperty('argName')) {
-      const {argName, argValue} = <NamedArg>eventArg;
+    if (eventArg.hasOwnProperty("argName")) {
+      const { argName, argValue } = <NamedArg>eventArg;
 
       eventArgNameMap[argName] = argValue;
       usedNamedArg = true;
     } else {
       if (usedNamedArg) {
-        throw new Error("Cannot use positional arg after named arg in macro invokation.");
+        throw new Error(
+          "Cannot use positional arg after named arg in macro invokation."
+        );
       }
 
       eventArgIndexed.push(<Event>eventArg);
     }
   });
 
-  macroArgs.forEach(({arg, def, splat}, argIndex) => {
+  macroArgs.forEach(({ arg, def, splat }, argIndex) => {
     let val;
 
     if (usedSplat) {
@@ -92,7 +94,7 @@ export function expandMacro(macro: Macro, event: Event): Event[] {
         }
       }
     });
-  };
+  }
 
   return macro.steps.map(expandStep);
 }

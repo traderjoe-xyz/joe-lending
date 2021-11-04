@@ -1,72 +1,106 @@
-const {
-  etherUnsigned
-} = require('../Utils/Ethereum');
+const { avaxUnsigned } = require("../Utils/Avalanche");
 
-const {
-  makeCToken,
-  preCSLP
-} = require('../Utils/Compound');
+const { makeJToken, preJJLP } = require("../Utils/BankerJoe");
 
-const amount = etherUnsigned(10e4);
+const amount = avaxUnsigned(10e4);
 
-describe('CToken', function () {
-  let cToken, root, admin, accounts;
+describe("JToken", function () {
+  let jToken, root, admin, accounts;
   beforeEach(async () => {
     [root, admin, ...accounts] = saddle.accounts;
-    cToken = await makeCToken({comptrollerOpts: {kind: 'bool'}});
+    jToken = await makeJToken({ joetrollerOpts: { kind: "bool" } });
   });
 
-  describe('_setImplementation', () => {
-    describe('ccapable', () => {
-      let cCapableDelegate;
+  describe("_setImplementation", () => {
+    describe("jcapable", () => {
+      let jCapableDelegate;
       beforeEach(async () => {
-        cCapableDelegate = await deploy('CCapableErc20Delegate');
+        jCapableDelegate = await deploy("JCapableErc20Delegate");
       });
 
       it("fails due to non admin", async () => {
-        cToken = await saddle.getContractAt('CErc20Delegator', cToken._address);
-        await expect(send(cToken, '_setImplementation', [cCapableDelegate._address, true, '0x0'], { from: accounts[0] })).rejects.toRevert("revert CErc20Delegator::_setImplementation: Caller must be admin");
+        jToken = await saddle.getContractAt("JErc20Delegator", jToken._address);
+        await expect(
+          send(
+            jToken,
+            "_setImplementation",
+            [jCapableDelegate._address, true, "0x0"],
+            { from: accounts[0] }
+          )
+        ).rejects.toRevert(
+          "revert JErc20Delegator::_setImplementation: Caller must be admin"
+        );
       });
 
       it("succeeds to have internal cash", async () => {
-        await send(cToken.underlying, 'harnessSetBalance', [cToken._address, amount]);
+        await send(jToken.underlying, "harnessSetBalance", [
+          jToken._address,
+          amount,
+        ]);
 
-        cToken = await saddle.getContractAt('CErc20Delegator', cToken._address);
-        expect(await send(cToken, '_setImplementation', [cCapableDelegate._address, true, '0x0'])).toSucceed();
+        jToken = await saddle.getContractAt("JErc20Delegator", jToken._address);
+        expect(
+          await send(jToken, "_setImplementation", [
+            jCapableDelegate._address,
+            true,
+            "0x0",
+          ])
+        ).toSucceed();
 
-        cToken = await saddle.getContractAt('CCapableErc20Delegate', cToken._address);
-        const result = await call(cToken, 'getCash');
+        jToken = await saddle.getContractAt(
+          "JCapableErc20Delegate",
+          jToken._address
+        );
+        const result = await call(jToken, "getCash");
         expect(result).toEqualNumber(amount);
       });
     });
 
-    describe('cslp', () => {
-      let cslpDelegate, data;
+    describe("jjlp", () => {
+      let jjlpDelegate, data;
       beforeEach(async () => {
-        cslpDelegate = await deploy('CSLPDelegateHarness');
-        data = await preCSLP(cToken.underlying._address);
+        jjlpDelegate = await deploy("JJLPDelegateHarness");
+        data = await preJJLP(jToken.underlying._address);
       });
 
       it("fails due to non admin", async () => {
-        cToken = await saddle.getContractAt('CErc20Delegator', cToken._address);
-        await expect(send(cToken, '_setImplementation', [cslpDelegate._address, true, data], { from: accounts[0] })).rejects.toRevert("revert CErc20Delegator::_setImplementation: Caller must be admin");
+        jToken = await saddle.getContractAt("JErc20Delegator", jToken._address);
+        await expect(
+          send(
+            jToken,
+            "_setImplementation",
+            [jjlpDelegate._address, true, data],
+            { from: accounts[0] }
+          )
+        ).rejects.toRevert(
+          "revert JErc20Delegator::_setImplementation: Caller must be admin"
+        );
       });
 
-      // It's unlikely to upgrade an implementation to CSLPDelegate.
+      // It's unlikely to upgrade an implementation to JJLPDelegate.
     });
 
-    describe('cctoken', () => {
-      let cctokenDelegate;
+    describe("jjtoken", () => {
+      let jjtokenDelegate;
       beforeEach(async () => {
-        cctokenDelegate = await deploy('CCTokenDelegateHarness');
+        jjtokenDelegate = await deploy("JJTokenDelegateHarness");
       });
 
       it("fails due to non admin", async () => {
-        cToken = await saddle.getContractAt('CErc20Delegator', cToken._address);
-        await expect(send(cToken, '_setImplementation', [cctokenDelegate._address, true, '0x0'], { from: accounts[0] })).rejects.toRevert("revert CErc20Delegator::_setImplementation: Caller must be admin");
+        jToken = await saddle.getContractAt("JErc20Delegator", jToken._address);
+        await expect(
+          send(
+            jToken,
+            "_setImplementation",
+            [jjtokenDelegate._address, true, "0x0"],
+            { from: accounts[0] }
+          )
+        ).rejects.toRevert(
+          "revert JErc20Delegator::_setImplementation: Caller must be admin"
+        );
       });
 
-      // It's unlikely to upgrade an implementation to CCTokenDelegate.
+      // It's unlikely to upgrade an implementation to JJTokenDelegate.
     });
   });
 });
