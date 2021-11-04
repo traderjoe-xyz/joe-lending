@@ -1,28 +1,28 @@
-import {World} from './World';
-import {readFile} from './File';
-import request from 'request';
-import * as path from 'path';
-import truffleFlattener from 'truffle-flattener';
-import {getNetworkContracts} from './Contract';
+import { World } from "./World";
+import { readFile } from "./File";
+import request from "request";
+import * as path from "path";
+import truffleFlattener from "truffle-flattener";
+import { getNetworkContracts } from "./Contract";
 
 interface DevDoc {
-  author: string
-  methods: object
-  title: string
+  author: string;
+  methods: object;
+  title: string;
 }
 
 interface UserDoc {
-  methods: object
-  notice: string
+  methods: object;
+  notice: string;
 }
 
 function getUrl(network: string): string {
   let host = {
-    kovan: 'api-kovan.etherscan.io',
-    rinkeby: 'api-rinkeby.etherscan.io',
-    ropsten: 'api-ropsten.etherscan.io',
-    goerli: 'api-goerli.etherscan.io',
-    mainnet: 'api.etherscan.io'
+    kovan: "api-kovan.etherscan.io",
+    rinkeby: "api-rinkeby.etherscan.io",
+    ropsten: "api-ropsten.etherscan.io",
+    goerli: "api-goerli.etherscan.io",
+    mainnet: "api.etherscan.io",
   }[network];
 
   if (!host) {
@@ -33,10 +33,16 @@ function getUrl(network: string): string {
 }
 
 function getConstructorABI(world: World, contractName: string): string {
-  let constructorAbi = world.getIn(['contractData', 'Constructors', contractName]);
+  let constructorAbi = world.getIn([
+    "contractData",
+    "Constructors",
+    contractName,
+  ]);
 
   if (!constructorAbi) {
-    throw new Error(`Unknown Constructor ABI for ${contractName} on ${world.network}. Try deploying again?`);
+    throw new Error(
+      `Unknown Constructor ABI for ${contractName} on ${world.network}. Try deploying again?`
+    );
   }
 
   return constructorAbi;
@@ -44,7 +50,7 @@ function getConstructorABI(world: World, contractName: string): string {
 
 function post(url, data): Promise<object> {
   return new Promise((resolve, reject) => {
-    request.post(url, {form: data}, (err, httpResponse, body) => {
+    request.post(url, { form: data }, (err, httpResponse, body) => {
       if (err) {
         reject(err);
       } else {
@@ -56,7 +62,7 @@ function post(url, data): Promise<object> {
 
 function get(url, data): Promise<object> {
   return new Promise((resolve, reject) => {
-    request.get(url, {form: data}, (err, httpResponse, body) => {
+    request.get(url, { form: data }, (err, httpResponse, body) => {
       if (err) {
         reject(err);
       } else {
@@ -67,18 +73,22 @@ function get(url, data): Promise<object> {
 }
 
 interface Result {
-  status: string
-  message: string
-  result: string
+  status: string;
+  message: string;
+  result: string;
 }
 
 async function sleep(timeout): Promise<void> {
   return new Promise((resolve, _reject) => {
     setTimeout(() => resolve(), timeout);
-  })
+  });
 }
 
-async function checkStatus(world: World, url: string, token: string): Promise<void> {
+async function checkStatus(
+  world: World,
+  url: string,
+  token: string
+): Promise<void> {
   world.printer.printLine(`Checking status of ${token}...`);
 
   // Potential results:
@@ -89,7 +99,7 @@ async function checkStatus(world: World, url: string, token: string): Promise<vo
   let result: Result = <Result>await get(url, {
     guid: token,
     module: "contract",
-    action: "checkverifystatus"
+    action: "checkverifystatus",
   });
 
   if (world.verbose) {
@@ -101,43 +111,60 @@ async function checkStatus(world: World, url: string, token: string): Promise<vo
     return await checkStatus(world, url, token);
   }
 
-  if (result.result.startsWith('Fail')) {
-    throw new Error(`Etherscan failed to verify contract: ${result.message} "${result.result}"`)
+  if (result.result.startsWith("Fail")) {
+    throw new Error(
+      `Etherscan failed to verify contract: ${result.message} "${result.result}"`
+    );
   }
 
   if (Number(result.status) !== 1) {
-    throw new Error(`Etherscan Error: ${result.message} "${result.result}"`)
+    throw new Error(`Etherscan Error: ${result.message} "${result.result}"`);
   }
 
   world.printer.printLine(`Verification result ${result.result}...`);
 }
 
-export async function verify(world: World, apiKey: string, contractName: string, buildInfoName: string, address: string): Promise<void> {
+export async function verify(
+  world: World,
+  apiKey: string,
+  contractName: string,
+  buildInfoName: string,
+  address: string
+): Promise<void> {
   let contractAddress: string = address;
-  let {networkContracts, version} = await getNetworkContracts(world);
+  let { networkContracts, version } = await getNetworkContracts(world);
   let networkContract = networkContracts[buildInfoName];
   if (!networkContract) {
-    throw new Error(`Cannot find contract ${buildInfoName}, found: ${Object.keys(networkContracts)}`)
+    throw new Error(
+      `Cannot find contract ${buildInfoName}, found: ${Object.keys(
+        networkContracts
+      )}`
+    );
   }
   let sourceCode: string = await truffleFlattener([networkContract.path]);
-  let compilerVersion: string = version.replace(/(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi, '');
+  let compilerVersion: string = version.replace(
+    /(\.Emscripten)|(\.clang)|(\.Darwin)|(\.appleclang)/gi,
+    ""
+  );
   let constructorAbi = getConstructorABI(world, contractName);
   let url = getUrl(world.network);
 
   const verifyData: object = {
     apikey: apiKey,
-    module: 'contract',
-    action: 'verifysourcecode',
+    module: "contract",
+    action: "verifysourcecode",
     contractaddress: contractAddress,
     sourceCode: sourceCode,
     contractname: buildInfoName,
     compilerversion: `v${compilerVersion}`,
-    optimizationUsed: '1',
-    runs: '200',
-    constructorArguements: constructorAbi.slice(2)
+    optimizationUsed: "1",
+    runs: "200",
+    constructorArguements: constructorAbi.slice(2),
   };
 
-  world.printer.printLine(`Verifying ${contractName} at ${address} with compiler version ${compilerVersion}...`);
+  world.printer.printLine(
+    `Verifying ${contractName} at ${address} with compiler version ${compilerVersion}...`
+  );
 
   // Potential results
   // {"status":"0","message":"NOTOK","result":"Invalid constructor arguments provided. Please verify that they are in ABI-encoded format"}
@@ -146,10 +173,10 @@ export async function verify(world: World, apiKey: string, contractName: string,
   let result: Result = <Result>await post(url, verifyData);
 
   if (Number(result.status) === 0 || result.message !== "OK") {
-    if (result.result.includes('Contract source code already verified')) {
+    if (result.result.includes("Contract source code already verified")) {
       world.printer.printLine(`Contract already verified`);
     } else {
-      throw new Error(`Etherscan Error: ${result.message}: ${result.result}`)
+      throw new Error(`Etherscan Error: ${result.message}: ${result.result}`);
     }
   } else {
     return await checkStatus(world, url, result.result);
