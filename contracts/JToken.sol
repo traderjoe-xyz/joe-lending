@@ -476,6 +476,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `borrowAllowed` for accuring potential JOE rewards.
          */
         if (borrowAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return uint256(Error.NO_ERROR);
         }
@@ -601,6 +602,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `repayBorrowAllowed` for accuring potential JOE rewards.
          */
         if (repayAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return (uint256(Error.NO_ERROR), 0);
         }
