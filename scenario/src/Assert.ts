@@ -1,7 +1,7 @@
 export type Expect = (actual: any) => {
-  toEqual: (expected: any) => any
-  fail: (message: string) => any
-}
+  toEqual: (expected: any) => any;
+  fail: (message: string) => any;
+};
 
 export const throwExpect: Expect = (x) => {
   return {
@@ -13,7 +13,7 @@ export const throwExpect: Expect = (x) => {
       }
     },
     fail: (reason) => {
-      throw new Error(reason)
-    }
-  }
+      throw new Error(reason);
+    },
+  };
 };

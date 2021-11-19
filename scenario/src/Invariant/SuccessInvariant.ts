@@ -1,17 +1,20 @@
-import {Invariant} from '../Invariant';
-import {fail, World} from '../World';
-import {getCoreValue} from '../CoreValue';
-import {Value} from '../Value';
-import {Event} from '../Event';
+import { Invariant } from "../Invariant";
+import { fail, World } from "../World";
+import { getCoreValue } from "../CoreValue";
+import { Value } from "../Value";
+import { Event } from "../Event";
 
 export class SuccessInvariant implements Invariant {
-	held = false;
+  held = false;
 
-	constructor() {}
+  constructor() {}
 
   async checker(world: World): Promise<void> {
     if (world.lastInvokation && !world.lastInvokation.success()) {
-      fail(world, `Success invariant broken! Expected successful execution, but had error ${world.lastInvokation.toString()}`);
+      fail(
+        world,
+        `Success invariant broken! Expected successful execution, but had error ${world.lastInvokation.toString()}`
+      );
     }
   }
 

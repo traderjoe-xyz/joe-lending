@@ -1,23 +1,29 @@
-const {
-  makeCToken
-} = require('../Utils/Compound');
+const { makeJToken } = require("../Utils/BankerJoe");
 
 const exchangeRate = 50e3;
 
-describe('CToken', function () {
+describe("JToken", function () {
   let root, admin, accounts;
-  let cToken;
+  let jToken;
 
   beforeEach(async () => {
     [root, admin, ...accounts] = saddle.accounts;
-    cToken = await makeCToken({kind: 'ccollateralcap', comptrollerOpts: {kind: 'bool'}, exchangeRate});
+    jToken = await makeJToken({
+      kind: "jcollateralcap",
+      joetrollerOpts: { kind: "bool" },
+      exchangeRate,
+    });
   });
 
-  it("fails to register collateral for non comptroller", async () => {
-    await expect(send(cToken, 'registerCollateral', [root])).rejects.toRevert("revert only comptroller may register collateral for user");
+  it("fails to register collateral for non joetroller", async () => {
+    await expect(send(jToken, "registerCollateral", [root])).rejects.toRevert(
+      "revert only joetroller may register collateral for user"
+    );
   });
 
-  it("fails to unregister collateral for non comptroller", async () => {
-    await expect(send(cToken, 'unregisterCollateral', [root])).rejects.toRevert("revert only comptroller may unregister collateral for user");
+  it("fails to unregister collateral for non joetroller", async () => {
+    await expect(send(jToken, "unregisterCollateral", [root])).rejects.toRevert(
+      "revert only joetroller may unregister collateral for user"
+    );
   });
 });

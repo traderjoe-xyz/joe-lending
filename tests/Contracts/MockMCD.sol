@@ -22,7 +22,7 @@ contract MockJug {
     uint256 public base;
 
     constructor(uint256 duty_, uint256 base_) public {
-        setETHDuty(duty_);
+        setAVAXDuty(duty_);
         setBase(base_);
     }
 
@@ -30,7 +30,7 @@ contract MockJug {
         base = base_;
     }
 
-    function setETHDuty(uint256 duty_) public {
-        ilks["ETH-A"].duty = duty_;
+    function setAVAXDuty(uint256 duty_) public {
+        ilks["AVAX-A"].duty = duty_;
     }
 }

@@ -1,4 +1,4 @@
-import { getNetworkPath, readFile, writeFile } from './File';
+import { getNetworkPath, readFile, writeFile } from "./File";
 
 export class Settings {
   basePath: string | null;
@@ -19,7 +19,11 @@ export class Settings {
     this.from = from;
   }
 
-  static deserialize(basePath: string, network: string, data: string): Settings {
+  static deserialize(
+    basePath: string,
+    network: string,
+    data: string
+  ): Settings {
     const { aliases } = JSON.parse(data);
 
     return new Settings(basePath, network, aliases);
@@ -27,7 +31,7 @@ export class Settings {
 
   serialize(): string {
     return JSON.stringify({
-      aliases: this.aliases
+      aliases: this.aliases,
     });
   }
 
@@ -36,18 +40,25 @@ export class Settings {
   }
 
   static getFilePath(basePath: string | null, network: string): string {
-    return getNetworkPath(basePath, network, '-settings');
+    return getNetworkPath(basePath, network, "-settings");
   }
 
   static load(basePath: string, network: string): Promise<Settings> {
-    return readFile(null, Settings.getFilePath(basePath, network), Settings.default(basePath, network), data =>
-      Settings.deserialize(basePath, network, data)
+    return readFile(
+      null,
+      Settings.getFilePath(basePath, network),
+      Settings.default(basePath, network),
+      (data) => Settings.deserialize(basePath, network, data)
     );
   }
 
   async save(): Promise<void> {
     if (this.network) {
-      await writeFile(null, Settings.getFilePath(this.basePath, this.network), this.serialize());
+      await writeFile(
+        null,
+        Settings.getFilePath(this.basePath, this.network),
+        this.serialize()
+      );
     }
   }
 
