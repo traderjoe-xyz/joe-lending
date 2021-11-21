@@ -4,38 +4,56 @@
  * This module loads Error and FailureInfo enum from ErrorReporter.sol.
  */
 
-const path = require('path');
-const solparse = require('solparse');
+const path = require("path");
+const solparse = require("solparse");
 
-const errorReporterPath = path.join(__dirname, '..', 'contracts', 'ErrorReporter.sol');
+const errorReporterPath = path.join(
+  __dirname,
+  "..",
+  "contracts",
+  "ErrorReporter.sol"
+);
 const contents = solparse.parseFile(errorReporterPath);
-const [
-  ComptrollerErrorReporter,
-  TokenErrorReporter
-] = contents.body.filter(k => k.type === 'ContractStatement');
+const [JoetrollerErrorReporter, TokenErrorReporter] = contents.body.filter(
+  (k) => k.type === "ContractStatement"
+);
 
 function invert(object) {
-  return Object.entries(object).reduce((obj, [key, value]) => ({ ...obj, [value]: key }), {});
+  return Object.entries(object).reduce(
+    (obj, [key, value]) => ({ ...obj, [value]: key }),
+    {}
+  );
 }
 
 function parse(reporter) {
-  const ErrorInv = reporter.body.find(k => k.name == 'Error').members;
-  const FailureInfoInv = reporter.body.find(k => k.name == 'FailureInfo').members;
+  const ErrorInv = reporter.body.find((k) => k.name == "Error").members;
+  const FailureInfoInv = reporter.body.find(
+    (k) => k.name == "FailureInfo"
+  ).members;
   const Error = invert(ErrorInv);
   const FailureInfo = invert(FailureInfoInv);
-  return {Error, FailureInfo, ErrorInv, FailureInfoInv};
+  return { Error, FailureInfo, ErrorInv, FailureInfoInv };
 }
 
-const carefulMathPath = path.join(__dirname, '..', 'contracts', 'CarefulMath.sol');
-const CarefulMath = solparse.parseFile(carefulMathPath).body.find(k => k.type === 'ContractStatement');
-const MathErrorInv = CarefulMath.body.find(k => k.name == 'MathError').members;
+const carefulMathPath = path.join(
+  __dirname,
+  "..",
+  "contracts",
+  "CarefulMath.sol"
+);
+const CarefulMath = solparse
+  .parseFile(carefulMathPath)
+  .body.find((k) => k.type === "ContractStatement");
+const MathErrorInv = CarefulMath.body.find(
+  (k) => k.name == "MathError"
+).members;
 const MathError = invert(MathErrorInv);
 
 module.exports = {
-  ComptrollerErr: parse(ComptrollerErrorReporter),
+  JoetrollerErr: parse(JoetrollerErrorReporter),
   TokenErr: parse(TokenErrorReporter),
   MathErr: {
     Error: MathError,
-    ErrorInv: MathErrorInv
-  }
+    ErrorInv: MathErrorInv,
+  },
 };

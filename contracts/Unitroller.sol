@@ -7,17 +7,17 @@ import "./JoetrollerStorage.sol";
 
 /**
  * @title JoetrollerCore
- * @dev Storage for the joetroller is at this address, while execution is delegated to the `joetrollerImplementation`.
+ * @dev Storage for the joetroller is at this address, while execution is delegated to the `implementation`.
  * JTokens should reference this contract as their joetroller.
  */
 contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is changed
+     * @notice Emitted when pendingImplementation is changed
      */
     event NewPendingImplementation(address oldPendingImplementation, address newPendingImplementation);
 
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is accepted, which means joetroller implementation is updated
+     * @notice Emitted when pendingImplementation is accepted, which means joetroller implementation is updated
      */
     event NewImplementation(address oldImplementation, address newImplementation);
 
@@ -42,11 +42,11 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
         }
 
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = newPendingImplementation;
+        pendingImplementation = newPendingImplementation;
 
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -58,20 +58,20 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function _acceptImplementation() public returns (uint256) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
-        if (msg.sender != pendingJoetrollerImplementation || pendingJoetrollerImplementation == address(0)) {
+        if (msg.sender != pendingImplementation || pendingImplementation == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
         }
 
         // Save current values for inclusion in log
-        address oldImplementation = joetrollerImplementation;
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldImplementation = implementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        joetrollerImplementation = pendingJoetrollerImplementation;
+        implementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = address(0);
+        pendingImplementation = address(0);
 
-        emit NewImplementation(oldImplementation, joetrollerImplementation);
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewImplementation(oldImplementation, implementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -134,7 +134,7 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function() external payable {
         // delegate all other functions to current implementation
-        (bool success, ) = joetrollerImplementation.delegatecall(msg.data);
+        (bool success, ) = implementation.delegatecall(msg.data);
 
         assembly {
             let free_mem_ptr := mload(0x40)

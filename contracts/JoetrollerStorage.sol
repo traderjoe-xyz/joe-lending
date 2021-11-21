@@ -19,12 +19,12 @@ contract UnitrollerAdminStorage {
     /**
      * @notice Active brains of Unitroller
      */
-    address public joetrollerImplementation;
+    address public implementation;
 
     /**
      * @notice Pending brains of Unitroller
      */
-    address public pendingJoetrollerImplementation;
+    address public pendingImplementation;
 }
 
 contract JoetrollerV1Storage is UnitrollerAdminStorage {

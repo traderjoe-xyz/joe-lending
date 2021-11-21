@@ -1,16 +1,20 @@
 "use strict";
 
-const {initWorld, loadVerbose, loadInvokationOpts} = require('../scenario/.tsbuilt/World.js');
-const {processEvents} = require('../scenario/.tsbuilt/CoreEvent.js');
-const {parse} = require('../scenario/.tsbuilt/Parser.js');
-const {ConsolePrinter} = require('../scenario/.tsbuilt/Printer.js');
+const {
+  initWorld,
+  loadVerbose,
+  loadInvokationOpts,
+} = require("../scenario/.tsbuilt/World.js");
+const { processEvents } = require("../scenario/.tsbuilt/CoreEvent.js");
+const { parse } = require("../scenario/.tsbuilt/Parser.js");
+const { ConsolePrinter } = require("../scenario/.tsbuilt/Printer.js");
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const basePath = process.env.proj_root || path.join(process.cwd());
-const baseScenarioPath = path.join(basePath, 'spec', 'scenario');
-const coreMacros = fs.readFileSync(path.join(baseScenarioPath, 'CoreMacros'));
+const baseScenarioPath = path.join(basePath, "spec", "scenario");
+const coreMacros = fs.readFileSync(path.join(baseScenarioPath, "CoreMacros"));
 
 const TOTAL_GAS = 5000000;
 
@@ -27,10 +31,10 @@ function loadScenario(file) {
     // Ignore files if they don't match `.scen`
     if (file.match(/\.scen$/)) {
       // Load file data
-      const data = fs.readFileSync(fullPath, 'utf8');
+      const data = fs.readFileSync(fullPath, "utf8");
 
       // Get the name of the test from its file name
-      const name = file.replace(/\..*$/g, 'Scen');
+      const name = file.replace(/\..*$/g, "Scen");
 
       try {
         // Try and parse the file
@@ -41,7 +45,7 @@ function loadScenario(file) {
           scenarios[`${name}: ${key}`] = val;
         });
       } catch (e) {
-        throw `Cannot parse scenario ${file}: ${e}`
+        throw `Cannot parse scenario ${file}: ${e}`;
       }
     }
   }
@@ -53,20 +57,20 @@ function run(file) {
   const scenarios = loadScenario(file);
 
   /**
-    * Allows user to specify a scenario filter
-    */
+   * Allows user to specify a scenario filter
+   */
   let scenarioFilter;
 
-  const scenarioEnv = process.env['scenarios'] || process.env['SCENARIOS'];
-  const verbose = !!process.env['verbose'];
-  const network = process.env['NETWORK'] || process.env['network'] || 'test';
+  const scenarioEnv = process.env["scenarios"] || process.env["SCENARIOS"];
+  const verbose = !!process.env["verbose"];
+  const network = process.env["NETWORK"] || process.env["network"] || "test";
 
   if (scenarioEnv) {
     console.log(`running scenarios matching: /${scenarioEnv}/i`);
-    scenarioFilter = new RegExp(scenarioEnv, 'i');
+    scenarioFilter = new RegExp(scenarioEnv, "i");
   }
 
-  describe('ScenarioTest', () => {
+  describe("ScenarioTest", () => {
     /*
      * This test runs our scenarios, which come from the reference implementation.
      */
@@ -82,7 +86,7 @@ function run(file) {
             break;
           case "Gas":
             // Skip gas tests on coverage
-            if (network === 'coverage') {
+            if (network === "coverage") {
               fn = it.skip;
             }
             events.shift();
@@ -102,7 +106,16 @@ function run(file) {
         } else {
           let finalWorld;
           let runner = async () => {
-            let world = await initWorld(expect, new ConsolePrinter(verbose), web3, saddle, network, accounts, basePath, TOTAL_GAS);
+            let world = await initWorld(
+              expect,
+              new ConsolePrinter(verbose),
+              web3,
+              saddle,
+              network,
+              accounts,
+              basePath,
+              TOTAL_GAS
+            );
             world = loadVerbose(world);
             world = loadInvokationOpts(world);
 
@@ -113,13 +126,13 @@ function run(file) {
             // console.log(["Final world", finalWorld, finalWorld.actions]);
 
             return finalWorld;
-          }
+          };
 
           const spec = fn("scenario: " + name, runner, 720000);
           afterEach(() => {
             if (finalWorld)
               spec.result.description += ` [${finalWorld.gasCounter.value} wei]`;
-          })
+          });
         }
       } else {
         it.skip("scenario: " + name, async () => {});
@@ -129,5 +142,5 @@ function run(file) {
 }
 
 module.exports = {
-  run: run
+  run: run,
 };

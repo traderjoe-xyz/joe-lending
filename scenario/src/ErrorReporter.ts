@@ -1,9 +1,9 @@
-import {ComptrollerErr, TokenErr} from './ErrorReporterConstants';
+import { JoetrollerErr, TokenErr } from "./ErrorReporterConstants";
 
 export interface ErrorReporter {
-  getError(error: any): string | null
-  getInfo(info: any): string | null
-  getDetail(error: any, detail: number): string
+  getError(error: any): string | null;
+  getInfo(info: any): string | null;
+  getDetail(error: any, detail: number): string;
 }
 
 class NoErrorReporterType implements ErrorReporter {
@@ -20,7 +20,7 @@ class NoErrorReporterType implements ErrorReporter {
   }
 }
 
-class CTokenErrorReporterType implements ErrorReporter {
+class JTokenErrorReporterType implements ErrorReporter {
   getError(error: any): string | null {
     if (error === null) {
       return null;
@@ -39,11 +39,11 @@ class CTokenErrorReporterType implements ErrorReporter {
 
   getDetail(error: any, detail: number): string {
     // Little hack to let us use proper names for cross-contract errors
-    if (this.getError(error) === "COMPTROLLER_REJECTION") {
-      let comptrollerError = ComptrollerErrorReporter.getError(detail);
+    if (this.getError(error) === "JOETROLLER_REJECTION") {
+      let joetrollerError = JoetrollerErrorReporter.getError(detail);
 
-      if (comptrollerError) {
-        return comptrollerError;
+      if (joetrollerError) {
+        return joetrollerError;
       }
     }
 
@@ -51,13 +51,13 @@ class CTokenErrorReporterType implements ErrorReporter {
   }
 }
 
-class ComptrollerErrorReporterType implements ErrorReporter {
+class JoetrollerErrorReporterType implements ErrorReporter {
   getError(error: any): string | null {
     if (error === null) {
       return null;
     } else {
       // TODO: This probably isn't right...
-      return ComptrollerErr.ErrorInv[Number(error)];
+      return JoetrollerErr.ErrorInv[Number(error)];
     }
   }
 
@@ -66,16 +66,16 @@ class ComptrollerErrorReporterType implements ErrorReporter {
       return null;
     } else {
       // TODO: This probably isn't right...
-      return ComptrollerErr.FailureInfoInv[Number(info)];
+      return JoetrollerErr.FailureInfoInv[Number(info)];
     }
   }
 
   getDetail(error: any, detail: number): string {
     if (this.getError(error) === "REJECTION") {
-      let comptrollerError = ComptrollerErrorReporter.getError(detail);
+      let joetrollerError = JoetrollerErrorReporter.getError(detail);
 
-      if (comptrollerError) {
-        return comptrollerError;
+      if (joetrollerError) {
+        return joetrollerError;
       }
     }
 
@@ -83,10 +83,13 @@ class ComptrollerErrorReporterType implements ErrorReporter {
   }
 }
 
-export function formatResult(errorReporter: ErrorReporter, result: any): string {
+export function formatResult(
+  errorReporter: ErrorReporter,
+  result: any
+): string {
   const errorStr = errorReporter.getError(result);
   if (errorStr !== null) {
-    return `Error=${errorStr}`
+    return `Error=${errorStr}`;
   } else {
     return `Result=${result}`;
   }
@@ -94,5 +97,5 @@ export function formatResult(errorReporter: ErrorReporter, result: any): string 
 
 // Singleton instances
 export const NoErrorReporter = new NoErrorReporterType();
-export const CTokenErrorReporter = new CTokenErrorReporterType();
-export const ComptrollerErrorReporter = new ComptrollerErrorReporterType();
+export const JTokenErrorReporter = new JTokenErrorReporterType();
+export const JoetrollerErrorReporter = new JoetrollerErrorReporterType();

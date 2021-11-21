@@ -2,7 +2,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
 
   const { deployer } = await getNamedAccounts();
-  const jAvax = await ethers.getContract("JWrappedNativeDelegator");
+  const jAvax = await ethers.getContract("JAvaxDelegator");
 
   await deploy("Maximillion", {
     from: deployer,
@@ -12,4 +12,4 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
   });
 };
 
-module.exports.tags = ["Max"];
+module.exports.tags = ["Maximillion"];

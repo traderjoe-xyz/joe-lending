@@ -148,12 +148,12 @@ contract UnitrollerAdminStorage {
     /**
      * @notice Active brains of Unitroller
      */
-    address public joetrollerImplementation;
+    address public implementation;
 
     /**
      * @notice Pending brains of Unitroller
      */
-    address public pendingJoetrollerImplementation;
+    address public pendingImplementation;
 }
 
 contract JoetrollerV1Storage is UnitrollerAdminStorage {
@@ -739,7 +739,7 @@ contract JWrappedNativeInterface is JErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -781,7 +781,7 @@ contract JCapableErc20Interface is JErc20Interface, JSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 

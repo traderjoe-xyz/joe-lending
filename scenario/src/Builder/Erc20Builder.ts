@@ -1,22 +1,13 @@
-
-import {Event} from '../Event';
-import {World} from '../World';
-import {Erc20} from '../Contract/Erc20';
-import {Invokation, invoke} from '../Invokation';
-import {
-  getAddressV,
-  getNumberV,
-  getStringV
-} from '../CoreValue';
-import {
-  AddressV,
-  NumberV,
-  StringV
-} from '../Value';
-import {Arg, Fetcher, getFetcherValue} from '../Command';
-import {storeAndSaveContract} from '../Networks';
-import {getContract} from '../Contract';
-import {encodeABI} from '../Utils';
+import { Event } from "../Event";
+import { World } from "../World";
+import { Erc20 } from "../Contract/Erc20";
+import { Invokation, invoke } from "../Invokation";
+import { getAddressV, getNumberV, getStringV } from "../CoreValue";
+import { AddressV, NumberV, StringV } from "../Value";
+import { Arg, Fetcher, getFetcherValue } from "../Command";
+import { storeAndSaveContract } from "../Networks";
+import { getContract } from "../Contract";
+import { encodeABI } from "../Utils";
 
 const ExistingToken = getContract("EIP20Interface");
 const TetherInterface = getContract("TetherInterface");
@@ -26,22 +17,30 @@ const FaucetTokenNonStandardHarness = getContract("FaucetNonStandardToken");
 const FaucetTokenReEntrantHarness = getContract("FaucetTokenReEntrantHarness");
 const EvilTokenHarness = getContract("EvilToken");
 const WBTCTokenHarness = getContract("WBTCToken");
-const WETHToken = getContract("WETH9");
+const WAVAXToken = getContract("WAVAX9");
 const FeeTokenHarness = getContract("FeeToken");
 
 export interface TokenData {
-  invokation: Invokation<Erc20>,
-  description: string,
-  name: string,
-  symbol: string,
-  decimals?: number,
-  address?: string,
-  contract: string
+  invokation: Invokation<Erc20>;
+  description: string;
+  name: string;
+  symbol: string;
+  decimals?: number;
+  address?: string;
+  contract: string;
 }
 
-export async function buildErc20(world: World, from: string, event: Event): Promise<{ world: World, erc20: Erc20, tokenData: TokenData }> {
+export async function buildErc20(
+  world: World,
+  from: string,
+  event: Event
+): Promise<{ world: World; erc20: Erc20; tokenData: TokenData }> {
   const fetchers = [
-    new Fetcher<{ symbol: StringV, address: AddressV, name: StringV }, TokenData>(`
+    new Fetcher<
+      { symbol: StringV; address: AddressV; name: StringV },
+      TokenData
+    >(
+      `
         #### Existing
 
         * "Existing symbol:<String> address:<Address> name:<String>" - Wrap an existing Erc20 token
@@ -64,34 +63,41 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
           decimals: Number(decimals),
           name: tokenName,
           symbol: symbol.val,
-          contract: 'ExistingToken'
+          contract: "ExistingToken",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, address: AddressV}, TokenData>(`
+    new Fetcher<{ symbol: StringV; address: AddressV }, TokenData>(
+      `
         #### ExistingTether
 
         * "Existing symbol:<String> address:<Address>" - Wrap an existing Erc20 token
           * E.g. "Erc20 Deploy ExistingTether USDT 0x123...
       `,
       "ExistingTether",
-      [
-        new Arg("symbol", getStringV),
-        new Arg("address", getAddressV)
-      ],
-      async (world, {symbol, address}) => {
+      [new Arg("symbol", getStringV), new Arg("address", getAddressV)],
+      async (world, { symbol, address }) => {
         return {
-          invokation: new Invokation<Erc20>(await TetherInterface.at<Erc20>(world, address.val), null, null, null),
+          invokation: new Invokation<Erc20>(
+            await TetherInterface.at<Erc20>(world, address.val),
+            null,
+            null,
+            null
+          ),
           description: "ExistingTether",
           name: symbol.val,
           symbol: symbol.val,
-          contract: 'TetherInterface'
+          contract: "TetherInterface",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV}, TokenData>(`
+    new Fetcher<
+      { symbol: StringV; name: StringV; decimals: NumberV },
+      TokenData
+    >(
+      `
         #### NonStandard
 
         * "NonStandard symbol:<String> name:<String> decimals:<Number=18>" - A non-standard token, like BAT
@@ -101,25 +107,39 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
-        new Arg("decimals", getNumberV, {default: new NumberV(18)}),
+        new Arg("decimals", getNumberV, { default: new NumberV(18) }),
       ],
-      async (world, {symbol, name, decimals}) => {
+      async (world, { symbol, name, decimals }) => {
         return {
-          invokation: await FaucetTokenNonStandardHarness.deploy<Erc20>(world, from, [0, name.val, decimals.val, symbol.val]),
+          invokation: await FaucetTokenNonStandardHarness.deploy<Erc20>(
+            world,
+            from,
+            [0, name.val, decimals.val, symbol.val]
+          ),
           description: "NonStandard",
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
-          contract: 'FaucetNonStandardToken'
+          contract: "FaucetNonStandardToken",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV, fun:StringV, reEntryFunSig: StringV, reEntryFunArgs: StringV[]}, TokenData>(`
+    new Fetcher<
+      {
+        symbol: StringV;
+        name: StringV;
+        fun: StringV;
+        reEntryFunSig: StringV;
+        reEntryFunArgs: StringV[];
+      },
+      TokenData
+    >(
+      `
         #### ReEntrant
 
         * "ReEntrant symbol:<String> name:string fun:<String> funSig:<String> ...funArgs:<Value>" - A token that loves to call back to spook its caller
-          * E.g. "Erc20 Deploy ReEntrant PHREAK PHREAK "transfer" "mint(uint256)" 0 - A token that will call back to a CToken's mint function
+          * E.g. "Erc20 Deploy ReEntrant PHREAK PHREAK "transfer" "mint(uint256)" 0 - A token that will call back to a JToken's mint function
 
         Note: valid functions: totalSupply, balanceOf, transfer, transferFrom, approve, allowance
       `,
@@ -129,23 +149,35 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
         new Arg("name", getStringV),
         new Arg("fun", getStringV),
         new Arg("reEntryFunSig", getStringV),
-        new Arg("reEntryFunArgs", getStringV, {variadic: true, mapped: true})
+        new Arg("reEntryFunArgs", getStringV, { variadic: true, mapped: true }),
       ],
-      async (world, {symbol, name, fun, reEntryFunSig, reEntryFunArgs}) => {
-        const fnData = encodeABI(world, reEntryFunSig.val, reEntryFunArgs.map((a) => a.val));
+      async (world, { symbol, name, fun, reEntryFunSig, reEntryFunArgs }) => {
+        const fnData = encodeABI(
+          world,
+          reEntryFunSig.val,
+          reEntryFunArgs.map((a) => a.val)
+        );
 
         return {
-          invokation: await FaucetTokenReEntrantHarness.deploy<Erc20>(world, from, [0, name.val, 18, symbol.val, fnData, fun.val]),
+          invokation: await FaucetTokenReEntrantHarness.deploy<Erc20>(
+            world,
+            from,
+            [0, name.val, 18, symbol.val, fnData, fun.val]
+          ),
           description: "ReEntrant",
           name: name.val,
           symbol: symbol.val,
           decimals: 18,
-          contract: 'FaucetTokenReEntrantHarness'
+          contract: "FaucetTokenReEntrantHarness",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV}, TokenData>(`
+    new Fetcher<
+      { symbol: StringV; name: StringV; decimals: NumberV },
+      TokenData
+    >(
+      `
         #### Evil
 
         * "Evil symbol:<String> name:<String> decimals:<Number>" - A less vanilla ERC-20 contract that fails transfers
@@ -155,21 +187,30 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
-        new Arg("decimals", getNumberV, {default: new NumberV(18)})
+        new Arg("decimals", getNumberV, { default: new NumberV(18) }),
       ],
-      async (world, {symbol, name, decimals}) => {
+      async (world, { symbol, name, decimals }) => {
         return {
-          invokation: await EvilTokenHarness.deploy<Erc20>(world, from, [0, name.val, decimals.val, symbol.val]),
+          invokation: await EvilTokenHarness.deploy<Erc20>(world, from, [
+            0,
+            name.val,
+            decimals.val,
+            symbol.val,
+          ]),
           description: "Evil",
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
-          contract: 'EvilToken'
+          contract: "EvilToken",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV}, TokenData>(`
+    new Fetcher<
+      { symbol: StringV; name: StringV; decimals: NumberV },
+      TokenData
+    >(
+      `
         #### Standard
 
         * "Standard symbol:<String> name:<String> decimals:<Number>" - A vanilla ERC-20 contract
@@ -179,21 +220,27 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
-        new Arg("decimals", getNumberV, {default: new NumberV(18)})
+        new Arg("decimals", getNumberV, { default: new NumberV(18) }),
       ],
-      async (world, {symbol, name, decimals}) => {
+      async (world, { symbol, name, decimals }) => {
         return {
-          invokation: await FaucetTokenHarness.deploy<Erc20>(world, from, [0, name.val, decimals.val, symbol.val]),
+          invokation: await FaucetTokenHarness.deploy<Erc20>(world, from, [
+            0,
+            name.val,
+            decimals.val,
+            symbol.val,
+          ]),
           description: "Standard",
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
-          contract: 'FaucetToken'
+          contract: "FaucetToken",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV}, TokenData>(`
+    new Fetcher<{ symbol: StringV; name: StringV }, TokenData>(
+      `
         #### WBTC
 
         * "WBTC symbol:<String> name:<String>" - The WBTC contract
@@ -201,10 +248,12 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
       `,
       "WBTC",
       [
-        new Arg("symbol", getStringV, {default: new StringV("WBTC")}),
-        new Arg("name", getStringV, {default: new StringV("Wrapped Bitcoin")})
+        new Arg("symbol", getStringV, { default: new StringV("WBTC") }),
+        new Arg("name", getStringV, {
+          default: new StringV("Wrapped Bitcoin"),
+        }),
       ],
-      async (world, {symbol, name}) => {
+      async (world, { symbol, name }) => {
         let decimals = 8;
 
         return {
@@ -213,36 +262,48 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
           name: name.val,
           symbol: symbol.val,
           decimals: decimals,
-          contract: 'WBTCToken'
+          contract: "WBTCToken",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV}, TokenData>(`
-        #### WETH
+    new Fetcher<{ symbol: StringV; name: StringV }, TokenData>(
+      `
+        #### WAVAX
 
-        * "WETH symbol:<String> name:<String>" - The WETH contract
-          * E.g. "Erc20 Deploy WETH WETH \"Wrapped Ether\""
+        * "WAVAX symbol:<String> name:<String>" - The WAVAX contract
+          * E.g. "Erc20 Deploy WAVAX WAVAX \"Wrapped Ether\""
       `,
-      "WETH", [
-        new Arg("symbol", getStringV, {default: new StringV("WETH")}),
-        new Arg("name", getStringV, {default: new StringV("Wrapped Ether")})
+      "WAVAX",
+      [
+        new Arg("symbol", getStringV, { default: new StringV("WAVAX") }),
+        new Arg("name", getStringV, { default: new StringV("Wrapped Ether") }),
       ],
-      async (world, {symbol, name}) => {
+      async (world, { symbol, name }) => {
         let decimals = 18;
 
         return {
-          invokation: await WETHToken.deploy<Erc20>(world, from, []),
-          description: "WETH",
+          invokation: await WAVAXToken.deploy<Erc20>(world, from, []),
+          description: "WAVAX",
           name: name.val,
           symbol: symbol.val,
           decimals: decimals,
-          contract: 'WETH9'
+          contract: "WAVAX9",
         };
       }
     ),
 
-    new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, basisPointFee: NumberV, owner: AddressV}, TokenData>(`
+    new Fetcher<
+      {
+        symbol: StringV;
+        name: StringV;
+        decimals: NumberV;
+        basisPointFee: NumberV;
+        owner: AddressV;
+      },
+      TokenData
+    >(
+      `
         #### Fee
 
         * "Fee symbol:<String> name:<String> decimals:<Number> basisPointFee:<Number> owner:<Address>" - An ERC20 whose owner takes a fee on transfers. Used for mocking USDT.
@@ -254,23 +315,35 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
         new Arg("name", getStringV),
         new Arg("decimals", getNumberV),
         new Arg("basisPointFee", getNumberV),
-        new Arg("owner", getAddressV)
+        new Arg("owner", getAddressV),
       ],
-      async (world, {symbol, name, decimals, basisPointFee, owner}) => {
+      async (world, { symbol, name, decimals, basisPointFee, owner }) => {
         return {
-          invokation: await FeeTokenHarness.deploy<Erc20>(world, from, [0, name.val, decimals.val, symbol.val, basisPointFee.val, owner.val]),
+          invokation: await FeeTokenHarness.deploy<Erc20>(world, from, [
+            0,
+            name.val,
+            decimals.val,
+            symbol.val,
+            basisPointFee.val,
+            owner.val,
+          ]),
           description: "Fee",
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           owner: owner.val,
-          contract: 'FeeToken'
+          contract: "FeeToken",
         };
       }
     ),
   ];
 
-  let tokenData = await getFetcherValue<any, TokenData>("DeployErc20", fetchers, world, event);
+  let tokenData = await getFetcherValue<any, TokenData>(
+    "DeployErc20",
+    fetchers,
+    world,
+    event
+  );
   let invokation = tokenData.invokation;
   delete tokenData.invokation;
 
@@ -285,10 +358,8 @@ export async function buildErc20(world: World, from: string, event: Event): Prom
     erc20,
     tokenData.symbol,
     invokation,
-    [
-      { index: ['Tokens', tokenData.symbol], data: tokenData }
-    ]
+    [{ index: ["Tokens", tokenData.symbol], data: tokenData }]
   );
 
-  return {world, erc20, tokenData};
+  return { world, erc20, tokenData };
 }

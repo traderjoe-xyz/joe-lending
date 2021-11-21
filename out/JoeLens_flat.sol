@@ -138,6 +138,7 @@ contract TokenErrorReporter {
         REDUCE_RESERVES_CASH_NOT_AVAILABLE,
         REDUCE_RESERVES_FRESH_CHECK,
         REDUCE_RESERVES_VALIDATION,
+        REPAY_BEHALF_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_ACCRUE_INTEREST_FAILED,
         REPAY_BORROW_JOETROLLER_REJECTION,
         REPAY_BORROW_FRESHNESS_CHECK,
@@ -916,12 +917,12 @@ contract UnitrollerAdminStorage {
     /**
      * @notice Active brains of Unitroller
      */
-    address public joetrollerImplementation;
+    address public implementation;
 
     /**
      * @notice Pending brains of Unitroller
      */
-    address public pendingJoetrollerImplementation;
+    address public pendingImplementation;
 }
 
 contract JoetrollerV1Storage is UnitrollerAdminStorage {
@@ -1492,6 +1493,8 @@ contract JErc20Interface is JErc20Storage {
 
     function repayBorrow(uint256 repayAmount) external returns (uint256);
 
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256);
+
     function liquidateBorrow(
         address borrower,
         uint256 repayAmount,
@@ -1505,7 +1508,7 @@ contract JWrappedNativeInterface is JErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -1526,6 +1529,8 @@ contract JWrappedNativeInterface is JErc20Interface {
 
     function repayBorrowNative() external payable returns (uint256);
 
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256);
+
     function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
         external
         payable
@@ -1545,7 +1550,7 @@ contract JCapableErc20Interface is JErc20Interface, JSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -1863,7 +1868,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @dev Function to simply retrieve block timestamp 
+     * @dev Function to simply retrieve block timestamp
      *  This exists mainly for inheriting test contracts to stub this result.
      */
     function getBlockTimestamp() internal view returns (uint256) {
@@ -2028,7 +2033,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice Applies accrued interest to total borrows and reserves
-     * @dev This calculates interest accrued from the last checkpointed timestamp 
+     * @dev This calculates interest accrued from the last checkpointed timestamp
      *   up to the current timestamp and writes new checkpoint to storage.
      */
     function accrueInterest() public returns (uint256) {
@@ -2253,6 +2258,27 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         return repayBorrowFresh(msg.sender, msg.sender, repayAmount, isNative);
     }
 
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @param isNative The amount is in native or not
+     * @return (uint, uint) An error code (0=success, otherwise a failure, see ErrorReporter.sol), and the actual repayment amount.
+     */
+    function repayBorrowBehalfInternal(
+        address borrower,
+        uint256 repayAmount,
+        bool isNative
+    ) internal nonReentrant returns (uint256, uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            // accrueInterest emits logs on errors, but we still want to log the fact that an attempted borrow failed
+            return (fail(Error(error), FailureInfo.REPAY_BEHALF_ACCRUE_INTEREST_FAILED), 0);
+        }
+        // repayBorrowFresh emits repay-borrow-specific logs on errors, so we don't need to
+        return repayBorrowFresh(msg.sender, borrower, repayAmount, isNative);
+    }
+
     struct RepayBorrowLocalVars {
         Error err;
         MathError mathErr;
@@ -2281,10 +2307,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         /* Fail if repayBorrow not allowed */
         uint256 allowed = joetroller.repayBorrowAllowed(address(this), payer, borrower, repayAmount);
         if (allowed != 0) {
-            return (
-                failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed),
-                0
-            );
+            return (failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REPAY_BORROW_JOETROLLER_REJECTION, allowed), 0);
         }
 
         /*
@@ -2604,7 +2627,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_RESERVE_FACTOR_ADMIN_CHECK);
         }
 
-        // Verify market's block timestamp equals current block timestamp 
+        // Verify market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_RESERVE_FACTOR_FRESH_CHECK);
         }
@@ -2652,7 +2675,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         uint256 totalReservesNew;
         uint256 actualAddAmount;
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return (fail(Error.MARKET_NOT_FRESH, FailureInfo.ADD_RESERVES_FRESH_CHECK), actualAddAmount);
         }
@@ -2713,7 +2736,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.REDUCE_RESERVES_ADMIN_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDUCE_RESERVES_FRESH_CHECK);
         }
@@ -2777,7 +2800,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_INTEREST_RATE_MODEL_OWNER_CHECK);
         }
 
-        // We fail gracefully unless market's block timestamp equals current block timestamp 
+        // We fail gracefully unless market's block timestamp equals current block timestamp
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_INTEREST_RATE_MODEL_FRESH_CHECK);
         }
@@ -2855,7 +2878,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
 
     /**
      * @notice User redeems jTokens in exchange for the underlying asset
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      */
     function redeemFresh(
         address payable redeemer,
@@ -2981,6 +3004,17 @@ contract JErc20 is JToken, JErc20Interface {
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
         (uint256 err, ) = repayBorrowInternal(repayAmount, false);
+        return err;
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @param repayAmount The amount to repay
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
         return err;
     }
 
@@ -3173,7 +3207,7 @@ contract JErc20 is JToken, JErc20Interface {
 
     /**
      * @notice User supplies assets into the market and receives jTokens in exchange
-     * @dev Assumes interest has already been accrued up to the current timestamp 
+     * @dev Assumes interest has already been accrued up to the current timestamp
      * @param minter The address of the account which is supplying the assets
      * @param mintAmount The amount of the underlying asset to supply
      * @param isNative The amount is in native or not
@@ -3882,17 +3916,17 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
 /**
  * @title JoetrollerCore
- * @dev Storage for the joetroller is at this address, while execution is delegated to the `joetrollerImplementation`.
+ * @dev Storage for the joetroller is at this address, while execution is delegated to the `implementation`.
  * JTokens should reference this contract as their joetroller.
  */
 contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is changed
+     * @notice Emitted when pendingImplementation is changed
      */
     event NewPendingImplementation(address oldPendingImplementation, address newPendingImplementation);
 
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is accepted, which means joetroller implementation is updated
+     * @notice Emitted when pendingImplementation is accepted, which means joetroller implementation is updated
      */
     event NewImplementation(address oldImplementation, address newImplementation);
 
@@ -3917,11 +3951,11 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
         }
 
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = newPendingImplementation;
+        pendingImplementation = newPendingImplementation;
 
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -3933,20 +3967,20 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function _acceptImplementation() public returns (uint256) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
-        if (msg.sender != pendingJoetrollerImplementation || pendingJoetrollerImplementation == address(0)) {
+        if (msg.sender != pendingImplementation || pendingImplementation == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
         }
 
         // Save current values for inclusion in log
-        address oldImplementation = joetrollerImplementation;
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldImplementation = implementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        joetrollerImplementation = pendingJoetrollerImplementation;
+        implementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = address(0);
+        pendingImplementation = address(0);
 
-        emit NewImplementation(oldImplementation, joetrollerImplementation);
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewImplementation(oldImplementation, implementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -4009,7 +4043,7 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function() external payable {
         // delegate all other functions to current implementation
-        (bool success, ) = joetrollerImplementation.delegatecall(msg.data);
+        (bool success, ) = implementation.delegatecall(msg.data);
 
         assembly {
             let free_mem_ptr := mload(0x40)
@@ -5380,7 +5414,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @notice Checks caller is admin, or this contract is becoming the new implementation
      */
     function adminOrInitializing() internal view returns (bool) {
-        return msg.sender == admin || msg.sender == joetrollerImplementation;
+        return msg.sender == admin || msg.sender == implementation;
     }
 
     /*** Reward distribution functions ***/
@@ -5590,7 +5624,8 @@ contract JoeLens is Exponential {
             vars.underlyingTokenAllowance = underlying.allowance(account, address(jToken));
         }
 
-        (, vars.jTokenBalance, , ) = jToken.getAccountSnapshot(account);
+        // (, vars.jTokenBalance, , ) = jToken.getAccountSnapshot(account);
+        vars.jTokenBalance = jToken.balanceOf(account);
         vars.borrowBalanceCurrent = jToken.borrowBalanceCurrent(account);
 
         vars.balanceOfUnderlyingCurrent = jToken.balanceOfUnderlying(account);
@@ -5636,7 +5671,9 @@ contract JoeLens is Exponential {
 
         Exp memory totalBorrows = Exp({mantissa: vars.totalBorrowValueUSD});
 
-        vars.healthFactor = vars.totalBorrowValueUSD > 0 ? div_(vars.totalCollateralValueUSD, totalBorrows) : 0;
+        vars.healthFactor = vars.totalCollateralValueUSD == 0 ? 0 : vars.totalBorrowValueUSD > 0
+            ? div_(vars.totalCollateralValueUSD, totalBorrows)
+            : 100;
 
         return vars;
     }

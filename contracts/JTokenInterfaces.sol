@@ -360,7 +360,7 @@ contract JWrappedNativeInterface is JErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -402,7 +402,7 @@ contract JCapableErc20Interface is JErc20Interface, JSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 

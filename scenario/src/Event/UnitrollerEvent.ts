@@ -1,18 +1,26 @@
-import { Event } from '../Event';
-import { addAction, describeUser, World } from '../World';
-import { Unitroller } from '../Contract/Unitroller';
-import { ComptrollerImpl } from '../Contract/ComptrollerImpl';
-import { invoke } from '../Invokation';
-import { getEventV, getStringV, getAddressV } from '../CoreValue';
-import { EventV, StringV, AddressV } from '../Value';
-import { Arg, Command, View, processCommandEvent } from '../Command';
-import { ComptrollerErrorReporter } from '../ErrorReporter';
-import { buildUnitroller } from '../Builder/UnitrollerBuilder';
-import { getComptrollerImpl, getUnitroller } from '../ContractLookup';
-import { verify } from '../Verify';
+import { Event } from "../Event";
+import { addAction, describeUser, World } from "../World";
+import { Unitroller } from "../Contract/Unitroller";
+import { JoetrollerImpl } from "../Contract/JoetrollerImpl";
+import { invoke } from "../Invokation";
+import { getEventV, getStringV, getAddressV } from "../CoreValue";
+import { EventV, StringV, AddressV } from "../Value";
+import { Arg, Command, View, processCommandEvent } from "../Command";
+import { JoetrollerErrorReporter } from "../ErrorReporter";
+import { buildUnitroller } from "../Builder/UnitrollerBuilder";
+import { getJoetrollerImpl, getUnitroller } from "../ContractLookup";
+import { verify } from "../Verify";
 
-async function genUnitroller(world: World, from: string, params: Event): Promise<World> {
-  let { world: nextWorld, unitroller, unitrollerData } = await buildUnitroller(world, from, params);
+async function genUnitroller(
+  world: World,
+  from: string,
+  params: Event
+): Promise<World> {
+  let {
+    world: nextWorld,
+    unitroller,
+    unitrollerData,
+  } = await buildUnitroller(world, from, params);
   world = nextWorld;
 
   world = addAction(
@@ -24,18 +32,39 @@ async function genUnitroller(world: World, from: string, params: Event): Promise
   return world;
 }
 
-async function verifyUnitroller(world: World, unitroller: Unitroller, apiKey: string): Promise<World> {
+async function verifyUnitroller(
+  world: World,
+  unitroller: Unitroller,
+  apiKey: string
+): Promise<World> {
   if (world.isLocalNetwork()) {
-    world.printer.printLine(`Politely declining to verify on local network: ${world.network}.`);
+    world.printer.printLine(
+      `Politely declining to verify on local network: ${world.network}.`
+    );
   } else {
-    await verify(world, apiKey, 'Unitroller', 'Unitroller', unitroller._address);
+    await verify(
+      world,
+      apiKey,
+      "Unitroller",
+      "Unitroller",
+      unitroller._address
+    );
   }
 
   return world;
 }
 
-async function acceptAdmin(world: World, from: string, unitroller: Unitroller): Promise<World> {
-  let invokation = await invoke(world, unitroller.methods._acceptAdmin(), from, ComptrollerErrorReporter);
+async function acceptAdmin(
+  world: World,
+  from: string,
+  unitroller: Unitroller
+): Promise<World> {
+  let invokation = await invoke(
+    world,
+    unitroller.methods._acceptAdmin(),
+    from,
+    JoetrollerErrorReporter
+  );
 
   world = addAction(world, `Accept admin as ${from}`, invokation);
 
@@ -52,7 +81,7 @@ async function setPendingAdmin(
     world,
     unitroller.methods._setPendingAdmin(pendingAdmin),
     from,
-    ComptrollerErrorReporter
+    JoetrollerErrorReporter
   );
 
   world = addAction(world, `Set pending admin to ${pendingAdmin}`, invokation);
@@ -64,16 +93,20 @@ async function setPendingImpl(
   world: World,
   from: string,
   unitroller: Unitroller,
-  comptrollerImpl: ComptrollerImpl
+  joetrollerImpl: JoetrollerImpl
 ): Promise<World> {
   let invokation = await invoke(
     world,
-    unitroller.methods._setPendingImplementation(comptrollerImpl._address),
+    unitroller.methods._setPendingImplementation(joetrollerImpl._address),
     from,
-    ComptrollerErrorReporter
+    JoetrollerErrorReporter
   );
 
-  world = addAction(world, `Set pending comptroller impl to ${comptrollerImpl.name}`, invokation);
+  world = addAction(
+    world,
+    `Set pending joetroller impl to ${joetrollerImpl.name}`,
+    invokation
+  );
 
   return world;
 }
@@ -87,9 +120,10 @@ export function unitrollerCommands() {
         * "Unitroller Deploy ...unitrollerParams" - Generates a new Unitroller
           * E.g. "Unitroller Deploy"
       `,
-      'Deploy',
-      [new Arg('unitrollerParams', getEventV, { variadic: true })],
-      (world, from, { unitrollerParams }) => genUnitroller(world, from, unitrollerParams.val)
+      "Deploy",
+      [new Arg("unitrollerParams", getEventV, { variadic: true })],
+      (world, from, { unitrollerParams }) =>
+        genUnitroller(world, from, unitrollerParams.val)
     ),
     new View<{ unitroller: Unitroller; apiKey: StringV }>(
       `
@@ -98,9 +132,13 @@ export function unitrollerCommands() {
         * "Unitroller Verify apiKey:<String>" - Verifies Unitroller in Etherscan
           * E.g. "Unitroller Verify "myApiKey"
       `,
-      'Verify',
-      [new Arg('unitroller', getUnitroller, { implicit: true }), new Arg('apiKey', getStringV)],
-      (world, { unitroller, apiKey }) => verifyUnitroller(world, unitroller, apiKey.val)
+      "Verify",
+      [
+        new Arg("unitroller", getUnitroller, { implicit: true }),
+        new Arg("apiKey", getStringV),
+      ],
+      (world, { unitroller, apiKey }) =>
+        verifyUnitroller(world, unitroller, apiKey.val)
     ),
     new Command<{ unitroller: Unitroller; pendingAdmin: AddressV }>(
       `
@@ -109,8 +147,8 @@ export function unitrollerCommands() {
         * "AcceptAdmin" - Accept admin for this unitroller
           * E.g. "Unitroller AcceptAdmin"
       `,
-      'AcceptAdmin',
-      [new Arg('unitroller', getUnitroller, { implicit: true })],
+      "AcceptAdmin",
+      [new Arg("unitroller", getUnitroller, { implicit: true })],
       (world, from, { unitroller }) => acceptAdmin(world, from, unitroller)
     ),
     new Command<{ unitroller: Unitroller; pendingAdmin: AddressV }>(
@@ -120,26 +158,29 @@ export function unitrollerCommands() {
         * "SetPendingAdmin admin:<Admin>" - Sets the pending admin for this unitroller
           * E.g. "Unitroller SetPendingAdmin Jared"
       `,
-      'SetPendingAdmin',
-      [new Arg('unitroller', getUnitroller, { implicit: true }), new Arg('pendingAdmin', getAddressV)],
+      "SetPendingAdmin",
+      [
+        new Arg("unitroller", getUnitroller, { implicit: true }),
+        new Arg("pendingAdmin", getAddressV),
+      ],
       (world, from, { unitroller, pendingAdmin }) =>
         setPendingAdmin(world, from, unitroller, pendingAdmin.val)
     ),
-    new Command<{ unitroller: Unitroller; comptrollerImpl: ComptrollerImpl }>(
+    new Command<{ unitroller: Unitroller; joetrollerImpl: JoetrollerImpl }>(
       `
         #### SetPendingImpl
 
-        * "SetPendingImpl impl:<Impl>" - Sets the pending comptroller implementation for this unitroller
-          * E.g. "Unitroller SetPendingImpl MyScenImpl" - Sets the current comptroller implementation to MyScenImpl
+        * "SetPendingImpl impl:<Impl>" - Sets the pending joetroller implementation for this unitroller
+          * E.g. "Unitroller SetPendingImpl MyScenImpl" - Sets the current joetroller implementation to MyScenImpl
       `,
-      'SetPendingImpl',
+      "SetPendingImpl",
       [
-        new Arg('unitroller', getUnitroller, { implicit: true }),
-        new Arg('comptrollerImpl', getComptrollerImpl)
+        new Arg("unitroller", getUnitroller, { implicit: true }),
+        new Arg("joetrollerImpl", getJoetrollerImpl),
       ],
-      (world, from, { unitroller, comptrollerImpl }) =>
-        setPendingImpl(world, from, unitroller, comptrollerImpl)
-    )
+      (world, from, { unitroller, joetrollerImpl }) =>
+        setPendingImpl(world, from, unitroller, joetrollerImpl)
+    ),
   ];
 }
 
@@ -148,5 +189,11 @@ export async function processUnitrollerEvent(
   event: Event,
   from: string | null
 ): Promise<World> {
-  return await processCommandEvent<any>('Unitroller', unitrollerCommands(), world, event, from);
+  return await processCommandEvent<any>(
+    "Unitroller",
+    unitrollerCommands(),
+    world,
+    event,
+    from
+  );
 }

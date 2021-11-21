@@ -170,7 +170,7 @@ contract JoeLens is Exponential {
             vars.underlyingTokenAllowance = underlying.allowance(account, address(jToken));
         }
 
-        (, vars.jTokenBalance, , ) = jToken.getAccountSnapshot(account);
+        vars.jTokenBalance = jToken.balanceOf(account);
         vars.borrowBalanceCurrent = jToken.borrowBalanceCurrent(account);
 
         vars.balanceOfUnderlyingCurrent = jToken.balanceOfUnderlying(account);

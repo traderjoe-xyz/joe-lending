@@ -1,9 +1,9 @@
-import {Artifacts} from './Artifact';
-import {Web3} from './Web3';
+import { Artifacts } from "./Artifact";
+import { Web3 } from "./Web3";
 
 declare namespace NodeJS {
-    interface Global {
-        Web3: Web3
-        Artifacts: Artifacts
-    }
+  interface Global {
+    Web3: Web3;
+    Artifacts: Artifacts;
+  }
 }

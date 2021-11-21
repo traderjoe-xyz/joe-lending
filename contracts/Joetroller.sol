@@ -1366,7 +1366,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @notice Checks caller is admin, or this contract is becoming the new implementation
      */
     function adminOrInitializing() internal view returns (bool) {
-        return msg.sender == admin || msg.sender == joetrollerImplementation;
+        return msg.sender == admin || msg.sender == implementation;
     }
 
     /*** Reward distribution functions ***/

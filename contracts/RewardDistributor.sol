@@ -188,7 +188,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose supply index to update
      */
-    function updateRewardSupplyIndex(uint8 rewardType, address jToken) internal {
+    function updateRewardSupplyIndex(uint8 rewardType, address jToken) public {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
         uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
@@ -248,7 +248,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         uint8 rewardType,
         address jToken,
         address supplier
-    ) internal {
+    ) public {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
         Double memory supplyIndex = Double({mantissa: supplyState.index});
@@ -280,7 +280,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address jToken,
         address borrower,
         Exp memory marketBorrowIndex
-    ) internal {
+    ) public {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
         Double memory borrowIndex = Double({mantissa: borrowState.index});
@@ -413,7 +413,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         uint8 rewardType,
         address payable user,
         uint256 amount
-    ) internal returns (uint256) {
+    ) public returns (uint256) {
         if (rewardType == 0) {
             EIP20Interface joe = EIP20Interface(joeAddress);
             uint256 joeRemaining = joe.balanceOf(address(this));
