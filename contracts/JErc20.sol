@@ -9,7 +9,7 @@ import "./JToken.sol";
  * @notice JTokens which wrap an EIP-20 underlying
  * @author Compound
  */
-contract JErc20 is JToken, JErc20Interface {
+contract JErc20 is JToken, JErc20Interface, JProtocolSeizeShareStorage {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset

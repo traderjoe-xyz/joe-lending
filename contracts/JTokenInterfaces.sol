@@ -117,16 +117,6 @@ contract JTokenStorage {
      * @notice Mapping of account addresses to outstanding borrow balances
      */
     mapping(address => BorrowSnapshot) internal accountBorrows;
-
-    /**
-     * @notice Share of seized collateral that is added to reserves
-     */
-    uint256 public protocolSeizeShareMantissa;
-
-    /**
-     * @notice Maximum fraction of seized collateral that can be set aside for reserves
-     */
-    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
 
 contract JErc20Storage {
@@ -249,11 +239,6 @@ contract JTokenInterface is JTokenStorage {
      * @notice Event emitted when the reserve factor is changed
      */
     event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
-
-    /**
-     * @notice Event emitted when the protocol share of seized collateral is changed
-     */
-    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
@@ -508,4 +493,21 @@ interface IFlashloanReceiver {
         uint256 fee,
         bytes calldata params
     ) external;
+}
+
+contract JProtocolSeizeShareStorage {
+    /**
+     * @notice Event emitted when the protocol share of seized collateral is changed
+     */
+    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
+
+    /**
+     * @notice Share of seized collateral that is added to reserves
+     */
+    uint256 public protocolSeizeShareMantissa;
+
+    /**
+     * @notice Maximum fraction of seized collateral that can be set aside for reserves
+     */
+    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
