@@ -288,15 +288,13 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex.mantissa;
 
         if (borrowerIndex.mantissa > 0) {
-            borrowerIndex.mantissa = rewardInitialIndex;
+            Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
+            uint256 borrowerAmount = div_(JToken(jToken).borrowBalanceStored(borrower), marketBorrowIndex);
+            uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
+            uint256 borrowerAccrued = add_(rewardAccrued[rewardType][borrower], borrowerDelta);
+            rewardAccrued[rewardType][borrower] = borrowerAccrued;
+            emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerDelta, borrowIndex.mantissa);
         }
-
-        Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
-        uint256 borrowerAmount = div_(JToken(jToken).borrowBalanceStored(borrower), marketBorrowIndex);
-        uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
-        uint256 borrowerAccrued = add_(rewardAccrued[rewardType][borrower], borrowerDelta);
-        rewardAccrued[rewardType][borrower] = borrowerAccrued;
-        emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerDelta, borrowIndex.mantissa);
     }
 
     /**
