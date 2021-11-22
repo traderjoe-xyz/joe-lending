@@ -8,6 +8,7 @@ require("hardhat-deploy-ethers");
 require("hardhat-spdx-license-identifier");
 require("hardhat-watcher");
 require("hardhat-contract-sizer");
+require("@openzeppelin/hardhat-upgrades");
 
 const { HardhatUserConfig } = require("hardhat/types");
 const { removeConsoleLog } = require("hardhat-preprocessor");

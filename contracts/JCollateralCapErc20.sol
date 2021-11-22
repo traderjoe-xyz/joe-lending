@@ -11,7 +11,7 @@ import "./ERC3156FlashBorrowerInterface.sol";
  * @notice JTokens which wrap an EIP-20 underlying with collateral cap
  * @author Cream
  */
-contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
+contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolSeizeShareStorage {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -731,9 +731,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
         /*
          * We only deallocate collateral tokens if the redeemer needs to redeem them.
          */
-        if (collateralTokens > 0) {
-            decreaseUserCollateralInternal(redeemer, collateralTokens);
-        }
+        decreaseUserCollateralInternal(redeemer, collateralTokens);
 
         /* We emit a Transfer event, and a Redeem event */
         emit Transfer(redeemer, address(this), vars.redeemTokens);
@@ -784,6 +782,12 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
+        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: protocolSeizeShareMantissa}));
+        uint256 liquidatorSeizeTokens = sub_(seizeTokens, protocolSeizeTokens);
+
+        uint256 exchangeRateMantissa = exchangeRateStoredInternal();
+        uint256 protocolSeizeAmount = mul_ScalarTruncate(Exp({mantissa: exchangeRateMantissa}), protocolSeizeTokens);
+
         /*
          * We calculate the new borrower and liquidator token balances and token collateral balances, failing on underflow/overflow:
          *  accountTokens[borrower] = accountTokens[borrower] - seizeTokens
@@ -792,18 +796,59 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface {
          *  accountCollateralTokens[liquidator] = accountCollateralTokens[liquidator] + seizeTokens
          */
         accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
+        accountTokens[liquidator] = add_(accountTokens[liquidator], liquidatorSeizeTokens);
         accountCollateralTokens[borrower] = sub_(accountCollateralTokens[borrower], seizeTokens);
-        accountCollateralTokens[liquidator] = add_(accountCollateralTokens[liquidator], seizeTokens);
+        accountCollateralTokens[liquidator] = add_(accountCollateralTokens[liquidator], liquidatorSeizeTokens);
+        totalReserves = add_(totalReserves, protocolSeizeAmount);
+        totalSupply = sub_(totalSupply, protocolSeizeTokens);
 
-        /* Emit a Transfer, UserCollateralChanged events */
+        /* Emit a Transfer, UserCollateralChanged and ReservesAdded events */
         emit Transfer(borrower, liquidator, seizeTokens);
         emit UserCollateralChanged(borrower, accountCollateralTokens[borrower]);
         emit UserCollateralChanged(liquidator, accountCollateralTokens[liquidator]);
+        emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
 
         /* We call the defense hook */
         // unused function
         // joetroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
+
+        return uint256(Error.NO_ERROR);
+    }
+
+    /*** Admin Functions ***/
+
+    /**
+     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
+     * @dev Admin function to accrue interest and set a new collateral seize share
+     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
+     */
+    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
+        }
+        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
+    }
+
+    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
+        }
+
+        // Verify market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
+            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
+        }
+
+        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
+            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
+        }
+
+        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
+        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
+
+        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
 
         return uint256(Error.NO_ERROR);
     }

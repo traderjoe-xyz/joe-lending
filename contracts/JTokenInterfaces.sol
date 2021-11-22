@@ -494,3 +494,20 @@ interface IFlashloanReceiver {
         bytes calldata params
     ) external;
 }
+
+contract JProtocolSeizeShareStorage {
+    /**
+     * @notice Event emitted when the protocol share of seized collateral is changed
+     */
+    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
+
+    /**
+     * @notice Share of seized collateral that is added to reserves
+     */
+    uint256 public protocolSeizeShareMantissa;
+
+    /**
+     * @notice Maximum fraction of seized collateral that can be set aside for reserves
+     */
+    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
+}

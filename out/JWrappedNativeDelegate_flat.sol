@@ -496,6 +496,16 @@ contract JTokenStorage {
      * @notice Mapping of account addresses to outstanding borrow balances
      */
     mapping(address => BorrowSnapshot) internal accountBorrows;
+
+    /**
+     * @notice Share of seized collateral that is added to reserves
+     */
+    uint256 public protocolSeizeShareMantissa;
+
+    /**
+     * @notice Maximum fraction of seized collateral that can be set aside for reserves
+     */
+    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
 
 contract JErc20Storage {
@@ -618,6 +628,11 @@ contract JTokenInterface is JTokenStorage {
      * @notice Event emitted when the reserve factor is changed
      */
     event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
+
+    /**
+     * @notice Event emitted when the protocol share of seized collateral is changed
+     */
+    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
@@ -1036,7 +1051,11 @@ contract TokenErrorReporter {
         TRANSFER_NOT_ALLOWED,
         ADD_RESERVES_ACCRUE_INTEREST_FAILED,
         ADD_RESERVES_FRESH_CHECK,
-        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE
+        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE,
+        SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED,
+        SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK,
+        SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK,
+        SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK
     }
 
     /**
@@ -2233,6 +2252,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `borrowAllowed` for accuring potential JOE rewards.
          */
         if (borrowAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return uint256(Error.NO_ERROR);
         }
@@ -2358,6 +2378,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `repayBorrowAllowed` for accuring potential JOE rewards.
          */
         if (repayAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return (uint256(Error.NO_ERROR), 0);
         }
@@ -2645,7 +2666,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @notice Accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -2684,6 +2705,42 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
         reserveFactorMantissa = newReserveFactorMantissa;
 
         emit NewReserveFactor(oldReserveFactorMantissa, newReserveFactorMantissa);
+
+        return uint256(Error.NO_ERROR);
+    }
+
+    /**
+     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
+     * @dev Admin function to accrue interest and set a new collateral seize share
+     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
+     */
+    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
+        }
+        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
+    }
+
+    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
+        }
+
+        // Verify market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
+            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
+        }
+
+        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
+            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
+        }
+
+        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
+        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
+
+        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
 
         return uint256(Error.NO_ERROR);
     }
@@ -3666,16 +3723,25 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
+        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: protocolSeizeShareMantissa}));
+        uint256 liquidatorSeizeTokens = sub_(seizeTokens, protocolSeizeTokens);
+
+        uint256 exchangeRateMantissa = exchangeRateStoredInternal();
+        uint256 protocolSeizeAmount = mul_ScalarTruncate(Exp({mantissa: exchangeRateMantissa}), protocolSeizeTokens);
+
         /*
          * We calculate the new borrower and liquidator token balances, failing on underflow/overflow:
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
         accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
+        accountTokens[liquidator] = add_(accountTokens[liquidator], liquidatorSeizeTokens);
+        totalReserves = add_(totalReserves, protocolSeizeAmount);
+        totalSupply = sub_(totalSupply, protocolSeizeTokens);
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
+        emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
 
         return uint256(Error.NO_ERROR);
     }

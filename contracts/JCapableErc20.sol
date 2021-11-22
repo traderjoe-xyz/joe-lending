@@ -9,7 +9,7 @@ import "./JToken.sol";
  * @notice JTokens which wrap an EIP-20 underlying
  * @author Cream
  */
-contract JCapableErc20 is JToken, JCapableErc20Interface {
+contract JCapableErc20 is JToken, JCapableErc20Interface, JProtocolSeizeShareStorage {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -572,16 +572,25 @@ contract JCapableErc20 is JToken, JCapableErc20Interface {
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
+        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: protocolSeizeShareMantissa}));
+        uint256 liquidatorSeizeTokens = sub_(seizeTokens, protocolSeizeTokens);
+
+        uint256 exchangeRateMantissa = exchangeRateStoredInternal();
+        uint256 protocolSeizeAmount = mul_ScalarTruncate(Exp({mantissa: exchangeRateMantissa}), protocolSeizeTokens);
+
         /*
          * We calculate the new borrower and liquidator token balances, failing on underflow/overflow:
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
         accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
+        accountTokens[liquidator] = add_(accountTokens[liquidator], liquidatorSeizeTokens);
+        totalReserves = add_(totalReserves, protocolSeizeAmount);
+        totalSupply = sub_(totalSupply, protocolSeizeTokens);
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
+        emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
 
         /* We call the defense hook */
         // unused function

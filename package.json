@@ -33,6 +33,7 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/hardhat-upgrades": "^1.12.0",
     "bignumber.js": "9.0.0",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
