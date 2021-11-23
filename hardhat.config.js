@@ -58,8 +58,9 @@ module.exports = {
     },
     hardhat: {
       forking: {
-        enabled: process.env.FORKING === "true",
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+        enabled: true,
+        url: `https://api.avax.network/ext/bc/C/rpc`,
+        blockNumber: 7328000,
       },
       live: false,
       saveDeployments: true,
