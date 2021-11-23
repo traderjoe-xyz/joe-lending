@@ -17,4 +17,4 @@ async function main() {
   const upgraded = await upgrades.upgradeProxy(instance.address, v2);
 }
 
-main();
+// main();
