@@ -49,17 +49,23 @@ describe("PriceOracleProxyUSD", function () {
     });
 
     describe("Test Oracle", function () {
-        it("Verrify xJoePrice is equal to JoePrice * ratio", async function () {
+        it("Verifies that xJoePrice is equal to JoePrice * ratio", async function () {
             await this.oracle._setAggregators([this.jXJoe.address], [JXJOE_AGGREGATOR_ADDRESS])
+            // asks XJoe price using the new contract
             const xJoePrice = await this.oracle.getUnderlyingPrice(JXJOE_ADDRESS)
+
+            // asks JoePrice using the old contract
             const joePrice = await this.oracleOld.getUnderlyingPrice(JXJOE_ADDRESS)
 
+            // calculates joe:xjoe ratio
             const joeAmount = await this.joe.balanceOf(XJOE_ADDRESS);
             const xJoeAmount = await this.xJoe.totalSupply();
             const ratio = joeAmount.mul("1000000000000000000").div(xJoeAmount);
+
+            // calculates the XJoe price
             const xJoePriceCalculated = joePrice.mul(ratio).div("1000000000000000000")
 
-            // return the joe:xJoe ratio
+            // Verifies that the 2 prices are identical
             await expect(xJoePriceCalculated).to.equal(xJoePrice);
         });
     });

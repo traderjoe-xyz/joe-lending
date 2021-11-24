@@ -59,6 +59,51 @@
       "address": "0x4b1FaE7cDCBE5FD59af962DA4De4646B310353b2",
       "txHash": "0x042144049f2326d0b4c3ed6d984deeef279145698ca745130dc7e55c3cdf6e74",
       "kind": "transparent"
+    },
+    {
+      "address": "0x5ffb0d1aA8ec7aD19d5D8F1eCcaC0748AEb287Ba",
+      "txHash": "0xba37640a2612e13b4c8ad57df63d0464b29cb37f90e3564dbf2d9801add033bb",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5CAAF127cda59a1E640414AAeBeCd2408C006E22",
+      "txHash": "0x9f09b7c03b6851d7a1fa7f5e29fff0cc3e66709bfbf4f2f60a47bf4acfa164f3",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xB864BA8D53A87472D6eAB93EBAE58c65023d274E",
+      "txHash": "0x3582b5ce145ebf1b983612ecef2b5eecf0b9974368cb5023d71c93d611b6d0b1",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x357211Bf58a13e626eEeB2e82e1297b9ebf67B1c",
+      "txHash": "0x43f7df52fad4d85acd0224163edadcb7e0a547746410e38db6d489a0a1715699",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x01b269D2E685127F6ca3DFdC3494b204DD2145e3",
+      "txHash": "0x3ec5ad1224f90f29bb8f52da7c271e254c5913dec1aa49861fe9358e7b069fed",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc672b65D9ca32D3d61aacDF5F02e02E4eE1F075B",
+      "txHash": "0xa39d93265efa5ed05e46969b13df56cb6b122a6927875d88d6078ab73896fe02",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xAFb2aA50D458A5611a8E212F094871a992c7Fe8b",
+      "txHash": "0xcf6bc3375bd8a6a47f2cb9120cc95f733ceb14ad364bc1b796a7aaa4958a6d25",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x86884879b4213187E19fc2CD191133B86b43cc3b",
+      "txHash": "0x64c236f004063a623955c733a37fc94f24f3eebb34e95015b8c81469be5ab1c2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x9f8C00DCE50F2cC5f4f9bAD0A79cDD1023B7C983",
+      "txHash": "0xc5bcdd4d5197100c08c2f7f77f785bb4a89a6dfe087d8dbea8762c2168ea4556",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -477,6 +522,788 @@
             "label": "mapping(address => struct JTokenStorage.BorrowSnapshot)"
           },
           "t_struct(BorrowSnapshot)15067_storage": {
+            "label": "struct JTokenStorage.BorrowSnapshot",
+            "members": [
+              {
+                "label": "principal",
+                "type": "t_uint256"
+              },
+              {
+                "label": "interestIndex",
+                "type": "t_uint256"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "3baee7cd10cc157d47e8027ad3fd8ef7755819135ab68f54d8bdd919b0ef192d": {
+      "address": "0xDf1339eF77Ba1ebD33Cbe0D83b289AF4c0EF8fE7",
+      "txHash": "0x63712bac97feb9b44ab800eec20a24ad452f9618aa1aaeeb026dc1443a63050a",
+      "layout": {
+        "storage": [
+          {
+            "contract": "JTokenStorage",
+            "label": "_notEntered",
+            "type": "t_bool",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:348"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "name",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:353"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "symbol",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:358"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "decimals",
+            "type": "t_uint8",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:363"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "admin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:379"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "pendingAdmin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:384"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "joetroller",
+            "type": "t_contract(JoetrollerInterface)373",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:389"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "interestRateModel",
+            "type": "t_contract(InterestRateModel)45",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:394"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "initialExchangeRateMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:399"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "reserveFactorMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:404"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accrualBlockTimestamp",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:409"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "borrowIndex",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:414"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalBorrows",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:419"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalReserves",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:424"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalSupply",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:429"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:434"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "transferAllowances",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:439"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountBorrows",
+            "type": "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:454"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "underlying",
+            "type": "t_address",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:461"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "implementation",
+            "type": "t_address",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:466"
+          },
+          {
+            "contract": "JSupplyCapStorage",
+            "label": "internalCash",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:473"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "totalCollateralTokens",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:480"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "accountCollateralTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:486"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "isCollateralTokenInit",
+            "type": "t_mapping(t_address,t_bool)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:491"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "collateralCap",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV1_flat.sol:496"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_address_payable": {
+            "label": "address payable"
+          },
+          "t_contract(JoetrollerInterface)373": {
+            "label": "contract JoetrollerInterface"
+          },
+          "t_contract(InterestRateModel)45": {
+            "label": "contract InterestRateModel"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)": {
+            "label": "mapping(address => struct JTokenStorage.BorrowSnapshot)"
+          },
+          "t_struct(BorrowSnapshot)454_storage": {
+            "label": "struct JTokenStorage.BorrowSnapshot",
+            "members": [
+              {
+                "label": "principal",
+                "type": "t_uint256"
+              },
+              {
+                "label": "interestIndex",
+                "type": "t_uint256"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "7c2f8c6a5d497ffbf295677f5dc93f1b1d11b9544b1a7ea5f1347b97d3216548": {
+      "address": "0x1A772776921A8d6cfdB266891D69907c474c30a9",
+      "txHash": "0xb35c59ebb8242ac3687b36624c1e80dad0967c625eb42095f08654c48e9c0b48",
+      "layout": {
+        "storage": [
+          {
+            "contract": "JTokenStorage",
+            "label": "_notEntered",
+            "type": "t_bool",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:348"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "name",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:353"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "symbol",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:358"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "decimals",
+            "type": "t_uint8",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:363"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "admin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:379"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "pendingAdmin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:384"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "joetroller",
+            "type": "t_contract(JoetrollerInterface)373",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:389"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "interestRateModel",
+            "type": "t_contract(InterestRateModel)45",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:394"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "initialExchangeRateMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:399"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "reserveFactorMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:404"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accrualBlockTimestamp",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:409"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "borrowIndex",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:414"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalBorrows",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:419"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalReserves",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:424"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalSupply",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:429"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:434"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "transferAllowances",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:439"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountBorrows",
+            "type": "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:454"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "underlying",
+            "type": "t_address",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:461"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "implementation",
+            "type": "t_address",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:466"
+          },
+          {
+            "contract": "JSupplyCapStorage",
+            "label": "internalCash",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:473"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "totalCollateralTokens",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:480"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "accountCollateralTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:486"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "isCollateralTokenInit",
+            "type": "t_mapping(t_address,t_bool)",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:491"
+          },
+          {
+            "contract": "JCollateralCapStorage",
+            "label": "collateralCap",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:496"
+          },
+          {
+            "contract": "JProtocolSeizeShareStorage",
+            "label": "protocolSeizeShareMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JCollateralCapErc20DelegateV2_flat.sol:842"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_address_payable": {
+            "label": "address payable"
+          },
+          "t_contract(JoetrollerInterface)373": {
+            "label": "contract JoetrollerInterface"
+          },
+          "t_contract(InterestRateModel)45": {
+            "label": "contract InterestRateModel"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)": {
+            "label": "mapping(address => struct JTokenStorage.BorrowSnapshot)"
+          },
+          "t_struct(BorrowSnapshot)454_storage": {
+            "label": "struct JTokenStorage.BorrowSnapshot",
+            "members": [
+              {
+                "label": "principal",
+                "type": "t_uint256"
+              },
+              {
+                "label": "interestIndex",
+                "type": "t_uint256"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "fb2f86c090ea895c093d02c0839dbe00d90d437d0ca1660468c1ecb98d51e8b5": {
+      "address": "0xF7Dbe7ab76a7716705340eBF0E3aF095d2a34Ca0",
+      "txHash": "0x569e8f24e46676bf051a9cbf1f705571700ee1a02c442d0a16a40bd8a5ebdf05",
+      "layout": {
+        "storage": [
+          {
+            "contract": "JTokenStorage",
+            "label": "_notEntered",
+            "type": "t_bool",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:348"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "name",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:353"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "symbol",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:358"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "decimals",
+            "type": "t_uint8",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:363"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "admin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:379"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "pendingAdmin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:384"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "joetroller",
+            "type": "t_contract(JoetrollerInterface)373",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:389"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "interestRateModel",
+            "type": "t_contract(InterestRateModel)29",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:394"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "initialExchangeRateMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:399"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "reserveFactorMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:404"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accrualBlockTimestamp",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:409"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "borrowIndex",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:414"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalBorrows",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:419"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalReserves",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:424"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalSupply",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:429"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:434"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "transferAllowances",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:439"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountBorrows",
+            "type": "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:454"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "underlying",
+            "type": "t_address",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:461"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "implementation",
+            "type": "t_address",
+            "src": "contracts/versions/JWrappedNativeDelegateV1_flat.sol:466"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_address_payable": {
+            "label": "address payable"
+          },
+          "t_contract(JoetrollerInterface)373": {
+            "label": "contract JoetrollerInterface"
+          },
+          "t_contract(InterestRateModel)29": {
+            "label": "contract InterestRateModel"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)": {
+            "label": "mapping(address => struct JTokenStorage.BorrowSnapshot)"
+          },
+          "t_struct(BorrowSnapshot)454_storage": {
+            "label": "struct JTokenStorage.BorrowSnapshot",
+            "members": [
+              {
+                "label": "principal",
+                "type": "t_uint256"
+              },
+              {
+                "label": "interestIndex",
+                "type": "t_uint256"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "db3f0e9c8d69b1ad0515eb9664fb18370ed626e4b5c7724fef4e1cf72501add8": {
+      "address": "0x79f47b453fA862FFFe4E09346b2Ae0f924Fd6a8b",
+      "txHash": "0x2757b94bd1dd3a0ae348e4620caa04051278e345303949935c74850faef869f2",
+      "layout": {
+        "storage": [
+          {
+            "contract": "JTokenStorage",
+            "label": "_notEntered",
+            "type": "t_bool",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:348"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "name",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:353"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "symbol",
+            "type": "t_string_storage",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:358"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "decimals",
+            "type": "t_uint8",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:363"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "admin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:379"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "pendingAdmin",
+            "type": "t_address_payable",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:384"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "joetroller",
+            "type": "t_contract(JoetrollerInterface)373",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:389"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "interestRateModel",
+            "type": "t_contract(InterestRateModel)29",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:394"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "initialExchangeRateMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:399"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "reserveFactorMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:404"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accrualBlockTimestamp",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:409"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "borrowIndex",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:414"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalBorrows",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:419"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalReserves",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:424"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "totalSupply",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:429"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountTokens",
+            "type": "t_mapping(t_address,t_uint256)",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:434"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "transferAllowances",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:439"
+          },
+          {
+            "contract": "JTokenStorage",
+            "label": "accountBorrows",
+            "type": "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:454"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "underlying",
+            "type": "t_address",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:461"
+          },
+          {
+            "contract": "JErc20Storage",
+            "label": "implementation",
+            "type": "t_address",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:466"
+          },
+          {
+            "contract": "JProtocolSeizeShareStorage",
+            "label": "protocolSeizeShareMantissa",
+            "type": "t_uint256",
+            "src": "contracts/versions/JWrappedNativeDelegateV2_flat.sol:842"
+          }
+        ],
+        "types": {
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_string_storage": {
+            "label": "string"
+          },
+          "t_uint8": {
+            "label": "uint8"
+          },
+          "t_address_payable": {
+            "label": "address payable"
+          },
+          "t_contract(JoetrollerInterface)373": {
+            "label": "contract JoetrollerInterface"
+          },
+          "t_contract(InterestRateModel)29": {
+            "label": "contract InterestRateModel"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(address => mapping(address => uint256))"
+          },
+          "t_mapping(t_address,t_struct(BorrowSnapshot)454_storage)": {
+            "label": "mapping(address => struct JTokenStorage.BorrowSnapshot)"
+          },
+          "t_struct(BorrowSnapshot)454_storage": {
             "label": "struct JTokenStorage.BorrowSnapshot",
             "members": [
               {

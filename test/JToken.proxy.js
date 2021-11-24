@@ -18,11 +18,13 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       JUSDC_DELEGATOR_ARTIFACT.abi,
       JUSDC_DELEGATOR_ARTIFACT.bytecode
     );
-    this.Old = await ethers.getContractFactory(
+    this.JUsdcDelegateCFOld = await ethers.getContractFactory(
       JUSDC_DELEGATE_ARTIFACT.abi,
       JUSDC_DELEGATE_ARTIFACT.bytecode
     );
-    this.New = await ethers.getContractFactory("JCollateralCapErc20Delegate");
+    this.JUsdcDelegateCFNew = await ethers.getContractFactory(
+      "JCollateralCapErc20Delegate"
+    );
 
     this.JAvaxDelegatorCF = await ethers.getContractFactory(
       JAVAX_DELEGATOR_ARTIFACT.abi,
@@ -40,7 +42,9 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
     this.jUsdcDelegator = await this.JUsdcDelegatorCF.attach(
       JUSDC_DELEGATOR_ARTIFACT.address
     );
-    this.jUsdc = await this.Old.attach(JUSDC_DELEGATOR_ARTIFACT.address);
+    this.jUsdc = await this.JUsdcDelegateCFOld.attach(
+      JUSDC_DELEGATOR_ARTIFACT.address
+    );
 
     this.jAvaxDelegator = await this.JAvaxDelegatorCF.attach(
       JAVAX_DELEGATOR_ARTIFACT.address
@@ -93,7 +97,7 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       const totalCollateralTokensBefore =
         await this.jUsdc.totalCollateralTokens();
 
-      const newDelegate = await this.New.deploy();
+      const newDelegate = await this.JUsdcDelegateCFNew.deploy();
 
       // Upgrade implementation contract
       await this.jUsdcDelegator
