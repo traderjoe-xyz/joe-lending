@@ -496,16 +496,6 @@ contract JTokenStorage {
      * @notice Mapping of account addresses to outstanding borrow balances
      */
     mapping(address => BorrowSnapshot) internal accountBorrows;
-
-    /**
-     * @notice Share of seized collateral that is added to reserves
-     */
-    uint256 public protocolSeizeShareMantissa;
-
-    /**
-     * @notice Maximum fraction of seized collateral that can be set aside for reserves
-     */
-    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
 
 contract JErc20Storage {
@@ -628,11 +618,6 @@ contract JTokenInterface is JTokenStorage {
      * @notice Event emitted when the reserve factor is changed
      */
     event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
-
-    /**
-     * @notice Event emitted when the protocol share of seized collateral is changed
-     */
-    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
@@ -887,6 +872,23 @@ interface IFlashloanReceiver {
         uint256 fee,
         bytes calldata params
     ) external;
+}
+
+contract JProtocolSeizeShareStorage {
+    /**
+     * @notice Event emitted when the protocol share of seized collateral is changed
+     */
+    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
+
+    /**
+     * @notice Share of seized collateral that is added to reserves
+     */
+    uint256 public protocolSeizeShareMantissa;
+
+    /**
+     * @notice Maximum fraction of seized collateral that can be set aside for reserves
+     */
+    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
 
 
@@ -2710,42 +2712,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
-     * @dev Admin function to accrue interest and set a new collateral seize share
-     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
-     */
-    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
-        uint256 error = accrueInterest();
-        if (error != uint256(Error.NO_ERROR)) {
-            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
-        }
-        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
-    }
-
-    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
-        // Check caller is admin
-        if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
-        }
-
-        // Verify market's block timestamp equals current block timestamp
-        if (accrualBlockTimestamp != getBlockTimestamp()) {
-            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
-        }
-
-        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
-            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
-        }
-
-        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
-        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
-
-        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
-
-        return uint256(Error.NO_ERROR);
-    }
-
-    /**
      * @notice Accrues interest and reduces reserves by transferring from msg.sender
      * @param addAmount Amount of addition to reserves
      * @param isNative The amount is in native or not
@@ -3029,7 +2995,7 @@ interface WrappedNativeInterface {
  * @notice JTokens which wrap the native token
  * @author Cream
  */
-contract JWrappedNative is JToken, JWrappedNativeInterface {
+contract JWrappedNative is JToken, JWrappedNativeInterface, JProtocolSeizeShareStorage {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -3742,6 +3708,44 @@ contract JWrappedNative is JToken, JWrappedNativeInterface {
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
         emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
+
+        return uint256(Error.NO_ERROR);
+    }
+
+    /*** Admin Functions ***/
+
+    /**
+     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
+     * @dev Admin function to accrue interest and set a new collateral seize share
+     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
+     */
+    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
+        uint256 error = accrueInterest();
+        if (error != uint256(Error.NO_ERROR)) {
+            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
+        }
+        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
+    }
+
+    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
+        // Check caller is admin
+        if (msg.sender != admin) {
+            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
+        }
+
+        // Verify market's block timestamp equals current block timestamp
+        if (accrualBlockTimestamp != getBlockTimestamp()) {
+            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
+        }
+
+        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
+            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
+        }
+
+        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
+        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
+
+        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
 
         return uint256(Error.NO_ERROR);
     }
