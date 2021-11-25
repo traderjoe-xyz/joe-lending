@@ -20,8 +20,8 @@ describe("PriceOracleProxyUSD", function () {
         this.JErc20CF = await ethers.getContractFactory("JErc20")
 
         // Tokens
+        // We cast here to JErc20 for its ERC20 interface
         this.joe = await this.JErc20CF.attach(JOE_ADDRESS)
-        // xJoe is also an ERC20, so we can use the JErc20CF.
         this.xJoe = await this.JErc20CF.attach(XJOE_ADDRESS)
         this.jXJoe = await this.JCollateralCapErc20DelegateCF.attach(JXJOE_ADDRESS)
         this.oracleOld = await this.PriceOracleCF.attach(PRICEORACLE_OLD_ADRESS)
