@@ -1,50 +1,53 @@
 const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
+const { duration, increase } = require("./utilities/time");
+
+const UNITROLLER_ARTIFACT = require("../deployments/avalanche/Unitroller.json");
+const JOELENS_ARTIFACT = require("../deployments/avalanche/JoeLens.json");
+const REWARD_DISTRIBUTOR_ARTIFACT_V1 = require("../deployments/avalanche/versions/RewardDistributorV1.json");
+const JUSDC_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JUsdcDelegator.json");
+const JUSDC_DELEGATE_ARTIFACT = require("../deployments/avalanche/JUsdcDelegate.json");
 
 const TIMELOCK_ADDRESS = "0x243cc1760F0b96c533C11656491e7EBB9663Bf33";
-const JUSDC_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JUsdcDelegator.json");
+const DEV_ADDRESS = "0x66Fb02746d72bC640643FdBa3aEFE9C126f0AA4f";
+const USDC_LENDER = "0xc5ed2333f8a2c351fca35e5ebadb2a82f5d254c3";
+const JOE_ADDRESS = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
 
-describe("", function () {
+describe("RewardDistributor", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();
     this.alice = this.signers[0];
 
     // ABIs
-    this.JUsdcDelegatorCF = await ethers.getContractFactory(
-      JUSDC_DELEGATOR_ARTIFACT.abi,
-      JUSDC_DELEGATOR_ARTIFACT.bytecode
-    );
-    this.Old = await ethers.getContractFactory(
+    this.JUsdcDelegateCF = await ethers.getContractFactory(
       JUSDC_DELEGATE_ARTIFACT.abi,
       JUSDC_DELEGATE_ARTIFACT.bytecode
     );
-    this.New = await ethers.getContractFactory("JCollateralCapErc20Delegate");
-
-    this.JAvaxDelegatorCF = await ethers.getContractFactory(
-      JAVAX_DELEGATOR_ARTIFACT.abi,
-      JAVAX_DELEGATOR_ARTIFACT.bytecode
+    this.JoetrollerCF = await ethers.getContractFactory("Joetroller");
+    this.JoeLensCF = await ethers.getContractFactory("JoeLens");
+    this.RewardDistributorCFOld = await ethers.getContractFactory(
+      REWARD_DISTRIBUTOR_ARTIFACT_V1.abi,
+      REWARD_DISTRIBUTOR_ARTIFACT_V1.bytecode
     );
-    this.JAvaxDelegateCFOld = await ethers.getContractFactory(
-      JAVAX_DELEGATE_ARTIFACT.abi,
-      JAVAX_DELEGATE_ARTIFACT.bytecode
+    this.RewardDistributorCFNew = await ethers.getContractFactory(
+      "RewardDistributor",
+      this.dev
     );
-    this.JAvaxDelegateCFNew = await ethers.getContractFactory(
-      "JWrappedNativeDelegate"
-    );
+    this.JoeCF = await ethers.getContractFactory("JErc20");
 
     // Contracts
-    this.jUsdcDelegator = await this.JUsdcDelegatorCF.attach(
+    this.jUsdc = await this.JUsdcDelegateCF.attach(
       JUSDC_DELEGATOR_ARTIFACT.address
     );
-    this.jUsdc = await this.Old.attach(JUSDC_DELEGATOR_ARTIFACT.address);
-
-    this.jAvaxDelegator = await this.JAvaxDelegatorCF.attach(
-      JAVAX_DELEGATOR_ARTIFACT.address
+    this.joetroller = await this.JoetrollerCF.attach(
+      UNITROLLER_ARTIFACT.address
     );
-    this.jAvax = await this.JAvaxDelegateCFOld.attach(
-      JAVAX_DELEGATOR_ARTIFACT.address
+    this.joeLens = await this.JoeLensCF.attach(JOELENS_ARTIFACT.address);
+    this.rewardDistributorOld = await this.RewardDistributorCFOld.attach(
+      REWARD_DISTRIBUTOR_ARTIFACT_V1.address
     );
+    this.joe = await this.JoeCF.attach(JOE_ADDRESS);
   });
 
   beforeEach(async function () {
@@ -58,7 +61,7 @@ describe("", function () {
             blockNumber: 7177420,
           },
           live: false,
-          saveDeployments: true,
+          saveDeployments: false,
           tags: ["test", "local"],
         },
       ],
@@ -68,116 +71,118 @@ describe("", function () {
       method: "hardhat_impersonateAccount",
       params: [TIMELOCK_ADDRESS],
     });
-    // Account
     this.admin = await ethers.getSigner(TIMELOCK_ADDRESS);
     // Fund admin with AVAX
     await this.alice.sendTransaction({
       to: this.admin.address,
       value: ethers.utils.parseEther("10"),
     });
+
+    // Impersonate Dev address, which is the owner of old RewardDistributor
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [DEV_ADDRESS],
+    });
+    this.dev = await ethers.getSigner(DEV_ADDRESS);
+    // Fund dev with AVAX
+    await this.alice.sendTransaction({
+      to: this.dev.address,
+      value: ethers.utils.parseEther("10"),
+    });
+
+    // Deploy new rewarder and fund with JOE
+    this.rewardDistributorNew = await this.RewardDistributorCFNew.connect(
+      this.dev
+    ).deploy();
+    await this.joe.connect(this.dev).transfer(
+      this.rewardDistributorNew.address,
+      ethers.utils.parseEther("1000") // 1 million JOE
+    );
   });
 
-  describe("V2 (protocolSeizeShare)", function () {
-    it("successfully upgrades JCollateralCapErc20Delegate", async function () {
-      // Get storage values before upgrade
-      const implBefore = await this.jUsdc.implementation();
-      const totalSupplyBefore = await this.jUsdc.totalSupply();
-      const totalBorrowsBefore = await this.jUsdc.totalBorrows();
-      const totalReservesBefore = await this.jUsdc.totalReserves();
-      const totalCashBefore = await this.jUsdc.getCash();
-      const borrowIndexBefore = await this.jUsdc.borrowIndex();
-      const internalCashBefore = await this.jUsdc.internalCash();
-      const totalCollateralTokensBefore =
-        await this.jUsdc.totalCollateralTokens();
+  it("automatically accrues rewards for current lenders after upgrade", async function () {
+    // Get USDC lender who has accrued rewards from V1
+    const rewardsBefore = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(rewardsBefore).to.be.gt("0");
 
-      const newDelegate = await this.New.deploy();
+    // Upgrade RewardDistributor from V1 to V2 and set reward speeds for JOE
+    await this.joetroller
+      .connect(this.admin)
+      ._setRewardDistributor(this.rewardDistributorNew.address);
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      .setJoeAddress(this.joe.address);
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      ._setRewardSpeed(0, this.jUsdc.address, "10", "10");
 
-      // Upgrade implementation contract
-      await this.jUsdcDelegator
-        .connect(this.admin)
-        ._setImplementation(newDelegate.address, false, "0x");
+    // Expect rewards to be zeroed out since new rewarder resets state
+    const rewardsAtT0 = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(rewardsAtT0).to.equal("0");
 
-      // Get storage values after upgrade
-      const implAfter = await this.jUsdc.implementation();
-      const protocolSeizeShareMantissa =
-        await this.jUsdc.protocolSeizeShareMantissa();
-      const totalSupplyAfter = await this.jUsdc.totalSupply();
-      const totalBorrowsAfter = await this.jUsdc.totalBorrows();
-      const totalReservesAfter = await this.jUsdc.totalReserves();
-      const totalCashAfter = await this.jUsdc.getCash();
-      const borrowIndexAfter = await this.jUsdc.borrowIndex();
-      const internalCashAfter = await this.jUsdc.internalCash();
-      const totalCollateralTokensAfter =
-        await this.jUsdc.totalCollateralTokens();
+    // Fast forward 10 seconds
+    await increase(duration.seconds(10));
 
-      // Assert successful upgrade
-      expect(implBefore).to.not.equal(implAfter);
-      expect(protocolSeizeShareMantissa).to.equal("0");
+    // Assert USDC lender has accrued rewards for supplying for 10 seconds
+    const rewardsAtT10 = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(rewardsAtT10).to.be.gt("0");
 
-      // Assert storage values are unchanged
-      expect(totalSupplyBefore).to.equal(totalSupplyAfter);
-      expect(totalBorrowsBefore).to.equal(totalBorrowsAfter);
-      expect(totalReservesBefore).to.equal(totalReservesAfter);
-      expect(totalCashBefore).to.equal(totalCashAfter);
-      expect(borrowIndexBefore).to.equal(borrowIndexAfter);
-      expect(internalCashBefore).to.equal(internalCashAfter);
-      expect(totalCollateralTokensBefore).to.equal(totalCollateralTokensAfter);
+    // Fast forward 10 days
+    await increase(duration.days(10));
 
-      // Assert successful setting of protocol seize share
-      const newProtocolSeizeShare = ethers.utils.parseEther("0.1");
-      await this.jUsdc
-        .connect(this.admin)
-        ._setProtocolSeizeShare(newProtocolSeizeShare);
+    // Assert USDC lender has accrued rewards for supplying for 10 days
+    const rewardsAtD10 = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(rewardsAtD10).to.be.gt(rewardsAtT10);
+  });
 
-      const protocolSeizeShareMantissaAfter =
-        await this.jUsdc.protocolSeizeShareMantissa();
-      expect(protocolSeizeShareMantissaAfter).to.equal(newProtocolSeizeShare);
-    });
+  it("can still claim rewards from old reward distributor contract", async function () {
+    // Get USDC lender who has accrued rewards from V1
+    const rewardsBefore = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(rewardsBefore).to.be.gt("0");
 
-    it("successfully upgrades JWrappedNativeDelegate", async function () {
-      // Get storage values before upgrade
-      const implBefore = await this.jAvax.implementation();
-      const totalSupplyBefore = await this.jAvax.totalSupply();
-      const totalBorrowsBefore = await this.jAvax.totalBorrows();
-      const totalReservesBefore = await this.jAvax.totalReserves();
-      const totalCashBefore = await this.jAvax.getCash();
-      const borrowIndexBefore = await this.jAvax.borrowIndex();
+    // Zero out reward rate on old rewarder
+    await this.rewardDistributorOld
+      .connect(this.dev)
+      ._setRewardSpeed(0, this.jUsdc.address, "0");
 
-      const newDelegate = await this.JAvaxDelegateCFNew.deploy();
+    // Upgrade RewardDistributor from V1 to V2 and set reward speeds for JOE
+    await this.joetroller
+      .connect(this.admin)
+      ._setRewardDistributor(this.rewardDistributorNew.address);
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      .setJoeAddress(this.joe.address);
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      ._setRewardSpeed(0, this.jUsdc.address, "10", "10");
 
-      // Upgrade implementation contract
-      await this.jAvaxDelegator
-        .connect(this.admin)
-        ._setImplementation(newDelegate.address, false, "0x");
+    // Expect new rewards to be zeroed out since new rewarder resets state
+    const newRewardsAtT0 = await this.joeLens.callStatic[
+      "getClaimableRewards(uint8,address,address,address)"
+    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
+    expect(newRewardsAtT0).to.equal("0");
 
-      // Get storage values after upgrade
-      const implAfter = await this.jAvax.implementation();
-      const totalSupplyAfter = await this.jAvax.totalSupply();
-      const totalBorrowsAfter = await this.jAvax.totalBorrows();
-      const totalReservesAfter = await this.jAvax.totalReserves();
-      const totalCashAfter = await this.jAvax.getCash();
-      const borrowIndexAfter = await this.jAvax.borrowIndex();
+    // Expect old rewards to still be claimable
+    const balBefore = await this.joe.balanceOf(USDC_LENDER);
+    await this.rewardDistributorOld["claimReward(uint8,address)"](
+      0,
+      USDC_LENDER
+    );
+    const balAfter = await this.joe.balanceOf(USDC_LENDER);
+    const balDelta = balAfter.sub(balBefore);
 
-      // Assert successful upgrade
-      expect(implBefore).to.not.equal(implAfter);
-
-      // Assert storage values are unchanged
-      expect(totalSupplyBefore).to.equal(totalSupplyAfter);
-      expect(totalBorrowsBefore).to.equal(totalBorrowsAfter);
-      expect(totalReservesBefore).to.equal(totalReservesAfter);
-      expect(totalCashBefore).to.equal(totalCashAfter);
-      expect(borrowIndexBefore).to.equal(borrowIndexAfter);
-
-      // Assert successful setting of protocol seize share
-      const newProtocolSeizeShare = ethers.utils.parseEther("0.1");
-      await this.jAvax
-        .connect(this.admin)
-        ._setProtocolSeizeShare(newProtocolSeizeShare);
-
-      const protocolSeizeShareMantissaAfter =
-        await this.jAvax.protocolSeizeShareMantissa();
-      expect(protocolSeizeShareMantissaAfter).to.equal(newProtocolSeizeShare);
-    });
+    // Assert it's greater here because some seconds have passed since
+    expect(balDelta).to.be.gt(rewardsBefore);
   });
 
   after(async function () {

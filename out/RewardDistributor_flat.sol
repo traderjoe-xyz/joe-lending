@@ -160,7 +160,11 @@ contract TokenErrorReporter {
         TRANSFER_NOT_ALLOWED,
         ADD_RESERVES_ACCRUE_INTEREST_FAILED,
         ADD_RESERVES_FRESH_CHECK,
-        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE
+        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE,
+        SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED,
+        SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK,
+        SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK,
+        SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK
     }
 
     /**
@@ -191,6 +195,9 @@ contract TokenErrorReporter {
         return uint256(err);
     }
 }
+
+
+
 
 /**
  * @title ERC 20 Token Standard Interface
@@ -259,6 +266,9 @@ interface EIP20Interface {
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
 
+
+
+
 /**
  * @title Compound's InterestRateModel Interface
  * @author Compound
@@ -296,6 +306,9 @@ contract InterestRateModel {
     ) external view returns (uint256);
 }
 
+
+
+
 interface ERC3156FlashBorrowerInterface {
     /**
      * @dev Receive a flash loan.
@@ -315,6 +328,11 @@ interface ERC3156FlashBorrowerInterface {
     ) external returns (bytes32);
 }
 
+
+
+
+
+
 contract PriceOracle {
     /**
      * @notice Get the underlying price of a jToken asset
@@ -324,6 +342,13 @@ contract PriceOracle {
      */
     function getUnderlyingPrice(JToken jToken) external view returns (uint256);
 }
+
+
+
+
+
+
+
 
 /**
  * @title Careful Math
@@ -411,6 +436,7 @@ contract CarefulMath {
         return subUInt(sum, c);
     }
 }
+
 
 /**
  * @title Exponential module for storing fixed-precision decimals
@@ -866,6 +892,21 @@ contract Exponential is CarefulMath {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 contract UnitrollerAdminStorage {
     /**
      * @notice Administrator for this contract
@@ -880,12 +921,12 @@ contract UnitrollerAdminStorage {
     /**
      * @notice Active brains of Unitroller
      */
-    address public joetrollerImplementation;
+    address public implementation;
 
     /**
      * @notice Pending brains of Unitroller
      */
-    address public pendingJoetrollerImplementation;
+    address public pendingImplementation;
 }
 
 contract JoetrollerV1Storage is UnitrollerAdminStorage {
@@ -973,6 +1014,7 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     // @notice rewardDistributor The module that handles reward distribution.
     address payable public rewardDistributor;
 }
+
 
 contract JoetrollerInterface {
     /// @notice Indicator that this is a Joetroller contract (for inspection)
@@ -1107,6 +1149,14 @@ interface JoetrollerInterfaceExtension {
         bytes calldata params
     ) external view returns (bool);
 }
+
+
+
+
+
+
+
+
 
 contract JTokenStorage {
     /**
@@ -1462,7 +1512,7 @@ contract JWrappedNativeInterface is JErc20Interface {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -1504,7 +1554,7 @@ contract JCapableErc20Interface is JErc20Interface, JSupplyCapStorage {
     /**
      * @notice Flash loan fee ratio
      */
-    uint256 public constant flashFeeBips = 3;
+    uint256 public constant flashFeeBips = 8;
 
     /*** Market Events ***/
 
@@ -1597,6 +1647,30 @@ interface IFlashloanReceiver {
     ) external;
 }
 
+contract JProtocolSeizeShareStorage {
+    /**
+     * @notice Event emitted when the protocol share of seized collateral is changed
+     */
+    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
+
+    /**
+     * @notice Share of seized collateral that is added to reserves
+     */
+    uint256 public protocolSeizeShareMantissa;
+
+    /**
+     * @notice Maximum fraction of seized collateral that can be set aside for reserves
+     */
+    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
+}
+
+
+
+
+
+
+
+
 /**
  * @title EIP20NonStandardInterface
  * @dev Version of ERC20 with no return values for `transfer` and `transferFrom`
@@ -1668,6 +1742,8 @@ interface EIP20NonStandardInterface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
+
+
 
 /**
  * @title Compound's JToken Contract
@@ -2135,6 +2211,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `borrowAllowed` for accuring potential JOE rewards.
          */
         if (borrowAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return uint256(Error.NO_ERROR);
         }
@@ -2260,6 +2337,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `repayBorrowAllowed` for accuring potential JOE rewards.
          */
         if (repayAmount == 0) {
+            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return (uint256(Error.NO_ERROR), 0);
         }
@@ -2547,7 +2625,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @notice Accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -2857,7 +2935,31 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 }
 
+
+
 pragma experimental ABIEncoderV2;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 contract RewardDistributorStorage {
     /**
@@ -2877,8 +2979,11 @@ contract RewardDistributorStorage {
         uint32 timestamp;
     }
 
-    /// @notice The portion of reward rate that each market currently receives
-    mapping(uint8 => mapping(address => uint256)) public rewardSpeeds;
+    /// @notice The portion of supply reward rate that each market currently receives
+    mapping(uint8 => mapping(address => uint256)) public rewardSupplySpeeds;
+
+    /// @notice The portion of borrow reward rate that each market currently receives
+    mapping(uint8 => mapping(address => uint256)) public rewardBorrowSpeeds;
 
     /// @notice The JOE/AVAX market supply state for each market
     mapping(uint8 => mapping(address => RewardMarketState)) public rewardSupplyState;
@@ -2903,8 +3008,11 @@ contract RewardDistributorStorage {
 }
 
 contract RewardDistributor is RewardDistributorStorage, Exponential {
-    /// @notice Emitted when a new reward speed is calculated for a market
-    event RewardSpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
+    /// @notice Emitted when a new reward supply speed is calculated for a market
+    event RewardSupplySpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
+
+    /// @notice Emitted when a new reward borrow speed is calculated for a market
+    event RewardBorrowSpeedUpdated(uint8 rewardType, JToken indexed jToken, uint256 newSpeed);
 
     /// @notice Emitted when JOE/AVAX is distributed to a supplier
     event DistributedSupplierReward(
@@ -2950,36 +3058,39 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Set JOE/AVAX speed for a single market
      * @param rewardType 0 = QI, 1 = AVAX
      * @param jToken The market whose reward speed to update
-     * @param rewardSpeed New reward speed for market
+     * @param rewardSupplySpeed New reward supply speed for market
+     * @param rewardBorrowSpeed New reward borrow speed for market
      */
     function _setRewardSpeed(
         uint8 rewardType,
         JToken jToken,
-        uint256 rewardSpeed
+        uint256 rewardSupplySpeed,
+        uint256 rewardBorrowSpeed
     ) public {
         require(rewardType <= 1, "rewardType is invalid");
         require(adminOrInitializing(), "only admin can set reward speed");
-        setRewardSpeedInternal(rewardType, jToken, rewardSpeed);
+        setRewardSpeedInternal(rewardType, jToken, rewardSupplySpeed, rewardBorrowSpeed);
     }
 
     /**
      * @notice Set JOE/AVAX speed for a single market
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose speed to update
-     * @param newSpeed New JOE or AVAX speed for market
+     * @param newSupplySpeed New JOE or AVAX supply speed for market
+     * @param newBorrowSpeed New JOE or AVAX borrow speed for market
      */
     function setRewardSpeedInternal(
         uint8 rewardType,
         JToken jToken,
-        uint256 newSpeed
+        uint256 newSupplySpeed,
+        uint256 newBorrowSpeed
     ) internal {
-        uint256 currentRewardSpeed = rewardSpeeds[rewardType][address(jToken)];
-        if (currentRewardSpeed != 0) {
+        // Handle new supply speeed
+        uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
+        if (currentRewardSupplySpeed != 0) {
             // note that JOE speed could be set to 0 to halt liquidity rewards for a market
-            Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
             updateRewardSupplyIndex(rewardType, address(jToken));
-            updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
-        } else if (newSpeed != 0) {
+        } else if (newSupplySpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
@@ -2992,6 +3103,22 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
                     timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
             }
+        }
+
+        if (currentRewardSupplySpeed != newSupplySpeed) {
+            rewardSupplySpeeds[rewardType][address(jToken)] = newSupplySpeed;
+            emit RewardSupplySpeedUpdated(rewardType, jToken, newSupplySpeed);
+        }
+
+        // Handle new borrow speed
+        uint256 currentRewardBorrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];
+        if (currentRewardBorrowSpeed != 0) {
+            // note that JOE speed could be set to 0 to halt liquidity rewards for a market
+            Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
+            updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
+        } else if (newBorrowSpeed != 0) {
+            // Add the JOE market
+            require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
             if (
                 rewardBorrowState[rewardType][address(jToken)].index == 0 &&
@@ -3004,9 +3131,9 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             }
         }
 
-        if (currentRewardSpeed != newSpeed) {
-            rewardSpeeds[rewardType][address(jToken)] = newSpeed;
-            emit RewardSpeedUpdated(rewardType, jToken, newSpeed);
+        if (currentRewardBorrowSpeed != newBorrowSpeed) {
+            rewardBorrowSpeeds[rewardType][address(jToken)] = newBorrowSpeed;
+            emit RewardBorrowSpeedUpdated(rewardType, jToken, newBorrowSpeed);
         }
     }
 
@@ -3018,7 +3145,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     function updateRewardSupplyIndex(uint8 rewardType, address jToken) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
-        uint256 supplySpeed = rewardSpeeds[rewardType][jToken];
+        uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
         uint256 blockTimestamp = getBlockTimestamp();
         uint256 deltaTimestamps = sub_(blockTimestamp, uint256(supplyState.timestamp));
         if (deltaTimestamps > 0 && supplySpeed > 0) {
@@ -3039,6 +3166,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Accrue JOE/AVAX to the market by updating the borrow index
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market whose borrow index to update
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function updateRewardBorrowIndex(
         uint8 rewardType,
@@ -3047,7 +3175,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
-        uint256 borrowSpeed = rewardSpeeds[rewardType][jToken];
+        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
         uint256 blockTimestamp = getBlockTimestamp();
         uint256 deltaTimestamps = sub_(blockTimestamp, uint256(borrowState.timestamp));
         if (deltaTimestamps > 0 && borrowSpeed > 0) {
@@ -3099,6 +3227,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param rewardType  0: JOE, 1: AVAX
      * @param jToken The market in which the borrower is interacting
      * @param borrower The address of the borrower to distribute JOE/AVAX to
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function distributeBorrowerReward(
         uint8 rewardType,
@@ -3139,6 +3268,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @notice Refactored function to calc and rewards accounts supplier rewards
      * @param jToken The market to verify the mint against
      * @param borrower Borrower to be rewarded
+     * @param marketBorrowIndex Current index of the borrow market
      */
     function updateAndDistributeBorrowerRewardsForToken(
         address jToken,
@@ -3164,6 +3294,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     /**
      * @notice Claim all the JOE/AVAX accrued by holder in the specified markets
+     * @param rewardType 0 = JOE, 1 = AVAX
      * @param holder The address to claim JOE/AVAX for
      * @param jTokens The list of markets to claim JOE/AVAX in
      */
@@ -3225,12 +3356,13 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /**
      * @notice Transfer JOE/AVAX to the user
      * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer all.
+     * @param rewardType 0 = JOE, 1 = AVAX.
      * @param user The address of the user to transfer JOE/AVAX to
      * @param amount The amount of JOE/AVAX to (possibly) transfer
      * @return The amount of JOE/AVAX which was NOT transferred to the user
      */
     function grantRewardInternal(
-        uint256 rewardType,
+        uint8 rewardType,
         address payable user,
         uint256 amount
     ) internal returns (uint256) {
@@ -3256,6 +3388,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     /**
      * @notice Transfer JOE to the recipient
      * @dev Note: If there is not enough JOE, we do not perform the transfer all.
+     * @param rewardType 0 = JOE, 1 = AVAX
      * @param recipient The address of the recipient to transfer JOE to
      * @param amount The amount of JOE to (possibly) transfer
      */
@@ -3304,19 +3437,26 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     }
 }
 
+
+
+
+
+
+
+
 /**
  * @title JoetrollerCore
- * @dev Storage for the joetroller is at this address, while execution is delegated to the `joetrollerImplementation`.
+ * @dev Storage for the joetroller is at this address, while execution is delegated to the `implementation`.
  * JTokens should reference this contract as their joetroller.
  */
 contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is changed
+     * @notice Emitted when pendingImplementation is changed
      */
     event NewPendingImplementation(address oldPendingImplementation, address newPendingImplementation);
 
     /**
-     * @notice Emitted when pendingJoetrollerImplementation is accepted, which means joetroller implementation is updated
+     * @notice Emitted when pendingImplementation is accepted, which means joetroller implementation is updated
      */
     event NewImplementation(address oldImplementation, address newImplementation);
 
@@ -3341,11 +3481,11 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
             return fail(Error.UNAUTHORIZED, FailureInfo.SET_PENDING_IMPLEMENTATION_OWNER_CHECK);
         }
 
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = newPendingImplementation;
+        pendingImplementation = newPendingImplementation;
 
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -3357,20 +3497,20 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function _acceptImplementation() public returns (uint256) {
         // Check caller is pendingImplementation and pendingImplementation ≠ address(0)
-        if (msg.sender != pendingJoetrollerImplementation || pendingJoetrollerImplementation == address(0)) {
+        if (msg.sender != pendingImplementation || pendingImplementation == address(0)) {
             return fail(Error.UNAUTHORIZED, FailureInfo.ACCEPT_PENDING_IMPLEMENTATION_ADDRESS_CHECK);
         }
 
         // Save current values for inclusion in log
-        address oldImplementation = joetrollerImplementation;
-        address oldPendingImplementation = pendingJoetrollerImplementation;
+        address oldImplementation = implementation;
+        address oldPendingImplementation = pendingImplementation;
 
-        joetrollerImplementation = pendingJoetrollerImplementation;
+        implementation = pendingImplementation;
 
-        pendingJoetrollerImplementation = address(0);
+        pendingImplementation = address(0);
 
-        emit NewImplementation(oldImplementation, joetrollerImplementation);
-        emit NewPendingImplementation(oldPendingImplementation, pendingJoetrollerImplementation);
+        emit NewImplementation(oldImplementation, implementation);
+        emit NewPendingImplementation(oldPendingImplementation, pendingImplementation);
 
         return uint256(Error.NO_ERROR);
     }
@@ -3433,7 +3573,7 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
      */
     function() external payable {
         // delegate all other functions to current implementation
-        (bool success, ) = joetrollerImplementation.delegatecall(msg.data);
+        (bool success, ) = implementation.delegatecall(msg.data);
 
         assembly {
             let free_mem_ptr := mload(0x40)
@@ -3449,6 +3589,7 @@ contract Unitroller is UnitrollerAdminStorage, JoetrollerErrorReporter {
         }
     }
 }
+
 
 /**
  * @title Compound's Joetroller Contract
@@ -4803,7 +4944,7 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
      * @notice Checks caller is admin, or this contract is becoming the new implementation
      */
     function adminOrInitializing() internal view returns (bool) {
-        return msg.sender == admin || msg.sender == joetrollerImplementation;
+        return msg.sender == admin || msg.sender == implementation;
     }
 
     /*** Reward distribution functions ***/
@@ -4847,3 +4988,5 @@ contract Joetroller is JoetrollerV1Storage, JoetrollerInterface, JoetrollerError
         RewardDistributor(rewardDistributor).claimReward(rewardType, holders, jTokens, borrowers, suppliers);
     }
 }
+
+
