@@ -1,7 +1,7 @@
 const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 
-const JXJOE_AGGREGATOR_ADDRESS = "0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a";
+const JOE_AGGREGATOR_ADDRESS = "0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a";
 const PRICEORACLE_OLD_ADRESS = "0xe34309613B061545d42c4160ec4d64240b114482";
 
 const JXJOE_ADDRESS = "0xC146783a59807154F92084f9243eb139D58Da696";
@@ -15,15 +15,16 @@ describe("PriceOracleProxyUSD", function () {
         this.alice = this.signers[0];
 
         // Contract Factory
-        this.priceOracleCF = await ethers.getContractFactory("PriceOracleProxyUSD")
-        this.JCollateralCapErc20Delegate = await ethers.getContractFactory("JCollateralCapErc20Delegate")
-        this.JErc20 = await ethers.getContractFactory("JErc20")
+        this.PriceOracleCF = await ethers.getContractFactory("PriceOracleProxyUSD")
+        this.JCollateralCapErc20DelegateCF = await ethers.getContractFactory("JCollateralCapErc20Delegate")
+        this.JErc20CF = await ethers.getContractFactory("JErc20")
 
         // Tokens
-        this.joe = await this.JCollateralCapErc20Delegate.attach(JOE_ADDRESS)
-        this.xJoe = await this.JCollateralCapErc20Delegate.attach(XJOE_ADDRESS)
-        this.jXJoe = await this.JCollateralCapErc20Delegate.attach(JXJOE_ADDRESS)
-        this.oracleOld = await this.priceOracleCF.attach(PRICEORACLE_OLD_ADRESS)
+        this.joe = await this.JErc20CF.attach(JOE_ADDRESS)
+        // xJoe is also an ERC20, so we can use the JErc20CF.
+        this.xJoe = await this.JErc20CF.attach(XJOE_ADDRESS)
+        this.jXJoe = await this.JCollateralCapErc20DelegateCF.attach(JXJOE_ADDRESS)
+        this.oracleOld = await this.PriceOracleCF.attach(PRICEORACLE_OLD_ADRESS)
     });
 
     beforeEach(async function () {
@@ -44,13 +45,13 @@ describe("PriceOracleProxyUSD", function () {
         });
 
         // Deploying contract
-        this.oracle = await this.priceOracleCF.deploy(this.alice.address)
+        this.oracle = await this.PriceOracleCF.deploy(this.alice.address)
         await this.oracle.deployed()
     });
 
     describe("Test Oracle", function () {
         it("Verifies that xJoePrice is equal to JoePrice * ratio", async function () {
-            await this.oracle._setAggregators([this.jXJoe.address], [JXJOE_AGGREGATOR_ADDRESS])
+            await this.oracle._setAggregators([this.jXJoe.address], [JOE_AGGREGATOR_ADDRESS])
             // asks XJoe price using the new contract
             const xJoePrice = await this.oracle.getUnderlyingPrice(JXJOE_ADDRESS)
 

@@ -21,7 +21,7 @@
     "lint": "./script/lint",
     "prettier": "prettier --write contracts/**/*.sol",
     "repl": "./scenario/script/repl",
-    "test": "./script./test",
+    "test": "./script/test",
     "test:prepare": "NO_RUN=true ./script/test",
     "checksize": "npx run ./script/saddle/contractSizer.js",
     "rinkeby:deploy": "hardhat --network rinkeby deploy",
