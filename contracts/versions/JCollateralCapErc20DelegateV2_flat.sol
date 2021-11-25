@@ -21,9 +21,6 @@ interface ERC3156FlashBorrowerInterface {
     ) external returns (bytes32);
 }
 
-
-
-
 /**
  * @title Compound's InterestRateModel Interface
  * @author Compound
@@ -61,10 +58,6 @@ contract InterestRateModel {
     ) external view returns (uint256);
 }
 
-
-
-
-
 interface ERC3156FlashLenderInterface {
     /**
      * @dev The amount of currency available to be lent.
@@ -96,33 +89,6 @@ interface ERC3156FlashLenderInterface {
     ) external returns (bool);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 contract PriceOracle {
     /**
      * @notice Get the underlying price of a jToken asset
@@ -132,7 +98,6 @@ contract PriceOracle {
      */
     function getUnderlyingPrice(JToken jToken) external view returns (uint256);
 }
-
 
 contract UnitrollerAdminStorage {
     /**
@@ -241,7 +206,6 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     // @notice rewardDistributor The module that handles reward distribution.
     address payable public rewardDistributor;
 }
-
 
 contract JoetrollerInterface {
     /// @notice Indicator that this is a Joetroller contract (for inspection)
@@ -376,14 +340,6 @@ interface JoetrollerInterfaceExtension {
         bytes calldata params
     ) external view returns (bool);
 }
-
-
-
-
-
-
-
-
 
 contract JTokenStorage {
     /**
@@ -891,10 +847,6 @@ contract JProtocolSeizeShareStorage {
     uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
 }
 
-
-
-
-
 contract JoetrollerErrorReporter {
     enum Error {
         NO_ERROR,
@@ -1089,14 +1041,6 @@ contract TokenErrorReporter {
     }
 }
 
-
-
-
-
-
-
-
-
 /**
  * @title Careful Math
  * @author Compound
@@ -1183,7 +1127,6 @@ contract CarefulMath {
         return subUInt(sum, c);
     }
 }
-
 
 /**
  * @title Exponential module for storing fixed-precision decimals
@@ -1639,10 +1582,6 @@ contract Exponential is CarefulMath {
     }
 }
 
-
-
-
-
 /**
  * @title ERC 20 Token Standard Interface
  *  https://eips.ethereum.org/EIPS/eip-20
@@ -1709,10 +1648,6 @@ interface EIP20Interface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
-
-
-
-
 
 /**
  * @title EIP20NonStandardInterface
@@ -1785,8 +1720,6 @@ interface EIP20NonStandardInterface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
-
-
 
 /**
  * @title Compound's JToken Contract
@@ -2978,9 +2911,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 }
 
-
-
-
 /**
  * @title Cream's JCollateralCapErc20 Contract
  * @notice JTokens which wrap an EIP-20 underlying with collateral cap
@@ -3829,13 +3759,12 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
     }
 }
 
-
 /**
  * @title Cream's JCollateralCapErc20Delegate Contract
  * @notice JTokens which wrap an EIP-20 underlying and are delegated to
  * @author Cream
  */
-contract JCollateralCapErc20Delegate is JCollateralCapErc20 {
+contract JCollateralCapErc20DelegateV2 is JCollateralCapErc20 {
     /**
      * @notice Construct an empty delegate
      */
@@ -3878,6 +3807,3 @@ contract JCollateralCapErc20Delegate is JCollateralCapErc20 {
         require(msg.sender == admin, "only the admin may call _resignImplementation");
     }
 }
-
-
-
