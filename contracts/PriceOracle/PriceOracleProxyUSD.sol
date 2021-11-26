@@ -51,6 +51,15 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
     /// @notice Guardian address
     address public guardian;
 
+    /// @notice joe address
+    address public joeAddress = 0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd;
+
+    /// @notice xJoe address
+    address public xJoeAddress = 0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33;
+
+    /// @notice jXJoe address
+    address public jXJoeAddress = 0xC146783a59807154F92084f9243eb139D58Da696;
+
     /// @notice Chainlink Aggregators
     mapping(address => AggregatorV3Interface) public aggregators;
 
@@ -73,6 +82,11 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
         if (address(aggregator) != address(0)) {
             uint256 price = getPriceFromChainlink(aggregator);
             uint256 underlyingDecimals = EIP20Interface(JErc20(jTokenAddress).underlying()).decimals();
+
+            if (jTokenAddress == jXJoeAddress){
+                price = mul_(price, Exp({mantissa: getXJoeRatio()}));
+            }
+
             if (underlyingDecimals <= 18) {
                 return mul_(price, 10**(18 - underlyingDecimals));
             }
@@ -99,6 +113,18 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
 
         // Extend the decimals to 1e18.
         return mul_(uint256(price), 10**(18 - uint256(aggregator.decimals())));
+    }
+
+    /**
+     * @notice Get joe:xJoe ratio
+     * @return The ratio
+     */
+    function getXJoeRatio() internal view returns (uint256) {
+        uint256 joeAmount = JErc20(joeAddress).balanceOf(xJoeAddress);
+        uint256 xJoeAmount = JErc20(xJoeAddress).totalSupply();
+
+        // return the joe:xJoe ratio
+        return div_(joeAmount, Exp({mantissa: xJoeAmount}));
     }
 
     /*** Admin or guardian functions ***/
