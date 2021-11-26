@@ -120,8 +120,8 @@ contract PriceOracleProxyUSD is PriceOracle, Exponential {
      * @return The ratio
      */
     function getXJoeRatio() internal view returns (uint256) {
-        uint256 joeAmount = JErc20(joeAddress).balanceOf(xJoeAddress);
-        uint256 xJoeAmount = JErc20(xJoeAddress).totalSupply();
+        uint256 joeAmount = EIP20Interface(joeAddress).balanceOf(xJoeAddress);
+        uint256 xJoeAmount = EIP20Interface(xJoeAddress).totalSupply();
 
         // return the joe:xJoe ratio
         return div_(joeAmount, Exp({mantissa: xJoeAmount}));

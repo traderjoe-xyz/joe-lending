@@ -2,28 +2,6 @@
 
 pragma solidity ^0.5.16;
 
-interface ERC3156FlashBorrowerInterface {
-    /**
-     * @dev Receive a flash loan.
-     * @param initiator The initiator of the loan.
-     * @param token The loan currency.
-     * @param amount The amount of tokens lent.
-     * @param fee The additional amount of tokens to repay.
-     * @param data Arbitrary data structure, intended to contain user-defined parameters.
-     * @return The keccak256 hash of "ERC3156FlashBorrower.onFlashLoan"
-     */
-    function onFlashLoan(
-        address initiator,
-        address token,
-        uint256 amount,
-        uint256 fee,
-        bytes calldata data
-    ) external returns (bytes32);
-}
-
-
-
-
 /**
  * @title Compound's InterestRateModel Interface
  * @author Compound
@@ -61,9 +39,24 @@ contract InterestRateModel {
     ) external view returns (uint256);
 }
 
-
-
-
+interface ERC3156FlashBorrowerInterface {
+    /**
+     * @dev Receive a flash loan.
+     * @param initiator The initiator of the loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param fee The additional amount of tokens to repay.
+     * @param data Arbitrary data structure, intended to contain user-defined parameters.
+     * @return The keccak256 hash of "ERC3156FlashBorrower.onFlashLoan"
+     */
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external returns (bytes32);
+}
 
 interface ERC3156FlashLenderInterface {
     /**
@@ -96,33 +89,6 @@ interface ERC3156FlashLenderInterface {
     ) external returns (bool);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 contract PriceOracle {
     /**
      * @notice Get the underlying price of a jToken asset
@@ -132,7 +98,6 @@ contract PriceOracle {
      */
     function getUnderlyingPrice(JToken jToken) external view returns (uint256);
 }
-
 
 contract UnitrollerAdminStorage {
     /**
@@ -241,7 +206,6 @@ contract JoetrollerV1Storage is UnitrollerAdminStorage {
     // @notice rewardDistributor The module that handles reward distribution.
     address payable public rewardDistributor;
 }
-
 
 contract JoetrollerInterface {
     /// @notice Indicator that this is a Joetroller contract (for inspection)
@@ -376,14 +340,6 @@ interface JoetrollerInterfaceExtension {
         bytes calldata params
     ) external view returns (bool);
 }
-
-
-
-
-
-
-
-
 
 contract JTokenStorage {
     /**
@@ -874,27 +830,6 @@ interface IFlashloanReceiver {
     ) external;
 }
 
-contract JProtocolSeizeShareStorage {
-    /**
-     * @notice Event emitted when the protocol share of seized collateral is changed
-     */
-    event NewProtocolSeizeShare(uint256 oldProtocolSeizeShareMantissa, uint256 newProtocolSeizeShareMantissa);
-
-    /**
-     * @notice Share of seized collateral that is added to reserves
-     */
-    uint256 public protocolSeizeShareMantissa;
-
-    /**
-     * @notice Maximum fraction of seized collateral that can be set aside for reserves
-     */
-    uint256 internal constant protocolSeizeShareMaxMantissa = 1e18;
-}
-
-
-
-
-
 contract JoetrollerErrorReporter {
     enum Error {
         NO_ERROR,
@@ -1053,11 +988,7 @@ contract TokenErrorReporter {
         TRANSFER_NOT_ALLOWED,
         ADD_RESERVES_ACCRUE_INTEREST_FAILED,
         ADD_RESERVES_FRESH_CHECK,
-        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE,
-        SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED,
-        SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK,
-        SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK,
-        SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK
+        ADD_RESERVES_TRANSFER_IN_NOT_POSSIBLE
     }
 
     /**
@@ -1088,14 +1019,6 @@ contract TokenErrorReporter {
         return uint256(err);
     }
 }
-
-
-
-
-
-
-
-
 
 /**
  * @title Careful Math
@@ -1183,7 +1106,6 @@ contract CarefulMath {
         return subUInt(sum, c);
     }
 }
-
 
 /**
  * @title Exponential module for storing fixed-precision decimals
@@ -1639,10 +1561,6 @@ contract Exponential is CarefulMath {
     }
 }
 
-
-
-
-
 /**
  * @title ERC 20 Token Standard Interface
  *  https://eips.ethereum.org/EIPS/eip-20
@@ -1709,10 +1627,6 @@ interface EIP20Interface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
-
-
-
-
 
 /**
  * @title EIP20NonStandardInterface
@@ -1785,8 +1699,6 @@ interface EIP20NonStandardInterface {
     event Transfer(address indexed from, address indexed to, uint256 amount);
     event Approval(address indexed owner, address indexed spender, uint256 amount);
 }
-
-
 
 /**
  * @title Compound's JToken Contract
@@ -2254,7 +2166,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `borrowAllowed` for accuring potential JOE rewards.
          */
         if (borrowAmount == 0) {
-            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return uint256(Error.NO_ERROR);
         }
@@ -2380,7 +2291,6 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
          * Put behind `repayBorrowAllowed` for accuring potential JOE rewards.
          */
         if (repayAmount == 0) {
-            accountBorrows[borrower].principal = borrowBalanceStoredInternal(borrower);
             accountBorrows[borrower].interestIndex = borrowIndex;
             return (uint256(Error.NO_ERROR), 0);
         }
@@ -2668,7 +2578,7 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 
     /**
-     * @notice Accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
+     * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
@@ -2978,15 +2888,21 @@ contract JToken is JTokenInterface, Exponential, TokenErrorReporter {
     }
 }
 
+/**
+ * @title Wrapped native token interface
+ */
+interface WrappedNativeInterface {
+    function deposit() external payable;
 
-
+    function withdraw(uint256 wad) external;
+}
 
 /**
- * @title Cream's JCollateralCapErc20 Contract
- * @notice JTokens which wrap an EIP-20 underlying with collateral cap
+ * @title Cream's JWrappedNative Contract
+ * @notice JTokens which wrap the native token
  * @author Cream
  */
-contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolSeizeShareStorage {
+contract JWrappedNative is JToken, JWrappedNativeInterface {
     /**
      * @notice Initialize the new money market
      * @param underlying_ The address of the underlying asset
@@ -3012,6 +2928,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         // Set underlying and sanity check it
         underlying = underlying_;
         EIP20Interface(underlying).totalSupply();
+        WrappedNativeInterface(underlying);
     }
 
     /*** User Interface ***/
@@ -3019,51 +2936,113 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
     /**
      * @notice Sender supplies assets into the market and receives jTokens in exchange
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param mintAmount The amount of the underlying asset to supply
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function mint(uint256 mintAmount) external returns (uint256) {
         (uint256 err, ) = mintInternal(mintAmount, false);
-        return err;
+        require(err == 0, "mint failed");
+    }
+
+    /**
+     * @notice Sender supplies assets into the market and receives jTokens in exchange
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function mintNative() external payable returns (uint256) {
+        (uint256 err, ) = mintInternal(msg.value, true);
+        require(err == 0, "mint native failed");
     }
 
     /**
      * @notice Sender redeems jTokens in exchange for the underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param redeemTokens The number of jTokens to redeem into underlying
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeem(uint256 redeemTokens) external returns (uint256) {
-        return redeemInternal(redeemTokens, false);
+        require(redeemInternal(redeemTokens, false) == 0, "redeem failed");
+    }
+
+    /**
+     * @notice Sender redeems jTokens in exchange for the underlying asset
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @param redeemTokens The number of jTokens to redeem into underlying
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function redeemNative(uint256 redeemTokens) external returns (uint256) {
+        require(redeemInternal(redeemTokens, true) == 0, "redeem native failed");
     }
 
     /**
      * @notice Sender redeems jTokens in exchange for a specified amount of underlying asset
      * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param redeemAmount The amount of underlying to redeem
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256) {
-        return redeemUnderlyingInternal(redeemAmount, false);
+        require(redeemUnderlyingInternal(redeemAmount, false) == 0, "redeem underlying failed");
+    }
+
+    /**
+     * @notice Sender redeems jTokens in exchange for a specified amount of underlying asset
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @param redeemAmount The amount of underlying to redeem
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function redeemUnderlyingNative(uint256 redeemAmount) external returns (uint256) {
+        require(redeemUnderlyingInternal(redeemAmount, true) == 0, "redeem underlying native failed");
     }
 
     /**
      * @notice Sender borrows assets from the protocol to their own address
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param borrowAmount The amount of the underlying asset to borrow
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function borrow(uint256 borrowAmount) external returns (uint256) {
-        return borrowInternal(borrowAmount, false);
+        require(borrowInternal(borrowAmount, false) == 0, "borrow failed");
+    }
+
+    /**
+     * @notice Sender borrows assets from the protocol to their own address
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @param borrowAmount The amount of the underlying asset to borrow
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function borrowNative(uint256 borrowAmount) external returns (uint256) {
+        require(borrowInternal(borrowAmount, true) == 0, "borrow native failed");
     }
 
     /**
      * @notice Sender repays their own borrow
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param repayAmount The amount to repay
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function repayBorrow(uint256 repayAmount) external returns (uint256) {
         (uint256 err, ) = repayBorrowInternal(repayAmount, false);
-        return err;
+        require(err == 0, "repay failed");
+    }
+
+    /**
+     * @notice Sender repays their own borrow
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowNative() external payable returns (uint256) {
+        (uint256 err, ) = repayBorrowInternal(msg.value, true);
+        require(err == 0, "repay native failed");
     }
 
     /**
@@ -3074,12 +3053,24 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
      */
     function repayBorrowBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
         (uint256 err, ) = repayBorrowBehalfInternal(borrower, repayAmount, false);
-        return err;
+        require(err == 0, "repay behalf failed");
+    }
+
+    /**
+     * @notice Sender repays a borrow belonging to borrower
+     * @param borrower the account with the debt being payed off
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function repayBorrowBehalfNative(address borrower) external payable returns (uint256) {
+        (uint256 err, ) = repayBorrowBehalfInternal(borrower, msg.value, true);
+        require(err == 0, "repay behalf native failed");
     }
 
     /**
      * @notice The sender liquidates the borrowers collateral.
      *  The collateral seized is transferred to the liquidator.
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
      * @param borrower The borrower of this jToken to be liquidated
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @param jTokenCollateral The market in which to seize collateral from the borrower
@@ -3091,39 +3082,25 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         JTokenInterface jTokenCollateral
     ) external returns (uint256) {
         (uint256 err, ) = liquidateBorrowInternal(borrower, repayAmount, jTokenCollateral, false);
-        return err;
+        require(err == 0, "liquidate borrow failed");
     }
 
     /**
-     * @notice The sender adds to reserves.
-     * @param addAmount The amount fo underlying token to add as reserves
+     * @notice The sender liquidates the borrowers collateral.
+     *  The collateral seized is transferred to the liquidator.
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @param borrower The borrower of this jToken to be liquidated
+     * @param jTokenCollateral The market in which to seize collateral from the borrower
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function _addReserves(uint256 addAmount) external returns (uint256) {
-        return _addReservesInternal(addAmount, false);
-    }
-
-    /**
-     * @notice Set the given collateral cap for the market.
-     * @param newCollateralCap New collateral cap for this market. A value of 0 corresponds to no cap.
-     */
-    function _setCollateralCap(uint256 newCollateralCap) external {
-        require(msg.sender == admin, "only admin can set collateral cap");
-
-        collateralCap = newCollateralCap;
-        emit NewCollateralCap(address(this), newCollateralCap);
-    }
-
-    /**
-     * @notice Absorb excess cash into reserves.
-     */
-    function gulp() external nonReentrant {
-        uint256 cashOnChain = getCashOnChain();
-        uint256 cashPrior = getCashPrior();
-
-        uint256 excessCash = sub_(cashOnChain, cashPrior);
-        totalReserves = add_(totalReserves, excessCash);
-        internalCash = cashOnChain;
+    function liquidateBorrowNative(address borrower, JTokenInterface jTokenCollateral)
+        external
+        payable
+        returns (uint256)
+    {
+        (uint256 err, ) = liquidateBorrowInternal(borrower, msg.value, jTokenCollateral, true);
+        require(err == 0, "liquidate borrow native failed");
     }
 
     /**
@@ -3174,7 +3151,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
             ),
             "flashloan is paused"
         );
-        uint256 cashOnChainBefore = getCashOnChain();
         uint256 cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
@@ -3188,7 +3164,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         totalBorrows = add_(totalBorrows, amount);
 
         // 4. execute receiver's callback function
-
         require(
             receiver.onFlashLoan(initiator, underlying, amount, totalFee, data) ==
                 keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
@@ -3197,96 +3172,56 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
 
         // 5. take amount + fee from receiver, then check balance
         uint256 repaymentAmount = add_(amount, totalFee);
+
         doTransferIn(address(receiver), repaymentAmount, false);
 
-        uint256 cashOnChainAfter = getCashOnChain();
+        uint256 cashAfter = getCashPrior();
+        require(cashAfter == add_(cashBefore, totalFee), "BALANCE_INCONSISTENT");
 
-        require(cashOnChainAfter == add_(cashOnChainBefore, totalFee), "BALANCE_INCONSISTENT");
-
-        // 6. update reserves and internal cash and totalBorrows
+        // 6. update totalReserves and totalBorrows
         uint256 reservesFee = mul_ScalarTruncate(Exp({mantissa: reserveFactorMantissa}), totalFee);
         totalReserves = add_(totalReserves, reservesFee);
-        internalCash = add_(cashBefore, totalFee);
         totalBorrows = sub_(totalBorrows, amount);
 
         emit Flashloan(address(receiver), amount, totalFee, reservesFee);
         return true;
     }
 
-    /**
-     * @notice Register account collateral tokens if there is space.
-     * @param account The account to register
-     * @dev This function could only be called by joetroller.
-     * @return The actual registered amount of collateral
-     */
-    function registerCollateral(address account) external returns (uint256) {
-        // Make sure accountCollateralTokens of `account` is initialized.
-        initializeAccountCollateralTokens(account);
-
-        require(msg.sender == address(joetroller), "only joetroller may register collateral for user");
-
-        uint256 amount = sub_(accountTokens[account], accountCollateralTokens[account]);
-        return increaseUserCollateralInternal(account, amount);
+    function() external payable {
+        require(msg.sender == underlying, "only wrapped native contract could send native token");
     }
 
     /**
-     * @notice Unregister account collateral tokens if the account still has enough collateral.
-     * @dev This function could only be called by joetroller.
-     * @param account The account to unregister
+     * @notice The sender adds to reserves.
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for backward joeatibility
+     * @param addAmount The amount fo underlying token to add as reserves
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
-    function unregisterCollateral(address account) external {
-        // Make sure accountCollateralTokens of `account` is initialized.
-        initializeAccountCollateralTokens(account);
+    function _addReserves(uint256 addAmount) external returns (uint256) {
+        require(_addReservesInternal(addAmount, false) == 0, "add reserves failed");
+    }
 
-        require(msg.sender == address(joetroller), "only joetroller may unregister collateral for user");
-
-        decreaseUserCollateralInternal(account, accountCollateralTokens[account]);
+    /**
+     * @notice The sender adds to reserves.
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     *  Keep return in the function signature for consistency
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function _addReservesNative() external payable returns (uint256) {
+        require(_addReservesInternal(msg.value, true) == 0, "add reserves failed");
     }
 
     /*** Safe Token ***/
 
     /**
-     * @notice Gets internal balance of this contract in terms of the underlying.
-     *  It excludes balance from direct transfer.
+     * @notice Gets balance of this contract in terms of the underlying
      * @dev This excludes the value of the current message, if any
      * @return The quantity of underlying tokens owned by this contract
      */
     function getCashPrior() internal view returns (uint256) {
-        return internalCash;
-    }
-
-    /**
-     * @notice Gets total balance of this contract in terms of the underlying
-     * @dev This excludes the value of the current message, if any
-     * @return The quantity of underlying tokens owned by this contract
-     */
-    function getCashOnChain() internal view returns (uint256) {
         EIP20Interface token = EIP20Interface(underlying);
         return token.balanceOf(address(this));
-    }
-
-    /**
-     * @notice Initialize the account's collateral tokens. This function should be called in the beginning of every function
-     *  that accesses accountCollateralTokens or accountTokens.
-     * @param account The account of accountCollateralTokens that needs to be updated
-     */
-    function initializeAccountCollateralTokens(address account) internal {
-        /**
-         * If isCollateralTokenInit is false, it means accountCollateralTokens was not initialized yet.
-         * This case will only happen once and must be the very beginning. accountCollateralTokens is a new structure and its
-         * initial value should be equal to accountTokens if user has entered the market. However, it's almost impossible to
-         * check every user's value when the implementation becomes active. Therefore, it must rely on every action which will
-         * access accountTokens to call this function to check if accountCollateralTokens needed to be initialized.
-         */
-        if (!isCollateralTokenInit[account]) {
-            if (JoetrollerInterfaceExtension(address(joetroller)).checkMembership(account, JToken(this))) {
-                accountCollateralTokens[account] = accountTokens[account];
-                totalCollateralTokens = add_(totalCollateralTokens, accountTokens[account]);
-
-                emit UserCollateralChanged(account, accountCollateralTokens[account]);
-            }
-            isCollateralTokenInit[account] = true;
-        }
     }
 
     /**
@@ -3303,36 +3238,42 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 amount,
         bool isNative
     ) internal returns (uint256) {
-        isNative; // unused
+        if (isNative) {
+            // Sanity checks
+            require(msg.sender == from, "sender mismatch");
+            require(msg.value == amount, "value mismatch");
 
-        EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-        uint256 balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
-        token.transferFrom(from, address(this), amount);
+            // Convert received native token to wrapped token
+            WrappedNativeInterface(underlying).deposit.value(amount)();
+            return amount;
+        } else {
+            EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
+            uint256 balanceBefore = EIP20Interface(underlying).balanceOf(address(this));
+            token.transferFrom(from, address(this), amount);
 
-        bool success;
-        assembly {
-            switch returndatasize()
-            case 0 {
-                // This is a non-standard ERC-20
-                success := not(0) // set success to true
+            bool success;
+            assembly {
+                switch returndatasize()
+                case 0 {
+                    // This is a non-standard ERC-20
+                    success := not(0) // set success to true
+                }
+                case 32 {
+                    // This is a compliant ERC-20
+                    returndatacopy(0, 0, 32)
+                    success := mload(0) // Set `success = returndata` of external call
+                }
+                default {
+                    // This is an excessively non-compliant ERC-20, revert.
+                    revert(0, 0)
+                }
             }
-            case 32 {
-                // This is a joeliant ERC-20
-                returndatacopy(0, 0, 32)
-                success := mload(0) // Set `success = returndata` of external call
-            }
-            default {
-                // This is an excessively non-joeliant ERC-20, revert.
-                revert(0, 0)
-            }
+            require(success, "TOKEN_TRANSFER_IN_FAILED");
+
+            // Calculate the amount that was *actually* transferred
+            uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
+            return sub_(balanceAfter, balanceBefore);
         }
-        require(success, "TOKEN_TRANSFER_IN_FAILED");
-
-        // Calculate the amount that was *actually* transferred
-        uint256 balanceAfter = EIP20Interface(underlying).balanceOf(address(this));
-        uint256 transferredIn = sub_(balanceAfter, balanceBefore);
-        internalCash = add_(internalCash, transferredIn);
-        return transferredIn;
     }
 
     /**
@@ -3349,30 +3290,34 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 amount,
         bool isNative
     ) internal {
-        isNative; // unused
+        if (isNative) {
+            // Convert wrapped token to native token
+            WrappedNativeInterface(underlying).withdraw(amount);
+            /* Send the Ether, with minimal gas and revert on failure */
+            to.transfer(amount);
+        } else {
+            EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
+            token.transfer(to, amount);
 
-        EIP20NonStandardInterface token = EIP20NonStandardInterface(underlying);
-        token.transfer(to, amount);
-
-        bool success;
-        assembly {
-            switch returndatasize()
-            case 0 {
-                // This is a non-standard ERC-20
-                success := not(0) // set success to true
+            bool success;
+            assembly {
+                switch returndatasize()
+                case 0 {
+                    // This is a non-standard ERC-20
+                    success := not(0) // set success to true
+                }
+                case 32 {
+                    // This is a joelaint ERC-20
+                    returndatacopy(0, 0, 32)
+                    success := mload(0) // Set `success = returndata` of external call
+                }
+                default {
+                    // This is an excessively non-compliant ERC-20, revert.
+                    revert(0, 0)
+                }
             }
-            case 32 {
-                // This is a joelaint ERC-20
-                returndatacopy(0, 0, 32)
-                success := mload(0) // Set `success = returndata` of external call
-            }
-            default {
-                // This is an excessively non-joeliant ERC-20, revert.
-                revert(0, 0)
-            }
+            require(success, "TOKEN_TRANSFER_OUT_FAILED");
         }
-        require(success, "TOKEN_TRANSFER_OUT_FAILED");
-        internalCash = sub_(internalCash, amount);
     }
 
     /**
@@ -3390,27 +3335,8 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         address dst,
         uint256 tokens
     ) internal returns (uint256) {
-        // Make sure accountCollateralTokens of `src` and `dst` are initialized.
-        initializeAccountCollateralTokens(src);
-        initializeAccountCollateralTokens(dst);
-
-        /**
-         * For every user, accountTokens must be greater than or equal to accountCollateralTokens.
-         * The buffer between the two values will be transferred first.
-         * bufferTokens = accountTokens[src] - accountCollateralTokens[src]
-         * collateralTokens = tokens - bufferTokens
-         */
-        uint256 bufferTokens = sub_(accountTokens[src], accountCollateralTokens[src]);
-        uint256 collateralTokens = 0;
-        if (tokens > bufferTokens) {
-            collateralTokens = tokens - bufferTokens;
-        }
-
-        /**
-         * Since bufferTokens are not collateralized and can be transferred freely, we only check with joetroller
-         * whether collateralized tokens can be transferred.
-         */
-        uint256 allowed = joetroller.transferAllowed(address(this), src, dst, collateralTokens);
+        /* Fail if transfer not allowed */
+        uint256 allowed = joetroller.transferAllowed(address(this), src, dst, tokens);
         if (allowed != 0) {
             return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.TRANSFER_JOETROLLER_REJECTION, allowed);
         }
@@ -3431,13 +3357,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         /* Do the calculations, checking for {under,over}flow */
         accountTokens[src] = sub_(accountTokens[src], tokens);
         accountTokens[dst] = add_(accountTokens[dst], tokens);
-        if (collateralTokens > 0) {
-            accountCollateralTokens[src] = sub_(accountCollateralTokens[src], collateralTokens);
-            accountCollateralTokens[dst] = add_(accountCollateralTokens[dst], collateralTokens);
-
-            emit UserCollateralChanged(src, accountCollateralTokens[src]);
-            emit UserCollateralChanged(dst, accountCollateralTokens[dst]);
-        }
 
         /* Eat some of the allowance (if necessary) */
         if (startingAllowance != uint256(-1)) {
@@ -3447,9 +3366,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         /* We emit a Transfer event */
         emit Transfer(src, dst, tokens);
 
-        // unused function
-        // joetroller.transferVerify(address(this), src, dst, tokens);
-
         return uint256(Error.NO_ERROR);
     }
 
@@ -3458,66 +3374,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
      * @param account The address of the account
      */
     function getJTokenBalanceInternal(address account) internal view returns (uint256) {
-        if (isCollateralTokenInit[account]) {
-            return accountCollateralTokens[account];
-        } else {
-            /**
-             * If the value of accountCollateralTokens was not initialized, we should return the value of accountTokens.
-             */
-            return accountTokens[account];
-        }
-    }
-
-    /**
-     * @notice Increase user's collateral. Increase as much as we can.
-     * @param account The address of the account
-     * @param amount The amount of collateral user wants to increase
-     * @return The actual increased amount of collateral
-     */
-    function increaseUserCollateralInternal(address account, uint256 amount) internal returns (uint256) {
-        uint256 totalCollateralTokensNew = add_(totalCollateralTokens, amount);
-        if (collateralCap == 0 || (collateralCap != 0 && totalCollateralTokensNew <= collateralCap)) {
-            // 1. If collateral cap is not set,
-            // 2. If collateral cap is set but has enough space for this user,
-            // give all the user needs.
-            totalCollateralTokens = totalCollateralTokensNew;
-            accountCollateralTokens[account] = add_(accountCollateralTokens[account], amount);
-
-            emit UserCollateralChanged(account, accountCollateralTokens[account]);
-            return amount;
-        } else if (collateralCap > totalCollateralTokens) {
-            // If the collateral cap is set but the remaining cap is not enough for this user,
-            // give the remaining parts to the user.
-            uint256 gap = sub_(collateralCap, totalCollateralTokens);
-            totalCollateralTokens = collateralCap;
-            accountCollateralTokens[account] = add_(accountCollateralTokens[account], gap);
-
-            emit UserCollateralChanged(account, accountCollateralTokens[account]);
-            return gap;
-        }
-        return 0;
-    }
-
-    /**
-     * @notice Decrease user's collateral. Reject if the amount can't be fully decrease.
-     * @param account The address of the account
-     * @param amount The amount of collateral user wants to decrease
-     */
-    function decreaseUserCollateralInternal(address account, uint256 amount) internal {
-        require(joetroller.redeemAllowed(address(this), account, amount) == 0, "joetroller rejection");
-
-        /*
-         * Return if amount is zero.
-         * Put behind `redeemAllowed` for accuring potential JOE rewards.
-         */
-        if (amount == 0) {
-            return;
-        }
-
-        totalCollateralTokens = sub_(totalCollateralTokens, amount);
-        accountCollateralTokens[account] = sub_(accountCollateralTokens[account], amount);
-
-        emit UserCollateralChanged(account, accountCollateralTokens[account]);
+        return accountTokens[account];
     }
 
     struct MintLocalVars {
@@ -3539,9 +3396,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 mintAmount,
         bool isNative
     ) internal returns (uint256, uint256) {
-        // Make sure accountCollateralTokens of `minter` is initialized.
-        initializeAccountCollateralTokens(minter);
-
         /* Fail if mint not allowed */
         uint256 allowed = joetroller.mintAllowed(address(this), minter, mintAmount);
         if (allowed != 0) {
@@ -3593,20 +3447,9 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         totalSupply = add_(totalSupply, vars.mintTokens);
         accountTokens[minter] = add_(accountTokens[minter], vars.mintTokens);
 
-        /*
-         * We only allocate collateral tokens if the minter has entered the market.
-         */
-        if (JoetrollerInterfaceExtension(address(joetroller)).checkMembership(minter, JToken(this))) {
-            increaseUserCollateralInternal(minter, vars.mintTokens);
-        }
-
         /* We emit a Mint event, and a Transfer event */
         emit Mint(minter, vars.actualMintAmount, vars.mintTokens);
         emit Transfer(address(this), minter, vars.mintTokens);
-
-        /* We call the defense hook */
-        // unused function
-        // joetroller.mintVerify(address(this), minter, vars.actualMintAmount, vars.mintTokens);
 
         return (uint256(Error.NO_ERROR), vars.actualMintAmount);
     }
@@ -3615,6 +3458,8 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 exchangeRateMantissa;
         uint256 redeemTokens;
         uint256 redeemAmount;
+        uint256 totalSupplyNew;
+        uint256 accountTokensNew;
     }
 
     /**
@@ -3632,9 +3477,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 redeemAmountIn,
         bool isNative
     ) internal returns (uint256) {
-        // Make sure accountCollateralTokens of `redeemer` is initialized.
-        initializeAccountCollateralTokens(redeemer);
-
         require(redeemTokensIn == 0 || redeemAmountIn == 0, "one of redeemTokensIn or redeemAmountIn must be zero");
 
         RedeemLocalVars memory vars;
@@ -3661,22 +3503,32 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
             vars.redeemAmount = redeemAmountIn;
         }
 
-        /**
-         * For every user, accountTokens must be greater than or equal to accountCollateralTokens.
-         * The buffer between the two values will be redeemed first.
-         * bufferTokens = accountTokens[redeemer] - accountCollateralTokens[redeemer]
-         * collateralTokens = redeemTokens - bufferTokens
+        /* Fail if redeem not allowed */
+        uint256 allowed = joetroller.redeemAllowed(address(this), redeemer, vars.redeemTokens);
+        if (allowed != 0) {
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REDEEM_JOETROLLER_REJECTION, allowed);
+        }
+
+        /*
+         * Return if redeemTokensIn and redeemAmountIn are zero.
+         * Put behind `redeemAllowed` for accuring potential JOE rewards.
          */
-        uint256 bufferTokens = sub_(accountTokens[redeemer], accountCollateralTokens[redeemer]);
-        uint256 collateralTokens = 0;
-        if (vars.redeemTokens > bufferTokens) {
-            collateralTokens = vars.redeemTokens - bufferTokens;
+        if (redeemTokensIn == 0 && redeemAmountIn == 0) {
+            return uint256(Error.NO_ERROR);
         }
 
         /* Verify market's block timestamp equals current block timestamp */
         if (accrualBlockTimestamp != getBlockTimestamp()) {
             return fail(Error.MARKET_NOT_FRESH, FailureInfo.REDEEM_FRESHNESS_CHECK);
         }
+
+        /*
+         * We calculate the new total supply and redeemer balance, checking for underflow:
+         *  totalSupplyNew = totalSupply - redeemTokens
+         *  accountTokensNew = accountTokens[redeemer] - redeemTokens
+         */
+        vars.totalSupplyNew = sub_(totalSupply, vars.redeemTokens);
+        vars.accountTokensNew = sub_(accountTokens[redeemer], vars.redeemTokens);
 
         /* Fail gracefully if protocol has insufficient cash */
         if (getCashPrior() < vars.redeemAmount) {
@@ -3695,18 +3547,9 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
          */
         doTransferOut(redeemer, vars.redeemAmount, isNative);
 
-        /*
-         * We calculate the new total supply and redeemer balance, checking for underflow:
-         *  totalSupplyNew = totalSupply - redeemTokens
-         *  accountTokensNew = accountTokens[redeemer] - redeemTokens
-         */
-        totalSupply = sub_(totalSupply, vars.redeemTokens);
-        accountTokens[redeemer] = sub_(accountTokens[redeemer], vars.redeemTokens);
-
-        /*
-         * We only deallocate collateral tokens if the redeemer needs to redeem them.
-         */
-        decreaseUserCollateralInternal(redeemer, collateralTokens);
+        /* We write previously calculated values into storage */
+        totalSupply = vars.totalSupplyNew;
+        accountTokens[redeemer] = vars.accountTokensNew;
 
         /* We emit a Transfer event, and a Redeem event */
         emit Transfer(redeemer, address(this), vars.redeemTokens);
@@ -3734,10 +3577,6 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         address borrower,
         uint256 seizeTokens
     ) internal returns (uint256) {
-        // Make sure accountCollateralTokens of `liquidator` and `borrower` are initialized.
-        initializeAccountCollateralTokens(liquidator);
-        initializeAccountCollateralTokens(borrower);
-
         /* Fail if seize not allowed */
         uint256 allowed = joetroller.seizeAllowed(address(this), seizerToken, liquidator, borrower, seizeTokens);
         if (allowed != 0) {
@@ -3757,85 +3596,27 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
             return fail(Error.INVALID_ACCOUNT_PAIR, FailureInfo.LIQUIDATE_SEIZE_LIQUIDATOR_IS_BORROWER);
         }
 
-        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: protocolSeizeShareMantissa}));
-        uint256 liquidatorSeizeTokens = sub_(seizeTokens, protocolSeizeTokens);
-
-        uint256 exchangeRateMantissa = exchangeRateStoredInternal();
-        uint256 protocolSeizeAmount = mul_ScalarTruncate(Exp({mantissa: exchangeRateMantissa}), protocolSeizeTokens);
-
         /*
-         * We calculate the new borrower and liquidator token balances and token collateral balances, failing on underflow/overflow:
-         *  accountTokens[borrower] = accountTokens[borrower] - seizeTokens
-         *  accountTokens[liquidator] = accountTokens[liquidator] + seizeTokens
-         *  accountCollateralTokens[borrower] = accountCollateralTokens[borrower] - seizeTokens
-         *  accountCollateralTokens[liquidator] = accountCollateralTokens[liquidator] + seizeTokens
+         * We calculate the new borrower and liquidator token balances, failing on underflow/overflow:
+         *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
+         *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
         accountTokens[borrower] = sub_(accountTokens[borrower], seizeTokens);
-        accountTokens[liquidator] = add_(accountTokens[liquidator], liquidatorSeizeTokens);
-        accountCollateralTokens[borrower] = sub_(accountCollateralTokens[borrower], seizeTokens);
-        accountCollateralTokens[liquidator] = add_(accountCollateralTokens[liquidator], liquidatorSeizeTokens);
-        totalReserves = add_(totalReserves, protocolSeizeAmount);
-        totalSupply = sub_(totalSupply, protocolSeizeTokens);
+        accountTokens[liquidator] = add_(accountTokens[liquidator], seizeTokens);
 
-        /* Emit a Transfer, UserCollateralChanged and ReservesAdded events */
+        /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, seizeTokens);
-        emit UserCollateralChanged(borrower, accountCollateralTokens[borrower]);
-        emit UserCollateralChanged(liquidator, accountCollateralTokens[liquidator]);
-        emit ReservesAdded(address(this), protocolSeizeAmount, totalReserves);
-
-        /* We call the defense hook */
-        // unused function
-        // joetroller.seizeVerify(address(this), seizerToken, liquidator, borrower, seizeTokens);
-
-        return uint256(Error.NO_ERROR);
-    }
-
-    /*** Admin Functions ***/
-
-    /**
-     * @notice Accrues interest and sets a new collateral seize share for the protocol using _setProtocolSeizeShareFresh
-     * @dev Admin function to accrue interest and set a new collateral seize share
-     * @return uint256 0=success, otherwise a failure (see ErrorReport.sol for details)
-     */
-    function _setProtocolSeizeShare(uint256 newProtocolSeizeShareMantissa) external nonReentrant returns (uint256) {
-        uint256 error = accrueInterest();
-        if (error != uint256(Error.NO_ERROR)) {
-            return fail(Error(error), FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ACCRUE_INTEREST_FAILED);
-        }
-        return _setProtocolSeizeShareFresh(newProtocolSeizeShareMantissa);
-    }
-
-    function _setProtocolSeizeShareFresh(uint256 newProtocolSeizeShareMantissa) internal returns (uint256) {
-        // Check caller is admin
-        if (msg.sender != admin) {
-            return fail(Error.UNAUTHORIZED, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_ADMIN_CHECK);
-        }
-
-        // Verify market's block timestamp equals current block timestamp
-        if (accrualBlockTimestamp != getBlockTimestamp()) {
-            return fail(Error.MARKET_NOT_FRESH, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_FRESH_CHECK);
-        }
-
-        if (newProtocolSeizeShareMantissa > protocolSeizeShareMaxMantissa) {
-            return fail(Error.BAD_INPUT, FailureInfo.SET_PROTOCOL_SEIZE_SHARE_BOUNDS_CHECK);
-        }
-
-        uint256 oldProtocolSeizeShareMantissa = protocolSeizeShareMantissa;
-        protocolSeizeShareMantissa = newProtocolSeizeShareMantissa;
-
-        emit NewProtocolSeizeShare(oldProtocolSeizeShareMantissa, newProtocolSeizeShareMantissa);
 
         return uint256(Error.NO_ERROR);
     }
 }
 
-
 /**
- * @title Cream's JCollateralCapErc20Delegate Contract
+ * @title Cream's JWrappedNativeDelegate Contract
  * @notice JTokens which wrap an EIP-20 underlying and are delegated to
  * @author Cream
  */
-contract JCollateralCapErc20Delegate is JCollateralCapErc20 {
+contract JWrappedNativeDelegateV1 is JWrappedNative {
     /**
      * @notice Construct an empty delegate
      */
@@ -3856,14 +3637,15 @@ contract JCollateralCapErc20Delegate is JCollateralCapErc20 {
 
         require(msg.sender == admin, "only the admin may call _becomeImplementation");
 
-        // Set internal cash when becoming implementation
-        internalCash = getCashOnChain();
-
-        // Set JToken version in joetroller
+        // Set JToken version in joetroller and convert native token to wrapped token.
         JoetrollerInterfaceExtension(address(joetroller)).updateJTokenVersion(
             address(this),
-            JoetrollerV1Storage.Version.COLLATERALCAP
+            JoetrollerV1Storage.Version.WRAPPEDNATIVE
         );
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            WrappedNativeInterface(underlying).deposit.value(balance)();
+        }
     }
 
     /**
@@ -3878,6 +3660,3 @@ contract JCollateralCapErc20Delegate is JCollateralCapErc20 {
         require(msg.sender == admin, "only the admin may call _resignImplementation");
     }
 }
-
-
-
