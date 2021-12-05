@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "address": "0x4A586DAA5D5EDCD8182339C24291FB510fA4d271",
+=======
+  "address": "0xeBeA851D28722E53AaCdC831d2894E25f460e62E",
+>>>>>>> df7b2b5 (Update JUsdcDelegate address)
   "abi": [
     {
       "inputs": [],
