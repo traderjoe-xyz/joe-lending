@@ -686,6 +686,7 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
             vars.redeemAmount = redeemAmountIn;
         }
 
+
         /**
          * For every user, accountTokens must be greater than or equal to accountCollateralTokens.
          * The buffer between the two values will be redeemed first.
@@ -696,6 +697,11 @@ contract JCollateralCapErc20 is JToken, JCollateralCapErc20Interface, JProtocolS
         uint256 collateralTokens = 0;
         if (vars.redeemTokens > bufferTokens) {
             collateralTokens = vars.redeemTokens - bufferTokens;
+        }
+
+        uint256 allowed = joetroller.redeemAllowed(address(this), redeemer, collateralTokens);
+        if (allowed != 0) {
+            return failOpaque(Error.JOETROLLER_REJECTION, FailureInfo.REDEEM_JOETROLLER_REJECTION, allowed);
         }
 
         /* Verify market's block timestamp equals current block timestamp */
