@@ -3,9 +3,9 @@ const { expect } = require("chai");
 
 const TIMELOCK_ADDRESS = "0x243cc1760F0b96c533C11656491e7EBB9663Bf33";
 const JUSDC_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JUsdcDelegator.json");
-const JUSDC_DELEGATE_ARTIFACT = require("../deployments/avalanche/JUsdcDelegate.json");
+const JUSDC_DELEGATE_ARTIFACT_V1 = require("../deployments/avalanche/versions/JUsdcDelegateV1.json");
 const JAVAX_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JAvaxDelegator.json");
-const JAVAX_DELEGATE_ARTIFACT = require("../deployments/avalanche/JAvaxDelegate.json");
+const JAVAX_DELEGATE_ARTIFACT_V1 = require("../deployments/avalanche/versions/JAvaxDelegateV1.json");
 
 describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", function () {
   before(async function () {
@@ -19,8 +19,8 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       JUSDC_DELEGATOR_ARTIFACT.bytecode
     );
     this.JUsdcDelegateCFOld = await ethers.getContractFactory(
-      JUSDC_DELEGATE_ARTIFACT.abi,
-      JUSDC_DELEGATE_ARTIFACT.bytecode
+      JUSDC_DELEGATE_ARTIFACT_V1.abi,
+      JUSDC_DELEGATE_ARTIFACT_V1.bytecode
     );
     this.JUsdcDelegateCFNew = await ethers.getContractFactory(
       "JCollateralCapErc20Delegate"
@@ -31,8 +31,8 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       JAVAX_DELEGATOR_ARTIFACT.bytecode
     );
     this.JAvaxDelegateCFOld = await ethers.getContractFactory(
-      JAVAX_DELEGATE_ARTIFACT.abi,
-      JAVAX_DELEGATE_ARTIFACT.bytecode
+      JAVAX_DELEGATE_ARTIFACT_V1.abi,
+      JAVAX_DELEGATE_ARTIFACT_V1.bytecode
     );
     this.JAvaxDelegateCFNew = await ethers.getContractFactory(
       "JWrappedNativeDelegate"
@@ -103,6 +103,9 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       await this.jUsdcDelegator
         .connect(this.admin)
         ._setImplementation(newDelegate.address, false, "0x");
+      this.jUsdc = await this.JUsdcDelegateCFNew.attach(
+        JUSDC_DELEGATOR_ARTIFACT.address
+      );
 
       // Get storage values after upgrade
       const implAfter = await this.jUsdc.implementation();
@@ -156,6 +159,9 @@ describe("JCollateralCapErc20 and JWrappedNative implementation upgrades", funct
       await this.jAvaxDelegator
         .connect(this.admin)
         ._setImplementation(newDelegate.address, false, "0x");
+      this.jAvax = await this.JAvaxDelegateCFNew.attach(
+        JAVAX_DELEGATOR_ARTIFACT.address
+      );
 
       // Get storage values after upgrade
       const implAfter = await this.jAvax.implementation();
