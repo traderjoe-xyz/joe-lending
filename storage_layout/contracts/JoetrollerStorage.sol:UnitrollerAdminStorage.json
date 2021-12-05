@@ -1,0 +1,43 @@
+{
+  "storage": [
+    {
+      "astId": 21502,
+      "contract": "contracts/JoetrollerStorage.sol:UnitrollerAdminStorage",
+      "label": "admin",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "astId": 21504,
+      "contract": "contracts/JoetrollerStorage.sol:UnitrollerAdminStorage",
+      "label": "pendingAdmin",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 21506,
+      "contract": "contracts/JoetrollerStorage.sol:UnitrollerAdminStorage",
+      "label": "implementation",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 21508,
+      "contract": "contracts/JoetrollerStorage.sol:UnitrollerAdminStorage",
+      "label": "pendingImplementation",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    }
+  }
+}

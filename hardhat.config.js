@@ -8,6 +8,7 @@ require("hardhat-deploy-ethers");
 require("hardhat-spdx-license-identifier");
 require("hardhat-watcher");
 require("hardhat-contract-sizer");
+require("hardhat-storage-layout-diff");
 require("@openzeppelin/hardhat-upgrades");
 
 const { HardhatUserConfig } = require("hardhat/types");

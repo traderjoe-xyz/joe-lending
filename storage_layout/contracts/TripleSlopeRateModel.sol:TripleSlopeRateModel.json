@@ -1,0 +1,72 @@
+{
+  "storage": [
+    {
+      "astId": 25919,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "owner",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "astId": 25927,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "multiplierPerSecond",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 25929,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "baseRatePerSecond",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 25931,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "jumpMultiplierPerSecond",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 25933,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "kink1",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 25935,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "kink2",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 25937,
+      "contract": "contracts/TripleSlopeRateModel.sol:TripleSlopeRateModel",
+      "label": "roof",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

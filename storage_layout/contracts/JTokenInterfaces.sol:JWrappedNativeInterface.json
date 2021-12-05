@@ -1,0 +1,27 @@
+{
+  "storage": [
+    {
+      "astId": 15080,
+      "contract": "contracts/JTokenInterfaces.sol:JWrappedNativeInterface",
+      "label": "underlying",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "astId": 15082,
+      "contract": "contracts/JTokenInterfaces.sol:JWrappedNativeInterface",
+      "label": "implementation",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    }
+  }
+}

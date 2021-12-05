@@ -1,0 +1,19 @@
+{
+  "storage": [
+    {
+      "astId": 21944,
+      "contract": "contracts/Lens/JoeLens.sol:JoeLens",
+      "label": "nativeSymbol",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_string_storage"
+    }
+  ],
+  "types": {
+    "t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    }
+  }
+}

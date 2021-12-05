@@ -45,3 +45,4 @@ junit.xml
 #Buidler files
 cache
 artifacts
+out.html

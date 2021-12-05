@@ -1,0 +1,47 @@
+{
+  "storage": [
+    {
+      "astId": 2081,
+      "contract": "contracts/FlashloanLender.sol:FlashloanLender",
+      "label": "underlyingToJToken",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_mapping(t_address,t_address)"
+    },
+    {
+      "astId": 2083,
+      "contract": "contracts/FlashloanLender.sol:FlashloanLender",
+      "label": "joetroller",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address_payable"
+    },
+    {
+      "astId": 2085,
+      "contract": "contracts/FlashloanLender.sol:FlashloanLender",
+      "label": "owner",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_address)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    }
+  }
+}

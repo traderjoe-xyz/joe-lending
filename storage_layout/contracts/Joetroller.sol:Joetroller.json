@@ -1,0 +1,306 @@
+{
+  "storage": [
+    {
+      "astId": 21502,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "admin",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    },
+    {
+      "astId": 21504,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "pendingAdmin",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 21506,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "implementation",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 21508,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "pendingImplementation",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    },
+    {
+      "astId": 21513,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "oracle",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_contract(PriceOracle)23745"
+    },
+    {
+      "astId": 21515,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "closeFactorMantissa",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 21517,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "liquidationIncentiveMantissa",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 21522,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "accountAssets",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_mapping(t_address,t_array(t_contract(JToken)11808)dyn_storage)"
+    },
+    {
+      "astId": 21541,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "markets",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_mapping(t_address,t_struct(Market)21537_storage)"
+    },
+    {
+      "astId": 21543,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "pauseGuardian",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_address"
+    },
+    {
+      "astId": 21545,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "_mintGuardianPaused",
+      "offset": 20,
+      "slot": "9",
+      "type": "t_bool"
+    },
+    {
+      "astId": 21547,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "_borrowGuardianPaused",
+      "offset": 21,
+      "slot": "9",
+      "type": "t_bool"
+    },
+    {
+      "astId": 21549,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "transferGuardianPaused",
+      "offset": 22,
+      "slot": "9",
+      "type": "t_bool"
+    },
+    {
+      "astId": 21551,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "seizeGuardianPaused",
+      "offset": 23,
+      "slot": "9",
+      "type": "t_bool"
+    },
+    {
+      "astId": 21555,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "mintGuardianPaused",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 21559,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "borrowGuardianPaused",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 21562,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "allMarkets",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_array(t_contract(JToken)11808)dyn_storage"
+    },
+    {
+      "astId": 21564,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "borrowCapGuardian",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_address"
+    },
+    {
+      "astId": 21568,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "borrowCaps",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 21570,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "supplyCapGuardian",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_address"
+    },
+    {
+      "astId": 21574,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "supplyCaps",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 21578,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "creditLimits",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 21582,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "flashloanGuardianPaused",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 21584,
+      "contract": "contracts/Joetroller.sol:Joetroller",
+      "label": "rewardDistributor",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_address_payable"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_contract(JToken)11808)dyn_storage": {
+      "base": "t_contract(JToken)11808",
+      "encoding": "dynamic_array",
+      "label": "contract JToken[]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(JToken)11808": {
+      "encoding": "inplace",
+      "label": "contract JToken",
+      "numberOfBytes": "20"
+    },
+    "t_contract(PriceOracle)23745": {
+      "encoding": "inplace",
+      "label": "contract PriceOracle",
+      "numberOfBytes": "20"
+    },
+    "t_enum(Version)21526": {
+      "encoding": "inplace",
+      "label": "enum JoetrollerV1Storage.Version",
+      "numberOfBytes": "1"
+    },
+    "t_mapping(t_address,t_array(t_contract(JToken)11808)dyn_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => contract JToken[])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_contract(JToken)11808)dyn_storage"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_struct(Market)21537_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct JoetrollerV1Storage.Market)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Market)21537_storage"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(Market)21537_storage": {
+      "encoding": "inplace",
+      "label": "struct JoetrollerV1Storage.Market",
+      "members": [
+        {
+          "astId": 21528,
+          "contract": "contracts/Joetroller.sol:Joetroller",
+          "label": "isListed",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 21530,
+          "contract": "contracts/Joetroller.sol:Joetroller",
+          "label": "collateralFactorMantissa",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 21534,
+          "contract": "contracts/Joetroller.sol:Joetroller",
+          "label": "accountMembership",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_mapping(t_address,t_bool)"
+        },
+        {
+          "astId": 21536,
+          "contract": "contracts/Joetroller.sol:Joetroller",
+          "label": "version",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_enum(Version)21526"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}
