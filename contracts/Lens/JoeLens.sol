@@ -9,6 +9,7 @@ import "../JToken.sol";
 import "../PriceOracle/PriceOracle.sol";
 import "../EIP20Interface.sol";
 import "../Exponential.sol";
+import "./RewardLens.sol";
 
 interface JJLPInterface {
     function claimJoe(address) external returns (uint256);
@@ -53,6 +54,10 @@ contract JoeLens is Exponential {
         bool borrowPaused;
         uint256 supplyCap;
         uint256 borrowCap;
+        uint256 supplyJoeRewardsPerSecond;
+        uint256 borrowJoeRewardsPerSecond;
+        uint256 supplyAvaxRewardsPerSecond;
+        uint256 borrowAvaxRewardsPerSecond;
     }
 
     function jTokenMetadataAll(JToken[] calldata jTokens) external returns (JTokenMetadata[] memory) {
@@ -125,7 +130,11 @@ contract JoeLens is Exponential {
                 supplyPaused: joetroller.mintGuardianPaused(address(jToken)),
                 borrowPaused: joetroller.borrowGuardianPaused(address(jToken)),
                 supplyCap: joetroller.supplyCaps(address(jToken)),
-                borrowCap: joetroller.borrowCaps(address(jToken))
+                borrowCap: joetroller.borrowCaps(address(jToken)),
+                supplyJoeRewardsPerSecond: supplyRewardsJoePerSec(address(jToken)),
+                borrowJoeRewardsPerSecond: borrowRewardsJoePerSec(address(jToken)),
+                supplyAvaxRewardsPerSecond: supplyAvaxRewardsPerSecond(address(jToken)),
+                borrowAvaxRewardsPerSecond: borrowAvaxRewardsPerSecond(address(jToken))
             });
     }
 
