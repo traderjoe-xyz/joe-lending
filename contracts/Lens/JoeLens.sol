@@ -9,7 +9,7 @@ import "../JToken.sol";
 import "../PriceOracle/PriceOracle.sol";
 import "../EIP20Interface.sol";
 import "../Exponential.sol";
-import "./RewardLens.sol";
+import "./IRewardLens.sol";
 
 interface JJLPInterface {
     function claimJoe(address) external returns (uint256);
@@ -25,9 +25,11 @@ interface JJTokenInterface {
  */
 contract JoeLens is Exponential {
     string public nativeSymbol;
+    address private rewardLensAddress;
 
-    constructor(string memory _nativeSymbol) public {
+    constructor(string memory _nativeSymbol, address _rewardLensAddress) public {
         nativeSymbol = _nativeSymbol;
+        rewardLensAddress = _rewardLensAddress;
     }
 
     /*** Market info functions ***/
@@ -107,6 +109,8 @@ contract JoeLens is Exponential {
             totalCollateralTokens = JCollateralCapErc20Interface(address(jToken)).totalCollateralTokens();
         }
 
+        IRewardLens.MarketRewards memory jTokenRewards = IRewardLens(rewardLensAddress).allMarketRewards(address(jToken));
+    
         return
             JTokenMetadata({
                 jToken: address(jToken),
@@ -131,10 +135,10 @@ contract JoeLens is Exponential {
                 borrowPaused: joetroller.borrowGuardianPaused(address(jToken)),
                 supplyCap: joetroller.supplyCaps(address(jToken)),
                 borrowCap: joetroller.borrowCaps(address(jToken)),
-                supplyJoeRewardsPerSecond: supplyRewardsJoePerSec(address(jToken)),
-                borrowJoeRewardsPerSecond: borrowRewardsJoePerSec(address(jToken)),
-                supplyAvaxRewardsPerSecond: supplyAvaxRewardsPerSecond(address(jToken)),
-                borrowAvaxRewardsPerSecond: borrowAvaxRewardsPerSecond(address(jToken))
+                supplyJoeRewardsPerSecond: jTokenRewards.supplyRewardsJoePerSec,
+                borrowJoeRewardsPerSecond: jTokenRewards.borrowRewardsJoePerSec,
+                supplyAvaxRewardsPerSecond: jTokenRewards.supplyRewardsAvaxPerSec,
+                borrowAvaxRewardsPerSecond: jTokenRewards.borrowRewardsAvaxPerSec
             });
     }
 
