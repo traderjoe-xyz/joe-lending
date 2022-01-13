@@ -86,7 +86,6 @@ contract JoeLens is Exponential {
         Joetroller joetroller,
         PriceOracle priceOracle
     ) internal returns (JTokenMetadata memory) {
-        uint256 exchangeRateCurrent = jToken.exchangeRateCurrent();
         (bool isListed, uint256 collateralFactorMantissa, JoetrollerV1Storage.Version version) = joetroller.markets(
             address(jToken)
         );
@@ -104,7 +103,7 @@ contract JoeLens is Exponential {
             underlyingDecimals = EIP20Interface(jErc20.underlying()).decimals();
         }
 
-        if (version == JoetrollerV1Storage.Version.COLLATERALCAP) {
+        if (version == JoetrollerV1Storage.Version.COLLATERALCAP) { 
             collateralCap = JCollateralCapErc20Interface(address(jToken)).collateralCap();
             totalCollateralTokens = JCollateralCapErc20Interface(address(jToken)).totalCollateralTokens();
         }
@@ -114,7 +113,7 @@ contract JoeLens is Exponential {
         return
             JTokenMetadata({
                 jToken: address(jToken),
-                exchangeRateCurrent: exchangeRateCurrent,
+                exchangeRateCurrent: jToken.exchangeRateCurrent(),
                 supplyRatePerSecond: jToken.supplyRatePerSecond(),
                 borrowRatePerSecond: jToken.borrowRatePerSecond(),
                 reserveFactorMantissa: jToken.reserveFactorMantissa(),
@@ -141,7 +140,7 @@ contract JoeLens is Exponential {
                 borrowAvaxRewardsPerSecond: jTokenRewards.borrowRewardsAvaxPerSec
             });
     }
-
+    
     /*** Account JToken info functions ***/
 
     struct JTokenBalances {
