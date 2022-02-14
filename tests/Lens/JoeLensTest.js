@@ -47,6 +47,59 @@ describe("JoeLens", () => {
   });
 
   describe("jTokenMetadata", () => {
+    its ("returns correct values from reward lens", async () => {
+      let rewardLens = await makeRewardLens();
+      let jCollateralCapErc20 = await makeJToken({
+        kind: "jcollateralcap",
+        supportMarket: true,
+      });
+
+      await send(rewardLens, "setMarketRewards", [
+        jCollateralCapErc20._address, 
+        1, 
+        2, 
+        3, 
+        4
+      ])
+
+      expect(
+        cullTuple(
+          await call(joeLens, "jTokenMetadata", [jCollateralCapErc20._address])
+        )
+      ).toEqual({
+        jToken: jCollateralCapErc20._address,
+        exchangeRateCurrent: "1000000000000000000",
+        supplyRatePerSecond: "0",
+        borrowRatePerSecond: "0",
+        reserveFactorMantissa: "0",
+        totalBorrows: "0",
+        totalReserves: "0",
+        totalSupply: "0",
+        totalCash: "0",
+        totalCollateralTokens: "0",
+        isListed: true,
+        collateralFactorMantissa: "0",
+        underlyingAssetAddress: await call(
+          jCollateralCapErc20,
+          "underlying",
+          []
+        ),
+        jTokenDecimals: "8",
+        underlyingDecimals: "18",
+        version: "1",
+        collateralCap: "0",
+        underlyingPrice: "0",
+        supplyPaused: false,
+        borrowPaused: false,
+        supplyCap: "0",
+        borrowCap: "0",
+        supplyJoeRewardsPerSecond: "1",
+        borrowJoeRewardsPerSecond: "2",
+        supplyAvaxRewardsPerSecond: "3",
+        borrowAvaxRewardsPerSecond: "4"
+      });
+    })
+
     it("is correct for a jErc20", async () => {
       let jErc20 = await makeJToken();
       await send(jErc20.joetroller, "_supportMarket", [jErc20._address, 0]);
@@ -88,6 +141,10 @@ describe("JoeLens", () => {
         borrowPaused: true,
         supplyCap: "100",
         borrowCap: "200",
+        supplyJoeRewardsPerSecond: "0",
+        borrowJoeRewardsPerSecond: "0",
+        supplyAvaxRewardsPerSecond: "0",
+        borrowAvaxRewardsPerSecond: "0"
       });
     });
 
@@ -121,6 +178,10 @@ describe("JoeLens", () => {
         borrowPaused: false,
         supplyCap: "0",
         borrowCap: "0",
+        supplyJoeRewardsPerSecond: "0",
+        borrowJoeRewardsPerSecond: "0",
+        supplyAvaxRewardsPerSecond: "0",
+        borrowAvaxRewardsPerSecond: "0"
       });
     });
 
@@ -160,6 +221,10 @@ describe("JoeLens", () => {
         borrowPaused: false,
         supplyCap: "0",
         borrowCap: "0",
+        supplyJoeRewardsPerSecond: "0",
+        borrowJoeRewardsPerSecond: "0",
+        supplyAvaxRewardsPerSecond: "0",
+        borrowAvaxRewardsPerSecond: "0"
       });
     });
 
@@ -202,6 +267,10 @@ describe("JoeLens", () => {
         borrowPaused: false,
         supplyCap: "0",
         borrowCap: "0",
+        supplyJoeRewardsPerSecond: "0",
+        borrowJoeRewardsPerSecond: "0",
+        supplyAvaxRewardsPerSecond: "0",
+        borrowAvaxRewardsPerSecond: "0"
       });
     });
 
@@ -237,6 +306,10 @@ describe("JoeLens", () => {
         borrowPaused: false,
         supplyCap: "0",
         borrowCap: "0",
+        supplyJoeRewardsPerSecond: "0",
+        borrowJoeRewardsPerSecond: "0",
+        supplyAvaxRewardsPerSecond: "0",
+        borrowAvaxRewardsPerSecond: "0"
       });
     });
   });
@@ -294,6 +367,10 @@ describe("JoeLens", () => {
           borrowPaused: false,
           supplyCap: "0",
           borrowCap: "0",
+          supplyJoeRewardsPerSecond: "0",
+          borrowJoeRewardsPerSecond: "0",
+          supplyAvaxRewardsPerSecond: "0",
+          borrowAvaxRewardsPerSecond: "0"
         },
         {
           borrowRatePerSecond: "0",
@@ -318,6 +395,10 @@ describe("JoeLens", () => {
           borrowPaused: false,
           supplyCap: "0",
           borrowCap: "0",
+          supplyJoeRewardsPerSecond: "0",
+          borrowJoeRewardsPerSecond: "0",
+          supplyAvaxRewardsPerSecond: "0",
+          borrowAvaxRewardsPerSecond: "0"
         },
         {
           borrowRatePerSecond: "0",
@@ -346,6 +427,10 @@ describe("JoeLens", () => {
           borrowPaused: false,
           supplyCap: "0",
           borrowCap: "0",
+          supplyJoeRewardsPerSecond: "0",
+          borrowJoeRewardsPerSecond: "0",
+          supplyAvaxRewardsPerSecond: "0",
+          borrowAvaxRewardsPerSecond: "0"
         },
         {
           jToken: jWrappedNative._address,
@@ -370,6 +455,10 @@ describe("JoeLens", () => {
           borrowPaused: false,
           supplyCap: "0",
           borrowCap: "0",
+          supplyJoeRewardsPerSecond: "0",
+          borrowJoeRewardsPerSecond: "0",
+          supplyAvaxRewardsPerSecond: "0",
+          borrowAvaxRewardsPerSecond: "0"
         },
       ]);
     });

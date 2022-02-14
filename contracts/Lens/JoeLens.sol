@@ -103,13 +103,13 @@ contract JoeLens is Exponential {
             underlyingDecimals = EIP20Interface(jErc20.underlying()).decimals();
         }
 
-        if (version == JoetrollerV1Storage.Version.COLLATERALCAP) { 
+        if (version == JoetrollerV1Storage.Version.COLLATERALCAP) {
             collateralCap = JCollateralCapErc20Interface(address(jToken)).collateralCap();
             totalCollateralTokens = JCollateralCapErc20Interface(address(jToken)).totalCollateralTokens();
         }
 
         IRewardLens.MarketRewards memory jTokenRewards = IRewardLens(rewardLensAddress).allMarketRewards(address(jToken));
-    
+
         return
             JTokenMetadata({
                 jToken: address(jToken),
@@ -140,7 +140,7 @@ contract JoeLens is Exponential {
                 borrowAvaxRewardsPerSecond: jTokenRewards.borrowRewardsAvaxPerSec
             });
     }
-    
+
     /*** Account JToken info functions ***/
 
     struct JTokenBalances {
