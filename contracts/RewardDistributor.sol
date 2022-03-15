@@ -256,7 +256,11 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = rewardInitialIndex;
+            if (supplyIndex.mantissa < 1e36) {
+                supplierIndex.mantissa = supplierIndex.mantissa;
+            } else {
+                supplierIndex.mantissa = rewardInitialIndex;
+            }
         }
 
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
