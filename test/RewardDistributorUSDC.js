@@ -2,7 +2,7 @@ const { ethers, network } = require("hardhat");
 const { expect } = require("chai");
 const { duration, increase } = require("./utilities/time");
 
-describe.only("Enabling USDC native rewards", function () {
+describe("Enabling USDC native rewards", function () {
   before(async function () {
 
     // Addresses
@@ -46,6 +46,12 @@ describe.only("Enabling USDC native rewards", function () {
     this.depositor = await ethers.getSigner(this.usdcHolder);
 
     // Contracts
+    // const fs = require('fs')
+    // await hre.network.provider.send(
+    //     "hardhat_setCode",
+    //     [this.rewarderAddress, JSON.parse(fs.readFileSync('artifacts/contracts/RewardDistributor.sol/RewardDistributor.json')).deployedBytecode]
+    // );
+
     this.usdcToken = await ethers.getContractAt(
         "EIP20Interface",
         this.usdcAddress
@@ -79,13 +85,13 @@ describe.only("Enabling USDC native rewards", function () {
   });
 
   it("accrues reward if reward rate > 1*10**15", async function () {
-	await this.rewarder.connect(this.rewarderAdmin)._setRewardSpeed(0, this.jusdcAddress, String(1*10**16), 0)
     await this.jusdcToken.connect(this.depositor).mint(1*10**6)
+	await this.rewarder.connect(this.rewarderAdmin)._setRewardSpeed(0, this.jusdcAddress, String(1*10**16), 0)
 	await this.rewarder.connect(this.rewarderAdmin)
       .updateAndDistributeSupplierRewardsForToken(this.jusdcAddress, this.usdcHolder);
     expect(
       await this.rewarder.rewardAccrued(0, this.usdcHolder)
-    ).to.equal("12864569115")
+    ).to.equal("7907683090")  // fails with 33636821352
   });
 
   it("only accrues rewards from when rewards enabled", async function () {
@@ -97,7 +103,7 @@ describe.only("Enabling USDC native rewards", function () {
     await this.rewarder.connect(this.rewarderAdmin).updateAndDistributeSupplierRewardsForToken(this.jusdcAddress, this.usdcHolder);
     expect(
       await this.rewarder.rewardAccrued(0, this.usdcHolder)
-    ).to.equal("12864569115")
+    ).to.equal("7907683090")  // fails with 33344996823534703
   });
 
   after(async function () {

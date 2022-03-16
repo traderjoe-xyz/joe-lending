@@ -140,6 +140,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
+            rewardSupplyState[rewardType][address(jToken)].timestamp = safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits");
             if (
                 rewardSupplyState[rewardType][address(jToken)].index == 0 &&
                 rewardSupplyState[rewardType][address(jToken)].timestamp == 0
@@ -165,7 +166,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         } else if (newBorrowSpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
-
+            rewardSupplyState[rewardType][address(jToken)].timestamp = safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits");
             if (
                 rewardBorrowState[rewardType][address(jToken)].index == 0 &&
                 rewardBorrowState[rewardType][address(jToken)].timestamp == 0
@@ -256,7 +257,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = supplyIndex.mantissa;
+            supplierIndex.mantissa = rewardInitialIndex;
         }
 
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
