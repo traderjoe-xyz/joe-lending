@@ -127,16 +127,22 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
                 oldRewardDistributor.rewardSupplySpeeds(rewardType, address(jToken)) == 0,
                 "old supply reward not stopped"
             );
-            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardSupplyState(rewardType, address(jToken));
-            rewardSupplyState[rewardType][address(jToken)] = RewardMarketState({index: index, timestamp: timestamp});
+            (uint224 index, ) = oldRewardDistributor.rewardSupplyState(rewardType, address(jToken));
+            rewardSupplyState[rewardType][address(jToken)] = RewardMarketState({
+                index: index,
+                timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
+            });
         }
         if (rewardBorrowState[rewardType][address(jToken)].timestamp == 0) {
             require(
                 oldRewardDistributor.rewardBorrowSpeeds(rewardType, address(jToken)) == 0,
                 "old borrow reward not stopped"
             );
-            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardBorrowState(rewardType, address(jToken));
-            rewardBorrowState[rewardType][address(jToken)] = RewardMarketState({index: index, timestamp: timestamp});
+            (uint224 index, ) = oldRewardDistributor.rewardBorrowState(rewardType, address(jToken));
+            rewardBorrowState[rewardType][address(jToken)] = RewardMarketState({
+                index: index,
+                timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
+            });
         }
 
         setRewardSpeedInternal(rewardType, jToken, rewardSupplySpeed, rewardBorrowSpeed);
