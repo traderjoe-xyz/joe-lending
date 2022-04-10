@@ -46,11 +46,17 @@ contract RewardDistributorStorage {
     /// @notice The JOE/AVAX accrued but not yet transferred to each user
     mapping(uint8 => mapping(address => uint256)) public rewardAccrued;
 
+    /// @notice If the JOE/AVAX rewards has already been updated for each user
+    mapping(uint8 => mapping(address => bool)) public oldRewardUpdated;
+
     /// @notice The initial reward index for a market
     uint224 public constant rewardInitialIndex = 1e36;
 
     /// @notice JOE token contract address
     address public joeAddress;
+
+    /// @notice The old rewarder address
+    RewardDistributor public oldRewardDistributor;
 }
 
 contract RewardDistributor is RewardDistributorStorage, Exponential {
@@ -83,8 +89,9 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
     bool private initialized;
 
-    constructor() public {
+    constructor(RewardDistributor _oldRewardDistributor) public {
         admin = msg.sender;
+        oldRewardDistributor = _oldRewardDistributor;
     }
 
     function initialize() public {
@@ -115,6 +122,23 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) public {
         require(rewardType <= 1, "rewardType is invalid");
         require(adminOrInitializing(), "only admin can set reward speed");
+        if (rewardSupplyState[rewardType][address(jToken)].timestamp == 0) {
+            require(
+                oldRewardDistributor.rewardSupplySpeeds(rewardType, address(jToken)) == 0,
+                "old supply reward not stopped"
+            );
+            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardSupplyState(rewardType, address(jToken));
+            rewardSupplyState[rewardType][address(jToken)] = RewardMarketState({index: index, timestamp: timestamp});
+        }
+        if (rewardBorrowState[rewardType][address(jToken)].timestamp == 0) {
+            require(
+                oldRewardDistributor.rewardBorrowSpeeds(rewardType, address(jToken)) == 0,
+                "old borrow reward not stopped"
+            );
+            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardBorrowState(rewardType, address(jToken));
+            rewardBorrowState[rewardType][address(jToken)] = RewardMarketState({index: index, timestamp: timestamp});
+        }
+
         setRewardSpeedInternal(rewardType, jToken, rewardSupplySpeed, rewardBorrowSpeed);
     }
 
@@ -133,14 +157,15 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) internal {
         // Handle new supply speeed
         uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
+
         if (currentRewardSupplySpeed != 0) {
             // note that JOE speed could be set to 0 to halt liquidity rewards for a market
             updateRewardSupplyIndex(rewardType, address(jToken));
         } else if (newSupplySpeed != 0) {
             // Add the JOE market
+
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
 
-            rewardSupplyState[rewardType][address(jToken)].timestamp = safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits");
             if (
                 rewardSupplyState[rewardType][address(jToken)].index == 0 &&
                 rewardSupplyState[rewardType][address(jToken)].timestamp == 0
@@ -149,6 +174,11 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
                     index: rewardInitialIndex,
                     timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
+            } else {
+                rewardSupplyState[rewardType][address(jToken)].timestamp = safe32(
+                    getBlockTimestamp(),
+                    "block timestamp exceeds 32 bits"
+                );
             }
         }
 
@@ -166,7 +196,6 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         } else if (newBorrowSpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
-            rewardSupplyState[rewardType][address(jToken)].timestamp = safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits");
             if (
                 rewardBorrowState[rewardType][address(jToken)].index == 0 &&
                 rewardBorrowState[rewardType][address(jToken)].timestamp == 0
@@ -175,6 +204,11 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
                     index: rewardInitialIndex,
                     timestamp: safe32(getBlockTimestamp(), "block timestamp exceeds 32 bits")
                 });
+            } else {
+                rewardBorrowState[rewardType][address(jToken)].timestamp = safe32(
+                    getBlockTimestamp(),
+                    "block timestamp exceeds 32 bits"
+                );
             }
         }
 
@@ -197,9 +231,9 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         uint256 deltaTimestamps = sub_(blockTimestamp, uint256(supplyState.timestamp));
         if (deltaTimestamps > 0 && supplySpeed > 0) {
             uint256 supplyTokens = JToken(jToken).totalSupply();
-            uint256 rewardAccrued = mul_(deltaTimestamps, supplySpeed);
+            uint256 rewardAccrued = mul_(deltaTimestamps, supplySpeed); // rewards = supply * timeEllapsed
             Double memory ratio = supplyTokens > 0 ? fraction(rewardAccrued, supplyTokens) : Double({mantissa: 0});
-            Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
+            Double memory index = add_(Double({mantissa: supplyState.index}), ratio); // accRewardPerShare += rewards / totalSupply
             rewardSupplyState[rewardType][jToken] = RewardMarketState({
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
                 timestamp: safe32(blockTimestamp, "block timestamp exceeds 32 bits")
@@ -252,8 +286,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
+        if (supplyState.index == 0) {
+            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardSupplyState(rewardType, jToken);
+            supplyState.index = index;
+            supplyState.timestamp = timestamp;
+        }
         Double memory supplyIndex = Double({mantissa: supplyState.index});
         Double memory supplierIndex = Double({mantissa: rewardSupplierIndex[rewardType][jToken][supplier]});
+        if (supplierIndex.mantissa == 0) {
+            supplierIndex = Double({mantissa: oldRewardDistributor.rewardSupplierIndex(rewardType, jToken, supplier)});
+        }
         rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex.mantissa;
 
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
@@ -284,8 +326,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     ) internal {
         require(rewardType <= 1, "rewardType is invalid");
         RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
+        if (borrowState.index == 0) {
+            (uint224 index, uint32 timestamp) = oldRewardDistributor.rewardBorrowState(rewardType, jToken);
+            borrowState.index = index;
+            borrowState.timestamp = timestamp;
+        }
         Double memory borrowIndex = Double({mantissa: borrowState.index});
         Double memory borrowerIndex = Double({mantissa: rewardBorrowerIndex[rewardType][jToken][borrower]});
+        if (borrowerIndex.mantissa == 0) {
+            borrowerIndex = Double({mantissa: oldRewardDistributor.rewardBorrowerIndex(rewardType, jToken, borrower)});
+        }
         rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex.mantissa;
 
         if (borrowerIndex.mantissa > 0) {
@@ -371,13 +421,26 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         bool suppliers
     ) public payable {
         require(rewardType <= 1, "rewardType is invalid");
+        uint256 len = holders.length;
+        {
+            for (uint256 i; i < len; i++) {
+                if (!oldRewardUpdated[rewardType][holders[i]]) {
+                    oldRewardDistributor.claimReward(rewardType, holders, jTokens, borrowers, suppliers);
+                    rewardAccrued[rewardType][holders[i]] = add_(
+                        rewardAccrued[rewardType][holders[i]],
+                        oldRewardDistributor.rewardAccrued(rewardType, holders[i])
+                    );
+                    oldRewardUpdated[rewardType][holders[i]] = true;
+                }
+            }
+        }
         for (uint256 i = 0; i < jTokens.length; i++) {
             JToken jToken = jTokens[i];
             require(joetroller.isMarketListed(address(jToken)), "market must be listed");
             if (borrowers == true) {
                 Exp memory borrowIndex = Exp({mantissa: jToken.borrowIndex()});
                 updateRewardBorrowIndex(rewardType, address(jToken), borrowIndex);
-                for (uint256 j = 0; j < holders.length; j++) {
+                for (uint256 j = 0; j < len; j++) {
                     distributeBorrowerReward(rewardType, address(jToken), holders[j], borrowIndex);
                     rewardAccrued[rewardType][holders[j]] = grantRewardInternal(
                         rewardType,
