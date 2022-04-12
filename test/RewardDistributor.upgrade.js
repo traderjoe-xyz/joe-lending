@@ -13,7 +13,7 @@ const DEV_ADDRESS = "0x66Fb02746d72bC640643FdBa3aEFE9C126f0AA4f";
 const USDC_LENDER = "0xc5ed2333f8a2c351fca35e5ebadb2a82f5d254c3";
 const JOE_ADDRESS = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
 
-describe.only("RewardDistributor", function () {
+describe("RewardDistributor", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();

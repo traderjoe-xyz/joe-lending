@@ -15,7 +15,7 @@ const USDC_ADDRESS = "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e";
 
 let rewardedJoe;
 
-describe.only("RewardDistributor USDC", function () {
+describe("RewardDistributor USDC", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();
