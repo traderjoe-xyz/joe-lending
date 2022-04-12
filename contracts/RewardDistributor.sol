@@ -8,6 +8,8 @@ import "./Exponential.sol";
 import "./JToken.sol";
 import "./SafeMath.sol";
 
+import "hardhat/console.sol";
+
 interface IJoetroller {
     function isMarketListed(address jTokenAddress) external view returns (bool);
 
@@ -59,9 +61,6 @@ contract RewardDistributorStorage {
 
     /// @notice If user claimed JOE/AVAX from the old rewarder
     mapping(uint8 => mapping(address => bool)) public claimedFromOldRewarder;
-
-    /// @notice The initial reward index for a market
-    uint224 public constant rewardInitialIndex = 1e36;
 
     /// @notice JOE token contract address
     EIP20Interface public joe;
@@ -308,7 +307,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         } else if (newRewardSupplySpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(jToken), "reward market is not listed");
-            rewardBorrowState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
+            rewardSupplyState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
         }
 
         if (currentRewardSupplySpeed != newRewardSupplySpeed) {
@@ -411,8 +410,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         uint8 rewardType,
         address jToken,
         address supplier
-    ) private verifyRewardType(rewardType) returns (uint256 supplierReward) {
-        // TODO check if any function use any internal by unheriting this contract (doubt)
+    ) private verifyRewardType(rewardType) returns (uint256) {
         (uint256 supplyIndex, uint256 supplierIndex, uint256 supplierReward) = _getSupplyIndexAndSupplierReward(
             rewardType,
             jToken,
@@ -422,6 +420,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex;
         }
         emit DistributedSupplierReward(rewardType, JToken(jToken), supplier, supplierReward, supplyIndex);
+        return supplierReward;
     }
 
     /**
@@ -438,7 +437,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address jToken,
         address borrower,
         uint256 marketBorrowIndex
-    ) private verifyRewardType(rewardType) returns (uint256 borrowerReward) {
+    ) private verifyRewardType(rewardType) returns (uint256) {
         (uint256 borrowIndex, uint256 borrowerIndex, uint256 borrowerReward) = _getBorrowIndexAndBorrowerReward(
             rewardType,
             jToken,
@@ -449,6 +448,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex;
         }
         emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerReward, borrowIndex);
+        return borrowerReward;
     }
 
     /**
@@ -478,6 +478,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
 
         uint256 deltaIndex = supplyIndex.sub(supplierIndex);
         uint256 supplierAmounts = JToken(jToken).balanceOf(supplier);
+        console.log(supplyIndex, supplierIndex, supplierAmounts);
 
         supplierReward = supplierAmounts.mul(deltaIndex).div(doubleScale);
     }
@@ -551,6 +552,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             if (supplier) {
                 _updateRewardSupplyIndex(rewardType, address(jToken));
                 uint256 reward = _distributeSupplierReward(rewardType, address(jToken), holder);
+                console.log("supply", reward);
                 rewards = rewards.add(reward);
             }
         }

@@ -13,7 +13,7 @@ const DEV_ADDRESS = "0x66Fb02746d72bC640643FdBa3aEFE9C126f0AA4f";
 const USDC_LENDER = "0xc5ed2333f8a2c351fca35e5ebadb2a82f5d254c3";
 const JOE_ADDRESS = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
 
-describe("RewardDistributor", function () {
+describe.only("RewardDistributor", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();
@@ -104,7 +104,7 @@ describe("RewardDistributor", function () {
     );
   });
 
-  it("automatically accrues rewards for current lenders after upgrade", async function () {
+  it.only("automatically accrues rewards for current lenders after upgrade", async function () {
     // Get USDC lender who has accrued rewards from V1
     const rewardsBefore = await this.joeLens.callStatic[
       "getClaimableRewards(uint8,address,address,address)"
@@ -118,10 +118,10 @@ describe("RewardDistributor", function () {
       ._setRewardDistributor(this.rewardDistributorNew.address);
     await this.rewardDistributorNew
       .connect(this.dev)
-      .setJoeAddress(this.joe.address);
+      .setJoe(this.joe.address);
     await this.rewardDistributorNew
       .connect(this.dev)
-      ._setRewardSpeed(0, this.jUsdc.address, "10", "10");
+      .setRewardSpeed(0, this.jUsdc.address, "10", "10");
 
     // Expect rewards to be zeroed out since new rewarder resets state
     const rewardsAtT0 = await this.joeLens.callStatic[
