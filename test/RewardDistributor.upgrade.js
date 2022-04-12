@@ -1,4 +1,4 @@
-const { ethers, network } = require("hardhat");
+const { ethers, network, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const { duration, increase } = require("./utilities/time");
 
@@ -13,7 +13,7 @@ const DEV_ADDRESS = "0x66Fb02746d72bC640643FdBa3aEFE9C126f0AA4f";
 const USDC_LENDER = "0xc5ed2333f8a2c351fca35e5ebadb2a82f5d254c3";
 const JOE_ADDRESS = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
 
-describe("RewardDistributor", function () {
+describe.only("RewardDistributor", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();
@@ -91,9 +91,13 @@ describe("RewardDistributor", function () {
     });
 
     // Deploy new rewarder and fund with JOE
-    this.rewardDistributorNew = await this.RewardDistributorCFNew.connect(
-      this.dev
-    ).deploy();
+    this.rewardDistributorNew = await upgrades.deployProxy(
+      this.RewardDistributorCFNew,
+      []
+    );
+
+    await this.rewardDistributorNew.setAdmin(this.dev.address);
+
     await this.joe.connect(this.dev).transfer(
       this.rewardDistributorNew.address,
       ethers.utils.parseEther("1000") // 1 million JOE
@@ -106,8 +110,9 @@ describe("RewardDistributor", function () {
       "getClaimableRewards(uint8,address,address,address)"
     ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
     expect(rewardsBefore).to.be.gt("0");
+    // Upgrade RewardDistributor from V1 to V2
+    await this.rewardDistributorNew.connect(this.dev).setJoe(this.joe.address);
 
-    // Upgrade RewardDistributor from V1 to V2 and set reward speeds for JOE
     await this.joetroller
       .connect(this.admin)
       ._setRewardDistributor(this.rewardDistributorNew.address);
@@ -123,6 +128,16 @@ describe("RewardDistributor", function () {
       "getClaimableRewards(uint8,address,address,address)"
     ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
     expect(rewardsAtT0).to.equal("0");
+
+    // Set reward speeds for JOE for jUSDC market
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      .setRewardSpeed(
+        0,
+        this.jUsdc.address,
+        ethers.utils.parseEther("0.1"),
+        ethers.utils.parseEther("0.1")
+      );
 
     // Fast forward 10 seconds
     await increase(duration.seconds(10));
@@ -150,12 +165,7 @@ describe("RewardDistributor", function () {
     ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
     expect(rewardsBefore).to.be.gt("0");
 
-    // Zero out reward rate on old rewarder
-    await this.rewardDistributorOld
-      .connect(this.dev)
-      ._setRewardSpeed(0, this.jUsdc.address, "0");
-
-    // Upgrade RewardDistributor from V1 to V2 and set reward speeds for JOE
+    await this.rewardDistributorNew.connect(this.dev).setJoe(this.joe.address);
     await this.joetroller
       .connect(this.admin)
       ._setRewardDistributor(this.rewardDistributorNew.address);
