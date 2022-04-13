@@ -31,7 +31,7 @@ describe("RewardDistributor", function () {
       OLD_REWARD_DISTRIBUTOR_ARTIFACT.bytecode
     );
     this.RewardDistributorCFNew = await ethers.getContractFactory(
-      "RewardDistributor"
+      "RewardDistributorV2"
     );
     this.JoeCF = await ethers.getContractFactory("JErc20");
 
