@@ -8,8 +8,6 @@ import "./Exponential.sol";
 import "./JToken.sol";
 import "./SafeMath.sol";
 
-import "hardhat/console.sol";
-
 interface IJoetroller {
     function isMarketListed(address jTokenAddress) external view returns (bool);
 
@@ -189,6 +187,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         }
     }
 
+    /**
+     * @notice Returns the pending JOE/AVAX reward accrued by the holder
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to check pending JOE/AVAX for
+     * @return pendingReward The pending JOE/AVAX reward of that holder
+     */
+    function pendingReward(uint8 rewardType, address holder) external view returns (uint256) {
+        return _pendingReward(rewardType, holder, joetroller.getAllMarkets());
+    }
+
     /*** Joetroller Or Joe Distribution Admin ***/
 
     /**
@@ -351,22 +359,12 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
      * @param jToken The market whose supply index to update
      */
     function _updateRewardSupplyIndex(uint8 rewardType, address jToken) private verifyRewardType(rewardType) {
-        RewardMarketState storage supplyState = rewardSupplyState[rewardType][jToken];
-        uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
-        uint256 deltaTimestamps = _getBlockTimestamp().sub(supplyState.timestamp);
+        (uint224 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
 
-        if (deltaTimestamps != 0) {
-            if (supplySpeed != 0) {
-                uint256 supplyTokens = JToken(jToken).totalSupply();
-                if (supplyTokens != 0) {
-                    uint256 reward = deltaTimestamps.mul(supplySpeed);
-                    supplyState.index = _safe224(
-                        uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens))
-                    );
-                }
-            }
-            supplyState.timestamp = _safe32(_getBlockTimestamp());
+        if (update) {
+            rewardSupplyState[rewardType][jToken].index = supplyIndex;
         }
+        rewardSupplyState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
     }
 
     /**
@@ -380,27 +378,16 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address jToken,
         uint256 marketBorrowIndex
     ) private verifyRewardType(rewardType) {
-        RewardMarketState storage borrowState = rewardBorrowState[rewardType][jToken];
-        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
-        uint256 deltaTimestamps = _getBlockTimestamp().sub(borrowState.timestamp);
+        (uint224 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
 
-        if (deltaTimestamps != 0) {
-            if (borrowSpeed != 0) {
-                uint256 totalBorrows = JToken(jToken).totalBorrows();
-                uint256 borrowAmount = totalBorrows.mul(expScale).div(marketBorrowIndex);
-                if (borrowAmount != 0) {
-                    uint256 reward = deltaTimestamps.mul(borrowSpeed);
-                    borrowState.index = _safe224(
-                        uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount))
-                    );
-                }
-            }
-            borrowState.timestamp = _safe32(_getBlockTimestamp());
+        if (update) {
+            rewardBorrowState[rewardType][jToken].index = borrowIndex;
         }
+        rewardBorrowState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
     }
 
     /**
-     * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
+     * @notice Calculate JOE/AVAX accrued by a supplier
      * @param rewardType 0: JOE, 1: AVAX
      * @param jToken The market in which the supplier is interacting
      * @param supplier The address of the supplier to distribute JOE/AVAX to
@@ -411,11 +398,13 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address jToken,
         address supplier
     ) private verifyRewardType(rewardType) returns (uint256) {
-        (uint256 supplyIndex, uint256 supplierIndex, uint256 supplierReward) = _getSupplyIndexAndSupplierReward(
-            rewardType,
-            jToken,
-            supplier
-        );
+        uint256 supplyIndex = rewardSupplyState[rewardType][jToken].index;
+        uint256 supplierIndex = rewardSupplierIndex[rewardType][jToken][supplier];
+
+        uint256 deltaIndex = supplyIndex.sub(supplierIndex);
+        uint256 supplierAmount = JToken(jToken).balanceOf(supplier);
+        uint256 supplierReward = supplierAmount.mul(deltaIndex).div(doubleScale);
+
         if (supplyIndex != supplierIndex) {
             rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex;
         }
@@ -424,7 +413,7 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     }
 
     /**
-     * @notice Calculate JOE/AVAX accrued by a borrower and possibly transfer it to them
+     * @notice Calculate JOE/AVAX accrued by a borrower
      * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.
      * @param rewardType 0: JOE, 1: AVAX
      * @param jToken The market in which the borrower is interacting
@@ -438,81 +427,18 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
         address borrower,
         uint256 marketBorrowIndex
     ) private verifyRewardType(rewardType) returns (uint256) {
-        (uint256 borrowIndex, uint256 borrowerIndex, uint256 borrowerReward) = _getBorrowIndexAndBorrowerReward(
-            rewardType,
-            jToken,
-            borrower,
-            marketBorrowIndex
-        );
+        uint256 borrowIndex = rewardBorrowState[rewardType][jToken].index;
+        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][jToken][borrower];
+
+        uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
+        uint256 borrowerAmount = JToken(jToken).borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);
+        uint256 borrowerReward = borrowerAmount.mul(deltaIndex).div(doubleScale);
+
         if (borrowIndex != borrowerIndex) {
             rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex;
         }
         emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerReward, borrowIndex);
         return borrowerReward;
-    }
-
-    /**
-     * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
-     * @param rewardType 0: JOE, 1: AVAX
-     * @param jToken The market in which the supplier is interacting
-     * @param supplier The address of the supplier to distribute JOE/AVAX to
-     * @return supplyIndex The JOE/AVAX supply index of that market
-     * @return supplierIndex The JOE/AVAX supply index that market of that supplier
-     * @return supplierReward The JOE/AVAX amount of reward from market
-     */
-    function _getSupplyIndexAndSupplierReward(
-        uint8 rewardType,
-        address jToken,
-        address supplier
-    )
-        private
-        view
-        returns (
-            uint256 supplyIndex,
-            uint256 supplierIndex,
-            uint256 supplierReward
-        )
-    {
-        supplyIndex = rewardSupplyState[rewardType][jToken].index;
-        supplierIndex = rewardSupplierIndex[rewardType][jToken][supplier];
-
-        uint256 deltaIndex = supplyIndex.sub(supplierIndex);
-        uint256 supplierAmounts = JToken(jToken).balanceOf(supplier);
-        console.log(supplyIndex, supplierIndex, supplierAmounts);
-
-        supplierReward = supplierAmounts.mul(deltaIndex).div(doubleScale);
-    }
-
-    /**
-     * @notice Calculate JOE/AVAX accrued by a supplier and possibly transfer it to them
-     * @param rewardType 0: JOE, 1: AVAX
-     * @param jToken The market in which the supplier is interacting
-     * @param borrower The address of the supplier to distribute JOE/AVAX to
-     * @param marketBorrowIndex Current index of the borrow market
-     * @return borrowIndex The JOE/AVAX borrow index of that market
-     * @return borrowerIndex The JOE/AVAX borrow index that market of that borrower
-     * @return borrowerReward The JOE/AVAX amount of reward from market
-     */
-    function _getBorrowIndexAndBorrowerReward(
-        uint8 rewardType,
-        address jToken,
-        address borrower,
-        uint256 marketBorrowIndex
-    )
-        private
-        view
-        returns (
-            uint256 borrowIndex,
-            uint256 borrowerIndex,
-            uint256 borrowerReward
-        )
-    {
-        borrowIndex = rewardBorrowState[rewardType][jToken].index;
-        borrowerIndex = rewardBorrowerIndex[rewardType][jToken][borrower];
-
-        uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
-        uint256 borrowerAmount = JToken(jToken).borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);
-        borrowerReward = borrowerAmount.mul(deltaIndex).div(doubleScale);
     }
 
     /**
@@ -552,16 +478,148 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
             if (supplier) {
                 _updateRewardSupplyIndex(rewardType, address(jToken));
                 uint256 reward = _distributeSupplierReward(rewardType, address(jToken), holder);
-                console.log("supply", reward);
                 rewards = rewards.add(reward);
             }
         }
-        rewardAccrued[rewardType][holder] = _grantReward(rewardType, holder, rewards);
+        if (rewards != 0) {
+            rewardAccrued[rewardType][holder] = _grantReward(rewardType, holder, rewards);
+        }
+    }
+
+    /**
+     * @notice Returns the pending JOE/AVAX reward for holder
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to return the pending JOE/AVAX reward for
+     * @param jTokens The market to return the pending JOE/AVAX reward in
+     * @return uint256 The JOE/AVAX reward for that user
+     */
+    function _pendingReward(
+        uint8 rewardType,
+        address holder,
+        JToken[] memory jTokens
+    ) private view verifyRewardType(rewardType) returns (uint256) {
+        uint256 rewards = rewardAccrued[rewardType][holder];
+        uint256 len = jTokens.length;
+
+        for (uint256 i; i < len; i++) {
+            address jToken = address(jTokens[i]);
+
+            uint256 supplierReward = _pendingSupplyReward(rewardType, jToken, holder);
+            uint256 borrowerReward = _pendingBorrowReward(rewardType, jToken, holder, JToken(jToken).borrowIndex());
+
+            rewards = rewards.add(supplierReward).add(borrowerReward);
+        }
+
+        return rewards;
+    }
+
+    /**
+     * @notice Returns the pending JOE/AVAX reward for a supplier on a market
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to return the pending JOE/AVAX reward for
+     * @param jToken The market to return the pending JOE/AVAX reward in
+     * @return uint256 The JOE/AVAX reward for that user
+     */
+    function _pendingSupplyReward(
+        uint8 rewardType,
+        address jToken,
+        address holder
+    ) private view returns (uint256) {
+        (uint256 supplyIndex, ) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
+        uint256 supplierIndex = rewardSupplierIndex[rewardType][jToken][holder];
+
+        uint256 deltaIndex = supplyIndex.sub(supplierIndex);
+        uint256 supplierAmount = JToken(jToken).balanceOf(holder);
+        return supplierAmount.mul(deltaIndex).div(doubleScale);
+    }
+
+    /**
+     * @notice Returns the pending JOE/AVAX reward for a borrower on a market
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to return the pending JOE/AVAX reward for
+     * @param jToken The market to return the pending JOE/AVAX reward in
+     * @param marketBorrowIndex Current index of the borrow market
+     * @return uint256 The JOE/AVAX reward for that user
+     */
+    function _pendingBorrowReward(
+        uint8 rewardType,
+        address jToken,
+        address holder,
+        uint256 marketBorrowIndex
+    ) private view returns (uint256) {
+        (uint256 borrowIndex, ) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
+        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][jToken][holder];
+
+        uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
+        uint256 borrowerAmount = JToken(jToken).borrowBalanceStored(holder).mul(expScale).div(marketBorrowIndex);
+
+        return borrowerAmount.mul(deltaIndex).div(doubleScale);
+    }
+
+    /**
+     * @notice Returns the updated reward supply index
+     * @param rewardType 0: JOE, 1: AVAX
+     * @param jToken The market whose supply index to update
+     * @return uint224 The updated supply state index
+     * @return bool If the stored supply state index needs to be updated
+     */
+    function _getUpdatedRewardSupplyIndex(uint8 rewardType, address jToken) private view returns (uint224, bool) {
+        RewardMarketState memory supplyState = rewardSupplyState[rewardType][jToken];
+        uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
+        uint256 deltaTimestamps = _getBlockTimestamp().sub(supplyState.timestamp);
+
+        if (deltaTimestamps != 0) {
+            if (supplySpeed != 0) {
+                uint256 supplyTokens = JToken(jToken).totalSupply();
+                if (supplyTokens != 0) {
+                    uint256 reward = deltaTimestamps.mul(supplySpeed);
+                    supplyState.index = _safe224(
+                        uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens))
+                    );
+                    return (supplyState.index, true);
+                }
+            }
+        }
+        return (supplyState.index, false);
+    }
+
+    /**
+     * @notice Returns the updated reward borrow index
+     * @param rewardType 0: JOE, 1: AVAX
+     * @param jToken The market whose borrow index to update
+     * @param marketBorrowIndex Current index of the borrow market
+     * @return uint224 The updated borrow state index
+     * @return bool If the stored borrow state index needs to be updated
+     */
+    function _getUpdatedRewardBorrowIndex(
+        uint8 rewardType,
+        address jToken,
+        uint256 marketBorrowIndex
+    ) private view returns (uint224, bool) {
+        RewardMarketState memory borrowState = rewardBorrowState[rewardType][jToken];
+        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
+        uint256 deltaTimestamps = _getBlockTimestamp().sub(borrowState.timestamp);
+
+        if (deltaTimestamps != 0) {
+            if (borrowSpeed != 0) {
+                uint256 totalBorrows = JToken(jToken).totalBorrows();
+                uint256 borrowAmount = totalBorrows.mul(expScale).div(marketBorrowIndex);
+                if (borrowAmount != 0) {
+                    uint256 reward = deltaTimestamps.mul(borrowSpeed);
+                    borrowState.index = _safe224(
+                        uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount))
+                    );
+                    return (borrowState.index, true);
+                }
+            }
+            borrowState.timestamp = _safe32(_getBlockTimestamp());
+        }
+        return (borrowState.index, false);
     }
 
     /**
      * @notice Transfer JOE/AVAX to the user
-     * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer all.
+     * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer at all.
      * @param rewardType 0 = JOE, 1 = AVAX.
      * @param user The address of the user to transfer JOE/AVAX to
      * @param amount The amount of JOE/AVAX to (possibly) transfer

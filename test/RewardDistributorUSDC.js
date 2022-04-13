@@ -128,13 +128,13 @@ describe("RewardDistributor USDC", function () {
       .mint(ethers.utils.parseUnits("1000", 6));
   });
 
-  it("reverts when minting if reward rate < 1*10**11", async function () {
+  it("claim reward for new user is 0", async function () {
     await increase(duration.days(1));
     expect(
       await this.joeLens.callStatic[
         "getClaimableRewards(uint8,address,address,address)"
       ](0, this.joetroller.address, this.joe.address, this.dev.address)
-    ).to.be.equal(0); //TODO not 0, previous reward. test that old reward
+    ).to.be.equal(0);
   });
 
   it("only accrues rewards from when rewards enabled", async function () {
@@ -153,7 +153,7 @@ describe("RewardDistributor USDC", function () {
       await this.joeLens.callStatic[
         "getClaimableRewards(uint8,address,address,address)"
       ](0, this.joetroller.address, this.joe.address, this.dev.address)
-    ).to.be.above(0); // TODO not 0
+    ).to.be.above(0);
   });
 
   after(async function () {
