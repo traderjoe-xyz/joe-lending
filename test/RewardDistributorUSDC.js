@@ -5,15 +5,15 @@ const { duration, increase } = require("./utilities/time");
 const UNITROLLER_ARTIFACT = require("../deployments/avalanche/Unitroller.json");
 const JOELENS_ARTIFACT = require("../deployments/avalanche/JoeLens.json");
 const OLD_REWARD_DISTRIBUTOR_ARTIFACT = require("../deployments/avalanche/versions/RewardDistributorV3.json");
-const JUSDC_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JUsdcDelegator.json");
-const JUSDC_DELEGATE_ARTIFACT = require("../deployments/avalanche/JUsdcDelegate.json");
+const JUSDC_DELEGATOR_ARTIFACT = require("../deployments/avalanche/JUsdcNativeDelegator.json");
+const JUSDC_DELEGATE_ARTIFACT = require("../deployments/avalanche/JUsdcNativeDelegate.json");
 
 const MULTISIG_ADDRESS = "0x3876183b75916e20d2ADAB202D1A3F9e9bf320ad";
 const DEV_ADDRESS = "0xD858eBAa943b4C2fb06BA0Ba8920A132fd2410eE";
-const USDC_LENDER = "0x26b31b6d07c4b3a9339a2fb89c4d8a3dfb402431";
 const JOE_ADDRESS = "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd";
+const USDC_ADDRESS = "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e";
 
-describe("RewardDistributor", function () {
+describe("RewardDistributor USDC", function () {
   before(async function () {
     // Accounts
     this.signers = await ethers.getSigners();
@@ -36,7 +36,7 @@ describe("RewardDistributor", function () {
     this.JoeCF = await ethers.getContractFactory("JErc20");
 
     // Contracts
-    this.jUsdc = await this.JUsdcDelegateCF.attach(
+    this.jUsdcNative = await this.JUsdcDelegateCF.attach(
       JUSDC_DELEGATOR_ARTIFACT.address
     );
     this.joetroller = await this.JoetrollerCF.attach(
@@ -57,7 +57,7 @@ describe("RewardDistributor", function () {
         {
           forking: {
             jsonRpcUrl: "https://api.avax.network/ext/bc/C/rpc",
-            blockNumber: 13175236,
+            blockNumber: 12947847,
           },
           live: false,
           saveDeployments: false,
@@ -83,6 +83,7 @@ describe("RewardDistributor", function () {
       params: [DEV_ADDRESS],
     });
     this.dev = await ethers.getSigner(DEV_ADDRESS);
+
     // Fund dev with AVAX
     await this.alice.sendTransaction({
       to: this.dev.address,
@@ -109,123 +110,50 @@ describe("RewardDistributor", function () {
         .connect(this.admin)
         ._setRewardSpeed(0, jTokens[i], "0", "0");
     }
-  });
 
-  it("automatically accrues rewards for current lenders after upgrade", async function () {
-    // Get USDC lender who has accrued rewards from V1
-    const rewardsBefore = await this.joeLens.callStatic[
-      "getClaimableRewards(uint8,address,address,address)"
-    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
-    expect(rewardsBefore).to.be.gt("0");
-    // Upgrade RewardDistributor from V1 to V2
     await this.rewardDistributorNew.connect(this.dev).setJoe(this.joe.address);
     await this.joetroller
       .connect(this.admin)
       ._setRewardDistributor(this.rewardDistributorNew.address);
 
-    // Expect rewards to be equal to the previous rewarder
-    const rewardsAtT0 = await this.joeLens.callStatic[
-      "getClaimableRewards(uint8,address,address,address)"
-    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
-    expect(rewardsAtT0).to.be.equal(rewardsBefore);
+    this.usdcToken = await ethers.getContractAt("EIP20Interface", USDC_ADDRESS);
+    // Approve the spender
+    await this.usdcToken
+      .connect(this.dev)
+      .approve(this.jUsdcNative.address, ethers.utils.parseEther("1000"));
 
-    // Set reward speeds for JOE for jUSDC market
+    // mint jusdc
+    await this.jUsdcNative
+      .connect(this.dev)
+      .mint(ethers.utils.parseUnits("1000", 6));
+  });
+
+  it("claim reward for new user is 0", async function () {
+    await increase(duration.days(1));
+    expect(
+      await this.joeLens.callStatic[
+        "getClaimableRewards(uint8,address,address,address)"
+      ](0, this.joetroller.address, this.joe.address, this.dev.address)
+    ).to.be.equal(0);
+  });
+
+  it("only accrues rewards from when rewards enabled", async function () {
     await this.rewardDistributorNew
       .connect(this.dev)
       .setRewardSpeed(
         0,
-        this.jUsdc.address,
+        this.jUsdcNative.address,
         ethers.utils.parseEther("0.1"),
-        ethers.utils.parseEther("0.1")
-      );
-
-    // Fast forward 10 seconds
-    await increase(duration.seconds(10));
-
-    // Assert USDC lender has accrued rewards for supplying for 10 seconds
-    const rewardsAtT10 = await this.joeLens.callStatic[
-      "getClaimableRewards(uint8,address,address,address)"
-    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
-    expect(rewardsAtT10).to.be.above(rewardsAtT0);
-
-    // Fast forward 10 days
-    await increase(duration.days(10));
-
-    // Assert USDC lender has accrued rewards for supplying for 10 days
-    const rewardsAtD10 = await this.joeLens.callStatic[
-      "getClaimableRewards(uint8,address,address,address)"
-    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
-    expect(rewardsAtD10).to.be.closeTo(
-      rewardsAtT0.add(
-        rewardsAtT10
-          .sub(rewardsAtT0)
-          .div("10")
-          .mul(10 * 86400)
-      ),
-      ethers.utils.parseEther("0.001")
-    );
-  });
-
-  it("Doesn't reward people twice", async function () {
-    // We use an interface so we can actually query claimReward
-    const rewarderNew = await ethers.getContractAt(
-      "IRewarder",
-      this.rewardDistributorNew.address
-    );
-    const rewarderOld = await ethers.getContractAt(
-      "IRewarder",
-      this.rewardDistributorOld.address
-    );
-
-    await this.rewardDistributorNew.connect(this.dev).setJoe(this.joe.address);
-    await this.joetroller
-      .connect(this.admin)
-      ._setRewardDistributor(this.rewardDistributorNew.address);
-
-    let previousBalance = await this.joe.balanceOf(USDC_LENDER);
-    await rewarderNew.claimReward("0", USDC_LENDER);
-    expect(
-      (await this.joe.balanceOf(USDC_LENDER)).sub(previousBalance)
-    ).to.be.gt("0");
-
-    previousBalance = await this.joe.balanceOf(USDC_LENDER);
-    await rewarderOld.claimReward("0", USDC_LENDER);
-    expect(
-      (await this.joe.balanceOf(USDC_LENDER)).sub(previousBalance)
-    ).to.be.equal("0");
-  });
-
-  it("Pendind rewards match actual claim", async function () {
-    await this.rewardDistributorNew.connect(this.dev).setJoe(this.joe.address);
-    await this.joetroller
-      .connect(this.admin)
-      ._setRewardDistributor(this.rewardDistributorNew.address);
-    // We use an interface so we can actually query pendingReward
-    const rewarderNew = await ethers.getContractAt(
-      "IRewarder",
-      this.rewardDistributorNew.address
-    );
-
-    // We call claim to clear the rewards from the old rewarder
-    await rewarderNew.claimReward(0, USDC_LENDER);
-
-    await this.rewardDistributorNew
-      .connect(this.dev)
-      .setRewardSpeed(
-        0,
-        this.jUsdc.address,
-        ethers.utils.parseEther("0.1"),
-        ethers.utils.parseEther("0.1")
+        ethers.utils.parseEther("0")
       );
 
     await increase(duration.days(1));
 
-    const reward = await this.joeLens.callStatic[
-      "getClaimableRewards(uint8,address,address,address)"
-    ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
     expect(
-      await this.rewardDistributorNew.pendingReward(0, USDC_LENDER)
-    ).to.be.equal(reward);
+      await this.joeLens.callStatic[
+        "getClaimableRewards(uint8,address,address,address)"
+      ](0, this.joetroller.address, this.joe.address, this.dev.address)
+    ).to.be.above(0);
   });
 
   after(async function () {
