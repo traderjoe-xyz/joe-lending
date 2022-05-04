@@ -605,7 +605,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @notice Returns the updated reward supply index
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param jToken The market whose supply index to update
-     * @return uint256 The updated supply state index
+     * @return uint208 The updated supply state index
      * @return bool If the stored supply state index needs to be updated
      */
     function _getUpdatedRewardSupplyIndex(uint8 rewardType, IJToken jToken) private view returns (uint208, bool) {
@@ -629,7 +629,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param jToken The market whose borrow index to update
      * @param marketBorrowIndex Current index of the borrow market
-     * @return uint256 The updated borrow state index
+     * @return uint208 The updated borrow state index
      * @return bool If the stored borrow state index needs to be updated
      */
     function _getUpdatedRewardBorrowIndex(
