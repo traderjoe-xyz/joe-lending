@@ -36,9 +36,9 @@ contract RewardDistributorStorageV2 {
 
     struct RewardMarketState {
         /// @notice The market's last updated joeBorrowIndex or joeSupplyIndex
-        uint256 index;
+        uint208 index;
         /// @notice The timestamp number the index was last updated at
-        uint64 timestamp;
+        uint48 timestamp;
     }
 
     /// @notice The portion of supply reward rate that each market currently receives
@@ -367,7 +367,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         } else if (newRewardSupplySpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
-            rewardSupplyState[rewardType][address(jToken)].timestamp = _safe64(_getBlockTimestamp());
+            rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
         }
 
         if (currentRewardSupplySpeed != newRewardSupplySpeed) {
@@ -396,7 +396,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         } else if (newRewardBorrowSpeed != 0) {
             // Add the JOE market
             require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
-            rewardBorrowState[rewardType][address(jToken)].timestamp = _safe64(_getBlockTimestamp());
+            rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
         }
 
         if (currentRewardBorrowSpeed != newRewardBorrowSpeed) {
@@ -411,12 +411,12 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param jToken The market whose supply index to update
      */
     function _updateRewardSupplyIndex(uint8 rewardType, IJToken jToken) private verifyRewardType(rewardType) {
-        (uint256 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
+        (uint208 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
 
         if (update) {
             rewardSupplyState[rewardType][address(jToken)].index = supplyIndex;
         }
-        rewardSupplyState[rewardType][address(jToken)].timestamp = _safe64(_getBlockTimestamp());
+        rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
     }
 
     /**
@@ -430,12 +430,12 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         IJToken jToken,
         uint256 marketBorrowIndex
     ) private verifyRewardType(rewardType) {
-        (uint256 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
+        (uint208 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
 
         if (update) {
             rewardBorrowState[rewardType][address(jToken)].index = borrowIndex;
         }
-        rewardBorrowState[rewardType][address(jToken)].timestamp = _safe64(_getBlockTimestamp());
+        rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
     }
 
     /**
@@ -449,13 +449,13 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         uint8 rewardType,
         IJToken jToken,
         address supplier
-    ) private verifyRewardType(rewardType) returns (uint256) {
+    ) private verifyRewardType(rewardType) returns (uint208) {
         uint256 supplyIndex = rewardSupplyState[rewardType][address(jToken)].index;
         uint256 supplierIndex = rewardSupplierIndex[rewardType][address(jToken)][supplier];
 
         uint256 deltaIndex = supplyIndex.sub(supplierIndex);
         uint256 supplierAmount = jToken.balanceOf(supplier);
-        uint256 supplierReward = supplierAmount.mul(deltaIndex).div(doubleScale);
+        uint208 supplierReward = _safe208(supplierAmount.mul(deltaIndex).div(doubleScale));
 
         if (supplyIndex != supplierIndex) {
             rewardSupplierIndex[rewardType][address(jToken)][supplier] = supplyIndex;
@@ -478,13 +478,13 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         IJToken jToken,
         address borrower,
         uint256 marketBorrowIndex
-    ) private verifyRewardType(rewardType) returns (uint256) {
+    ) private verifyRewardType(rewardType) returns (uint208) {
         uint256 borrowIndex = rewardBorrowState[rewardType][address(jToken)].index;
         uint256 borrowerIndex = rewardBorrowerIndex[rewardType][address(jToken)][borrower];
 
         uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
         uint256 borrowerAmount = jToken.borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);
-        uint256 borrowerReward = borrowerAmount.mul(deltaIndex).div(doubleScale);
+        uint208 borrowerReward = _safe208(borrowerAmount.mul(deltaIndex).div(doubleScale));
 
         if (borrowIndex != borrowerIndex) {
             rewardBorrowerIndex[rewardType][address(jToken)][borrower] = borrowIndex;
@@ -608,7 +608,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @return uint256 The updated supply state index
      * @return bool If the stored supply state index needs to be updated
      */
-    function _getUpdatedRewardSupplyIndex(uint8 rewardType, IJToken jToken) private view returns (uint256, bool) {
+    function _getUpdatedRewardSupplyIndex(uint8 rewardType, IJToken jToken) private view returns (uint208, bool) {
         RewardMarketState memory supplyState = rewardSupplyState[rewardType][address(jToken)];
         uint256 supplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
         uint256 deltaTimestamps = _getBlockTimestamp().sub(supplyState.timestamp);
@@ -617,7 +617,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
             uint256 supplyTokens = jToken.totalSupply();
             if (supplyTokens != 0) {
                 uint256 reward = deltaTimestamps.mul(supplySpeed);
-                supplyState.index = supplyState.index.add(reward.mul(doubleScale).div(supplyTokens));
+                supplyState.index = _safe208(uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens)));
                 return (supplyState.index, true);
             }
         }
@@ -636,7 +636,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         uint8 rewardType,
         IJToken jToken,
         uint256 marketBorrowIndex
-    ) private view returns (uint256, bool) {
+    ) private view returns (uint208, bool) {
         RewardMarketState memory borrowState = rewardBorrowState[rewardType][address(jToken)];
         uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];
         uint256 deltaTimestamps = _getBlockTimestamp().sub(borrowState.timestamp);
@@ -646,7 +646,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
             uint256 borrowAmount = totalBorrows.mul(expScale).div(marketBorrowIndex);
             if (borrowAmount != 0) {
                 uint256 reward = deltaTimestamps.mul(borrowSpeed);
-                borrowState.index = borrowState.index.add(reward.mul(doubleScale).div(borrowAmount));
+                borrowState.index = _safe208(uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount)));
                 return (borrowState.index, true);
             }
         }
@@ -694,12 +694,22 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     }
 
     /**
-     * @notice Return x written on 64 bits while asserting that x doesn't exceed 64 bits
+     * @notice Return x written on 48 bits while asserting that x doesn't exceed 48 bits
      * @param x The value
-     * @return uint64 The value x on 64 bits
+     * @return uint48 The value x on 48 bits
      */
-    function _safe64(uint256 x) private pure returns (uint64) {
-        require(x < 2**64, "exceeds 64 bits");
-        return uint64(x);
+    function _safe48(uint256 x) private pure returns (uint48) {
+        require(x < 2**48, "exceeds 48 bits");
+        return uint48(x);
+    }
+
+    /**
+     * @notice Return x written on 208 bits while asserting that x doesn't exceed 208 bits
+     * @param x The value
+     * @return uint208 The value x on 208 bits
+     */
+    function _safe208(uint256 x) private pure returns (uint208) {
+        require(x < 2**208, "exceeds 208 bits");
+        return uint208(x);
     }
 }
