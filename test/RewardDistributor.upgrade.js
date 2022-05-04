@@ -169,11 +169,11 @@ describe("RewardDistributor", function () {
   it("Admins are able to set pending rewards", async function () {
     // We use an interface so we can actually query claimReward
     const rewarderNew = await ethers.getContractAt(
-      "IRewarder",
+      "IRewardDistributor",
       this.rewardDistributorNew.address
     );
     const rewarderOld = await ethers.getContractAt(
-      "IRewarder",
+      "IRewardDistributor",
       this.rewardDistributorOld.address
     );
 
@@ -218,7 +218,7 @@ describe("RewardDistributor", function () {
       ._setRewardDistributor(this.rewardDistributorNew.address);
     // We use an interface so we can actually query pendingReward
     const rewarderNew = await ethers.getContractAt(
-      "IRewarder",
+      "IRewardDistributor",
       this.rewardDistributorNew.address
     );
 
