@@ -5,21 +5,26 @@ pragma experimental ABIEncoderV2;
 
 import "./EIP20Interface.sol";
 import "./Exponential.sol";
-import "./JToken.sol";
 import "./SafeMath.sol";
+
+interface IJToken {
+    function balanceOf(address owner) external view returns (uint256);
+
+    function borrowIndex() external view returns (uint256);
+
+    function totalSupply() external view returns (uint256);
+
+    function totalBorrows() external view returns (uint256);
+
+    function borrowBalanceStored(address account) external view returns (uint256);
+}
 
 interface IJoetroller {
     function isMarketListed(address jTokenAddress) external view returns (bool);
 
-    function getAllMarkets() external view returns (JToken[] memory);
+    function getAllMarkets() external view returns (IJToken[] memory);
 
     function rewardDistributor() external view returns (address);
-}
-
-interface IRewarder {
-    function claimReward(uint8 rewardType, address payable holder) external;
-
-    function rewardAccrued(uint8 rewardType, address holder) external view returns (uint256);
 }
 
 contract RewardDistributorStorageV2 {
@@ -31,9 +36,9 @@ contract RewardDistributorStorageV2 {
 
     struct RewardMarketState {
         /// @notice The market's last updated joeBorrowIndex or joeSupplyIndex
-        uint224 index;
+        uint208 index;
         /// @notice The timestamp number the index was last updated at
-        uint32 timestamp;
+        uint48 timestamp;
     }
 
     /// @notice The portion of supply reward rate that each market currently receives
@@ -60,7 +65,7 @@ contract RewardDistributorStorageV2 {
     /// @notice JOE token contract address
     EIP20Interface public joe;
 
-    /// @notice If setAccruedRewardsForUsers is locked
+    /// @notice If initializeRewardAccrued is locked
     bool public isInitializeRewardAccruedLocked;
 }
 
@@ -68,15 +73,15 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     using SafeMath for uint256;
 
     /// @notice Emitted when a new reward supply speed is calculated for a market
-    event RewardSupplySpeedUpdated(uint8 rewardType, address indexed jToken, uint256 newSpeed);
+    event RewardSupplySpeedUpdated(uint8 rewardType, IJToken indexed jToken, uint256 newSpeed);
 
     /// @notice Emitted when a new reward borrow speed is calculated for a market
-    event RewardBorrowSpeedUpdated(uint8 rewardType, address indexed jToken, uint256 newSpeed);
+    event RewardBorrowSpeedUpdated(uint8 rewardType, IJToken indexed jToken, uint256 newSpeed);
 
     /// @notice Emitted when JOE/AVAX is distributed to a supplier
     event DistributedSupplierReward(
         uint8 rewardType,
-        JToken indexed jToken,
+        IJToken indexed jToken,
         address indexed supplier,
         uint256 rewardDelta,
         uint256 rewardSupplyIndex
@@ -85,7 +90,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     /// @notice Emitted when JOE/AVAX is distributed to a borrower
     event DistributedBorrowerReward(
         uint8 rewardType,
-        JToken indexed jToken,
+        IJToken indexed jToken,
         address indexed borrower,
         uint256 rewardDelta,
         uint256 rewardBorrowIndex
@@ -172,7 +177,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     function claimReward(
         uint8 rewardType,
         address payable holder,
-        JToken[] calldata jTokens
+        IJToken[] calldata jTokens
     ) external {
         _claimReward(rewardType, holder, jTokens, true, true);
     }
@@ -188,7 +193,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     function claimReward(
         uint8 rewardType,
         address payable[] calldata holders,
-        JToken[] calldata jTokens,
+        IJToken[] calldata jTokens,
         bool borrowers,
         bool suppliers
     ) external {
@@ -215,7 +220,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param jToken The market to verify the mint against
      * @param supplier The supplier to be rewarded
      */
-    function updateAndDistributeSupplierRewardsForToken(address jToken, address supplier)
+    function updateAndDistributeSupplierRewardsForToken(IJToken jToken, address supplier)
         external
         onlyJoetrollerOrAdmin
     {
@@ -227,13 +232,13 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     }
 
     /**
-     * @notice Refactored function to calc and rewards accounts supplier rewards
+     * @notice Refactored function to calc and rewards accounts borrower rewards
      * @param jToken The market to verify the mint against
      * @param borrower Borrower to be rewarded
      * @param marketBorrowIndex Current index of the borrow market
      */
     function updateAndDistributeBorrowerRewardsForToken(
-        address jToken,
+        IJToken jToken,
         address borrower,
         Exp calldata marketBorrowIndex
     ) external onlyJoetrollerOrAdmin {
@@ -255,16 +260,16 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function setRewardSpeed(
         uint8 rewardType,
-        JToken jToken,
+        IJToken jToken,
         uint256 rewardSupplySpeed,
         uint256 rewardBorrowSpeed
     ) external onlyAdmin verifyRewardType(rewardType) {
-        _setRewardSupplySpeed(rewardType, address(jToken), rewardSupplySpeed);
-        _setRewardBorrowSpeed(rewardType, address(jToken), rewardBorrowSpeed);
+        _setRewardSupplySpeed(rewardType, jToken, rewardSupplySpeed);
+        _setRewardBorrowSpeed(rewardType, jToken, rewardBorrowSpeed);
     }
 
     /**
-     * @notice Transfer JOE to the recipient
+     * @notice Transfer JOE/AVAX to the recipient
      * @dev Note: If there is not enough JOE, we do not perform the transfer at all.
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param recipient The address of the recipient to transfer JOE to
@@ -274,7 +279,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         uint8 rewardType,
         address payable recipient,
         uint256 amount
-    ) external onlyAdmin {
+    ) external onlyAdmin verifyRewardType(rewardType) {
         uint256 amountLeft = _grantReward(rewardType, recipient, amount);
         require(amountLeft == 0, "insufficient joe for grant");
         emit RewardGranted(rewardType, recipient, amount);
@@ -350,23 +355,23 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _setRewardSupplySpeed(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         uint256 newRewardSupplySpeed
     ) private {
         // Handle new supply speed
-        uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][jToken];
+        uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
 
         if (currentRewardSupplySpeed != 0) {
             // note that JOE speed could be set to 0 to halt liquidity rewards for a market
             _updateRewardSupplyIndex(rewardType, jToken);
         } else if (newRewardSupplySpeed != 0) {
             // Add the JOE market
-            require(joetroller.isMarketListed(jToken), "reward market is not listed");
-            rewardSupplyState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
+            require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
+            rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
         }
 
         if (currentRewardSupplySpeed != newRewardSupplySpeed) {
-            rewardSupplySpeeds[rewardType][jToken] = newRewardSupplySpeed;
+            rewardSupplySpeeds[rewardType][address(jToken)] = newRewardSupplySpeed;
             emit RewardSupplySpeedUpdated(rewardType, jToken, newRewardSupplySpeed);
         }
     }
@@ -379,23 +384,23 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _setRewardBorrowSpeed(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         uint256 newRewardBorrowSpeed
     ) private {
         // Handle new borrow speed
-        uint256 currentRewardBorrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
+        uint256 currentRewardBorrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];
 
         if (currentRewardBorrowSpeed != 0) {
             // note that JOE speed could be set to 0 to halt liquidity rewards for a market
-            _updateRewardBorrowIndex(rewardType, jToken, JToken(jToken).borrowIndex());
+            _updateRewardBorrowIndex(rewardType, jToken, jToken.borrowIndex());
         } else if (newRewardBorrowSpeed != 0) {
             // Add the JOE market
-            require(joetroller.isMarketListed(jToken), "reward market is not listed");
-            rewardBorrowState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
+            require(joetroller.isMarketListed(address(jToken)), "reward market is not listed");
+            rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
         }
 
         if (currentRewardBorrowSpeed != newRewardBorrowSpeed) {
-            rewardBorrowSpeeds[rewardType][jToken] = newRewardBorrowSpeed;
+            rewardBorrowSpeeds[rewardType][address(jToken)] = newRewardBorrowSpeed;
             emit RewardBorrowSpeedUpdated(rewardType, jToken, newRewardBorrowSpeed);
         }
     }
@@ -405,13 +410,13 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param jToken The market whose supply index to update
      */
-    function _updateRewardSupplyIndex(uint8 rewardType, address jToken) private verifyRewardType(rewardType) {
-        (uint224 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
+    function _updateRewardSupplyIndex(uint8 rewardType, IJToken jToken) private verifyRewardType(rewardType) {
+        (uint208 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
 
         if (update) {
-            rewardSupplyState[rewardType][jToken].index = supplyIndex;
+            rewardSupplyState[rewardType][address(jToken)].index = supplyIndex;
         }
-        rewardSupplyState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
+        rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
     }
 
     /**
@@ -422,15 +427,15 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _updateRewardBorrowIndex(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         uint256 marketBorrowIndex
     ) private verifyRewardType(rewardType) {
-        (uint224 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
+        (uint208 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
 
         if (update) {
-            rewardBorrowState[rewardType][jToken].index = borrowIndex;
+            rewardBorrowState[rewardType][address(jToken)].index = borrowIndex;
         }
-        rewardBorrowState[rewardType][jToken].timestamp = _safe32(_getBlockTimestamp());
+        rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());
     }
 
     /**
@@ -442,20 +447,20 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _distributeSupplierReward(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         address supplier
-    ) private verifyRewardType(rewardType) returns (uint256) {
-        uint256 supplyIndex = rewardSupplyState[rewardType][jToken].index;
-        uint256 supplierIndex = rewardSupplierIndex[rewardType][jToken][supplier];
+    ) private verifyRewardType(rewardType) returns (uint208) {
+        uint256 supplyIndex = rewardSupplyState[rewardType][address(jToken)].index;
+        uint256 supplierIndex = rewardSupplierIndex[rewardType][address(jToken)][supplier];
 
         uint256 deltaIndex = supplyIndex.sub(supplierIndex);
-        uint256 supplierAmount = JToken(jToken).balanceOf(supplier);
-        uint256 supplierReward = supplierAmount.mul(deltaIndex).div(doubleScale);
+        uint256 supplierAmount = jToken.balanceOf(supplier);
+        uint208 supplierReward = _safe208(supplierAmount.mul(deltaIndex).div(doubleScale));
 
         if (supplyIndex != supplierIndex) {
-            rewardSupplierIndex[rewardType][jToken][supplier] = supplyIndex;
+            rewardSupplierIndex[rewardType][address(jToken)][supplier] = supplyIndex;
         }
-        emit DistributedSupplierReward(rewardType, JToken(jToken), supplier, supplierReward, supplyIndex);
+        emit DistributedSupplierReward(rewardType, jToken, supplier, supplierReward, supplyIndex);
         return supplierReward;
     }
 
@@ -470,21 +475,21 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _distributeBorrowerReward(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         address borrower,
         uint256 marketBorrowIndex
-    ) private verifyRewardType(rewardType) returns (uint256) {
-        uint256 borrowIndex = rewardBorrowState[rewardType][jToken].index;
-        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][jToken][borrower];
+    ) private verifyRewardType(rewardType) returns (uint208) {
+        uint256 borrowIndex = rewardBorrowState[rewardType][address(jToken)].index;
+        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][address(jToken)][borrower];
 
         uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
-        uint256 borrowerAmount = JToken(jToken).borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);
-        uint256 borrowerReward = borrowerAmount.mul(deltaIndex).div(doubleScale);
+        uint256 borrowerAmount = jToken.borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);
+        uint208 borrowerReward = _safe208(borrowerAmount.mul(deltaIndex).div(doubleScale));
 
         if (borrowIndex != borrowerIndex) {
-            rewardBorrowerIndex[rewardType][jToken][borrower] = borrowIndex;
+            rewardBorrowerIndex[rewardType][address(jToken)][borrower] = borrowIndex;
         }
-        emit DistributedBorrowerReward(rewardType, JToken(jToken), borrower, borrowerReward, borrowIndex);
+        emit DistributedBorrowerReward(rewardType, jToken, borrower, borrowerReward, borrowIndex);
         return borrowerReward;
     }
 
@@ -499,25 +504,25 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     function _claimReward(
         uint8 rewardType,
         address payable holder,
-        JToken[] memory jTokens,
+        IJToken[] memory jTokens,
         bool borrower,
         bool supplier
     ) private verifyRewardType(rewardType) {
         uint256 rewards = rewardAccrued[rewardType][holder];
         uint256 len = jTokens.length;
         for (uint256 i; i < len; i++) {
-            JToken jToken = jTokens[i];
+            IJToken jToken = jTokens[i];
             require(joetroller.isMarketListed(address(jToken)), "market must be listed");
 
             if (borrower) {
                 uint256 marketBorrowIndex = jToken.borrowIndex();
-                _updateRewardBorrowIndex(rewardType, address(jToken), marketBorrowIndex);
-                uint256 reward = _distributeBorrowerReward(rewardType, address(jToken), holder, marketBorrowIndex);
+                _updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
+                uint256 reward = _distributeBorrowerReward(rewardType, jToken, holder, marketBorrowIndex);
                 rewards = rewards.add(reward);
             }
             if (supplier) {
-                _updateRewardSupplyIndex(rewardType, address(jToken));
-                uint256 reward = _distributeSupplierReward(rewardType, address(jToken), holder);
+                _updateRewardSupplyIndex(rewardType, jToken);
+                uint256 reward = _distributeSupplierReward(rewardType, jToken, holder);
                 rewards = rewards.add(reward);
             }
         }
@@ -530,22 +535,22 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @notice Returns the pending JOE/AVAX reward for holder
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param holder The address to return the pending JOE/AVAX reward for
-     * @param jTokens The market to return the pending JOE/AVAX reward in
+     * @param jTokens The markets to return the pending JOE/AVAX reward in
      * @return uint256 The JOE/AVAX reward for that user
      */
     function _pendingReward(
         uint8 rewardType,
         address holder,
-        JToken[] memory jTokens
+        IJToken[] memory jTokens
     ) private view verifyRewardType(rewardType) returns (uint256) {
         uint256 rewards = rewardAccrued[rewardType][holder];
         uint256 len = jTokens.length;
 
         for (uint256 i; i < len; i++) {
-            address jToken = address(jTokens[i]);
+            IJToken jToken = jTokens[i];
 
             uint256 supplierReward = _pendingSupplyReward(rewardType, jToken, holder);
-            uint256 borrowerReward = _pendingBorrowReward(rewardType, jToken, holder, JToken(jToken).borrowIndex());
+            uint256 borrowerReward = _pendingBorrowReward(rewardType, jToken, holder, jToken.borrowIndex());
 
             rewards = rewards.add(supplierReward).add(borrowerReward);
         }
@@ -562,14 +567,14 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _pendingSupplyReward(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         address holder
     ) private view returns (uint256) {
         (uint256 supplyIndex, ) = _getUpdatedRewardSupplyIndex(rewardType, jToken);
-        uint256 supplierIndex = rewardSupplierIndex[rewardType][jToken][holder];
+        uint256 supplierIndex = rewardSupplierIndex[rewardType][address(jToken)][holder];
 
         uint256 deltaIndex = supplyIndex.sub(supplierIndex);
-        uint256 supplierAmount = JToken(jToken).balanceOf(holder);
+        uint256 supplierAmount = jToken.balanceOf(holder);
         return supplierAmount.mul(deltaIndex).div(doubleScale);
     }
 
@@ -583,15 +588,15 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      */
     function _pendingBorrowReward(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         address holder,
         uint256 marketBorrowIndex
     ) private view returns (uint256) {
         (uint256 borrowIndex, ) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);
-        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][jToken][holder];
+        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][address(jToken)][holder];
 
         uint256 deltaIndex = borrowIndex.sub(borrowerIndex);
-        uint256 borrowerAmount = JToken(jToken).borrowBalanceStored(holder).mul(expScale).div(marketBorrowIndex);
+        uint256 borrowerAmount = jToken.borrowBalanceStored(holder).mul(expScale).div(marketBorrowIndex);
 
         return borrowerAmount.mul(deltaIndex).div(doubleScale);
     }
@@ -600,19 +605,19 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @notice Returns the updated reward supply index
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param jToken The market whose supply index to update
-     * @return uint224 The updated supply state index
+     * @return uint208 The updated supply state index
      * @return bool If the stored supply state index needs to be updated
      */
-    function _getUpdatedRewardSupplyIndex(uint8 rewardType, address jToken) private view returns (uint224, bool) {
-        RewardMarketState memory supplyState = rewardSupplyState[rewardType][jToken];
-        uint256 supplySpeed = rewardSupplySpeeds[rewardType][jToken];
+    function _getUpdatedRewardSupplyIndex(uint8 rewardType, IJToken jToken) private view returns (uint208, bool) {
+        RewardMarketState memory supplyState = rewardSupplyState[rewardType][address(jToken)];
+        uint256 supplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];
         uint256 deltaTimestamps = _getBlockTimestamp().sub(supplyState.timestamp);
 
         if (deltaTimestamps != 0 && supplySpeed != 0) {
-            uint256 supplyTokens = JToken(jToken).totalSupply();
+            uint256 supplyTokens = jToken.totalSupply();
             if (supplyTokens != 0) {
                 uint256 reward = deltaTimestamps.mul(supplySpeed);
-                supplyState.index = _safe224(uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens)));
+                supplyState.index = _safe208(uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens)));
                 return (supplyState.index, true);
             }
         }
@@ -624,24 +629,24 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param jToken The market whose borrow index to update
      * @param marketBorrowIndex Current index of the borrow market
-     * @return uint224 The updated borrow state index
+     * @return uint208 The updated borrow state index
      * @return bool If the stored borrow state index needs to be updated
      */
     function _getUpdatedRewardBorrowIndex(
         uint8 rewardType,
-        address jToken,
+        IJToken jToken,
         uint256 marketBorrowIndex
-    ) private view returns (uint224, bool) {
-        RewardMarketState memory borrowState = rewardBorrowState[rewardType][jToken];
-        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][jToken];
+    ) private view returns (uint208, bool) {
+        RewardMarketState memory borrowState = rewardBorrowState[rewardType][address(jToken)];
+        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];
         uint256 deltaTimestamps = _getBlockTimestamp().sub(borrowState.timestamp);
 
         if (deltaTimestamps != 0 && borrowSpeed != 0) {
-            uint256 totalBorrows = JToken(jToken).totalBorrows();
+            uint256 totalBorrows = jToken.totalBorrows();
             uint256 borrowAmount = totalBorrows.mul(expScale).div(marketBorrowIndex);
             if (borrowAmount != 0) {
                 uint256 reward = deltaTimestamps.mul(borrowSpeed);
-                borrowState.index = _safe224(uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount)));
+                borrowState.index = _safe208(uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount)));
                 return (borrowState.index, true);
             }
         }
@@ -689,22 +694,22 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     }
 
     /**
-     * @notice Return x written on 32 bits while asserting that x doesn't exceed 32 bits
+     * @notice Return x written on 48 bits while asserting that x doesn't exceed 48 bits
      * @param x The value
-     * @return uint32 The value x on 32 bits
+     * @return uint48 The value x on 48 bits
      */
-    function _safe32(uint256 x) private pure returns (uint32) {
-        require(x < 2**32, "exceeds 32 bits");
-        return uint32(x);
+    function _safe48(uint256 x) private pure returns (uint48) {
+        require(x < 2**48, "exceeds 48 bits");
+        return uint48(x);
     }
 
     /**
-     * @notice Return x written on 224 bits while asserting that x doesn't exceed 224 bits
+     * @notice Return x written on 208 bits while asserting that x doesn't exceed 208 bits
      * @param x The value
-     * @return uint224 The value x on 224 bits
+     * @return uint208 The value x on 208 bits
      */
-    function _safe224(uint256 x) private pure returns (uint224) {
-        require(x < 2**224, "exceeds 224 bits");
-        return uint224(x);
+    function _safe208(uint256 x) private pure returns (uint208) {
+        require(x < 2**208, "exceeds 208 bits");
+        return uint208(x);
     }
 }
