@@ -61,7 +61,7 @@ contract RewardDistributorStorageV2 {
     EIP20Interface public joe;
 
     /// @notice If setAccruedRewardsForUsers is locked
-    bool public rewardsSetterLocked;
+    bool public isInitializeRewardAccruedLocked;
 }
 
 contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
@@ -107,7 +107,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     event AccruedRewardsSet(uint8 rewardType, address indexed user, uint256 amount);
 
     /// @notice Emitted when the setAccruedRewardsForUsers function is locked
-    event RewardsSetterLocked();
+    event InitializeRewardAccruedLocked();
 
     /**
      * @notice Checks if caller is admin
@@ -321,7 +321,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         address[] calldata users,
         uint256[] calldata amounts
     ) external onlyAdmin verifyRewardType(rewardType) {
-        require(!rewardsSetterLocked, "initializeRewardAccrued is locked");
+        require(!isInitializeRewardAccruedLocked, "initializeRewardAccrued is locked");
         uint256 len = users.length;
         require(len == amounts.length, "length mismatch");
         for (uint256 i; i < len; i++) {
@@ -333,11 +333,11 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     }
 
     /**
-     * @notice Lock the setAccruedRewardsForUsers function
+     * @notice Lock the initializeRewardAccrued function
      */
     function lockInitializeRewardAccrued() external onlyAdmin {
-        rewardsSetterLocked = true;
-        emit RewardsSetterLocked();
+        isInitializeRewardAccruedLocked = true;
+        emit InitializeRewardAccruedLocked();
     }
 
     /*** Private functions ***/
