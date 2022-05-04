@@ -309,19 +309,19 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     }
 
     /**
-     * @notice Set the rewardAccrued of users
-     * @dev The purpose of this function is to transfer unclaimed rewards from
-     * the previous rewarder safely.
+     * @notice Initialize rewardAccrued of users for the first time
+     * @dev We initialize rewardAccrued to transfer pending rewards from previous rewarder to this one.
+     * Must call lockInitializeRewardAccrued() after initialization.
      * @param rewardType 0 = JOE, 1 = AVAX
      * @param users The list of addresses of users that did not claim their rewards
      * @param amounts The list of amounts of unclaimed rewards
      */
-    function setAccruedRewardsForUsers(
+    function initializeRewardAccrued(
         uint8 rewardType,
         address[] calldata users,
         uint256[] calldata amounts
     ) external onlyAdmin verifyRewardType(rewardType) {
-        require(!rewardsSetterLocked, "function is locked");
+        require(!rewardsSetterLocked, "initializeRewardAccrued is locked");
         uint256 len = users.length;
         require(len == amounts.length, "length mismatch");
         for (uint256 i; i < len; i++) {
@@ -335,7 +335,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     /**
      * @notice Lock the setAccruedRewardsForUsers function
      */
-    function lockRewardSetter() external onlyAdmin {
+    function lockInitializeRewardAccrued() external onlyAdmin {
         rewardsSetterLocked = true;
         emit RewardsSetterLocked();
     }
