@@ -123,11 +123,11 @@ describe("RewardDistributor", function () {
       .connect(this.admin)
       ._setRewardDistributor(this.rewardDistributorNew.address);
 
-    // Expect rewards to be equal to the previous rewarder
+    // Expect rewards to be equal to 0, forfeiting rewards from previous rewarder
     const rewardsAtT0 = await this.joeLens.callStatic[
       "getClaimableRewards(uint8,address,address,address)"
     ](0, this.joetroller.address, this.joe.address, USDC_LENDER);
-    expect(rewardsAtT0).to.be.equal(rewardsBefore);
+    expect(rewardsAtT0).to.be.equal(0);
 
     // Set reward speeds for JOE for jUSDC market
     await this.rewardDistributorNew
@@ -166,7 +166,7 @@ describe("RewardDistributor", function () {
     );
   });
 
-  it("Doesn't reward people twice", async function () {
+  it("Admins are able to set pending rewards", async function () {
     // We use an interface so we can actually query claimReward
     const rewarderNew = await ethers.getContractAt(
       "IRewarder",
@@ -182,17 +182,33 @@ describe("RewardDistributor", function () {
       .connect(this.admin)
       ._setRewardDistributor(this.rewardDistributorNew.address);
 
+    // Set reward speeds for JOE for jUSDC market
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      .initializeRewardAccrued(
+        0,
+        [USDC_LENDER],
+        [ethers.utils.parseEther("100")]
+      );
+    await this.rewardDistributorNew
+      .connect(this.dev)
+      .lockInitializeRewardAccrued();
+
+    await expect(
+      this.rewardDistributorNew
+        .connect(this.dev)
+        .initializeRewardAccrued(
+          0,
+          [USDC_LENDER],
+          [ethers.utils.parseEther("100000")]
+        )
+    ).to.be.revertedWith("initializeRewardAccrued is locked");
+
     let previousBalance = await this.joe.balanceOf(USDC_LENDER);
     await rewarderNew.claimReward("0", USDC_LENDER);
     expect(
       (await this.joe.balanceOf(USDC_LENDER)).sub(previousBalance)
-    ).to.be.gt("0");
-
-    previousBalance = await this.joe.balanceOf(USDC_LENDER);
-    await rewarderOld.claimReward("0", USDC_LENDER);
-    expect(
-      (await this.joe.balanceOf(USDC_LENDER)).sub(previousBalance)
-    ).to.be.equal("0");
+    ).to.be.equal(ethers.utils.parseEther("100"));
   });
 
   it("Pendind rewards match actual claim", async function () {
