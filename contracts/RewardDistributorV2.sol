@@ -57,14 +57,11 @@ contract RewardDistributorStorageV2 {
     /// @notice The JOE/AVAX accrued but not yet transferred to each user
     mapping(uint8 => mapping(address => uint256)) public rewardAccrued;
 
-    /// @notice If user claimed JOE/AVAX from the old rewarder
-    mapping(uint8 => mapping(address => bool)) public claimedFromOldRewarder;
-
     /// @notice JOE token contract address
     EIP20Interface public joe;
 
-    /// @notice The previous rewarder
-    IRewarder oldRewarder;
+    /// @notice If setAccruedRewardsForUsers is locked
+    bool public rewardsSetterLocked;
 }
 
 contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
@@ -106,6 +103,12 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
     /// @notice Emitted when admin is transfered
     event AdminTransferred(address oldAdmin, address newAdmin);
 
+    /// @notice Emitted when accruedRewards is set
+    event AccruedRewardsSet(uint8 rewardType, address indexed user, uint256 amount);
+
+    /// @notice Emitted when the setAccruedRewardsForUsers function is locked
+    event RewardsSetterLocked();
+
     /**
      * @notice Checks if caller is admin
      */
@@ -118,7 +121,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @notice Checks if caller is joetroller or admin
      */
     modifier onlyJoetrollerOrAdmin() {
-        require(msg.sender == address(joetroller) || msg.sender == admin, "only joe troller or admin");
+        require(msg.sender == address(joetroller) || msg.sender == admin, "only joetroller or admin");
         _;
     }
 
@@ -141,7 +144,6 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
             admin = msg.sender;
         } else {
             joetroller = IJoetroller(msg.sender);
-            oldRewarder = IRewarder(joetroller.rewardDistributor());
         }
     }
 
@@ -235,7 +237,7 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         address borrower,
         Exp calldata marketBorrowIndex
     ) external onlyJoetrollerOrAdmin {
-        for (uint8 rewardType = 0; rewardType <= 1; rewardType++) {
+        for (uint8 rewardType; rewardType <= 1; rewardType++) {
             _updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex.mantissa);
             uint256 reward = _distributeBorrowerReward(rewardType, jToken, borrower, marketBorrowIndex.mantissa);
             rewardAccrued[rewardType][borrower] = rewardAccrued[rewardType][borrower].add(reward);
@@ -304,6 +306,38 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         address oldAdmin = admin;
         admin = newAdmin;
         emit AdminTransferred(oldAdmin, newAdmin);
+    }
+
+    /**
+     * @notice Set the rewardAccrued of users
+     * @dev The purpose of this function is to transfer unclaimed rewards from
+     * the previous rewarder safely.
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param users The list of addresses of users that did not claim their rewards
+     * @param amounts The list of amounts of unclaimed rewards
+     */
+    function setAccruedRewardsForUsers(
+        uint8 rewardType,
+        address[] calldata users,
+        uint256[] calldata amounts
+    ) external onlyAdmin verifyRewardType(rewardType) {
+        require(!rewardsSetterLocked, "function is locked");
+        uint256 len = users.length;
+        require(len == amounts.length, "length mismatch");
+        for (uint256 i; i < len; i++) {
+            address user = users[i];
+            uint256 amount = amounts[i];
+            rewardAccrued[rewardType][user] = amount;
+            emit AccruedRewardsSet(rewardType, user, amount);
+        }
+    }
+
+    /**
+     * @notice Lock the setAccruedRewardsForUsers function
+     */
+    function lockRewardSetter() external onlyAdmin {
+        rewardsSetterLocked = true;
+        emit RewardsSetterLocked();
     }
 
     /*** Private functions ***/
@@ -470,13 +504,6 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
         bool supplier
     ) private verifyRewardType(rewardType) {
         uint256 rewards = rewardAccrued[rewardType][holder];
-        if (!claimedFromOldRewarder[rewardType][holder]) {
-            // claim from previous rewarder
-            oldRewarder.claimReward(rewardType, holder);
-            rewards = rewards.add(oldRewarder.rewardAccrued(rewardType, holder));
-            claimedFromOldRewarder[rewardType][holder] = true;
-        }
-
         uint256 len = jTokens.length;
         for (uint256 i; i < len; i++) {
             JToken jToken = jTokens[i];
