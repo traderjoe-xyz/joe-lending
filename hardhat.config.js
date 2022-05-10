@@ -294,8 +294,8 @@ module.exports = {
     apiKey: {
       mainnet: process.env.ETHERSCAN_API_KEY,
       rinkeby: process.env.ETHERSCAN_API_KEY,
-      avalanche: process.env.AVASCAN_API_KEY,
-      avalancheFujiTestnet: process.env.AVASCAN_API_KEY,
+      avalanche: process.env.SNOWTRACE_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
     },
   },
 };
