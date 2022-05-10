@@ -2,6 +2,7 @@
 
 require("dotenv").config();
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-etherscan");
 require("hardhat-abi-exporter");
 require("hardhat-deploy");
 require("hardhat-deploy-ethers");
@@ -204,7 +205,7 @@ module.exports = {
       chainId: 43114,
       live: true,
       saveDeployments: true,
-      gasPrice: 225000000000,
+      gasPrice: 120000000000,
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
@@ -287,6 +288,14 @@ module.exports = {
       tasks: ["compile"],
       files: ["./contracts"],
       verbose: true,
+    },
+  },
+  etherscan: {
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY,
+      rinkeby: process.env.ETHERSCAN_API_KEY,
+      avalanche: process.env.AVASCAN_API_KEY,
+      avalancheFujiTestnet: process.env.AVASCAN_API_KEY,
     },
   },
 };
