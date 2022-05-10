@@ -1,0 +1,1152 @@
+{
+  "address": "0xb650CCF8073D096fED45C7E2b3CD76725f611daB",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "AccruedRewardsSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldAdmin",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "AdminTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rewardDelta",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rewardBorrowIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "DistributedBorrowerReward",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "supplier",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rewardDelta",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rewardSupplyIndex",
+          "type": "uint256"
+        }
+      ],
+      "name": "DistributedSupplierReward",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [],
+      "name": "InitializeRewardAccruedLocked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "contract EIP20Interface",
+          "name": "joe",
+          "type": "address"
+        }
+      ],
+      "name": "JoeSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "contract IJoetroller",
+          "name": "newJoetroller",
+          "type": "address"
+        }
+      ],
+      "name": "JoetrollerSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newSpeed",
+          "type": "uint256"
+        }
+      ],
+      "name": "RewardBorrowSpeedUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RewardGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "newSpeed",
+          "type": "uint256"
+        }
+      ],
+      "name": "RewardSupplySpeedUpdated",
+      "type": "event"
+    },
+    {
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "admin",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address payable",
+          "name": "holder",
+          "type": "address"
+        }
+      ],
+      "name": "claimReward",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address payable",
+          "name": "holder",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IJToken[]",
+          "name": "jTokens",
+          "type": "address[]"
+        }
+      ],
+      "name": "claimReward",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address payable[]",
+          "name": "holders",
+          "type": "address[]"
+        },
+        {
+          "internalType": "contract IJToken[]",
+          "name": "jTokens",
+          "type": "address[]"
+        },
+        {
+          "internalType": "bool",
+          "name": "borrowers",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "suppliers",
+          "type": "bool"
+        }
+      ],
+      "name": "claimReward",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address payable",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "grantReward",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "initialize",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address[]",
+          "name": "users",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "initializeRewardAccrued",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isInitializeRewardAccruedLocked",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "joe",
+      "outputs": [
+        {
+          "internalType": "contract EIP20Interface",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "joetroller",
+      "outputs": [
+        {
+          "internalType": "contract IJoetroller",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "lockInitializeRewardAccrued",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "holder",
+          "type": "address"
+        }
+      ],
+      "name": "pendingReward",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardAccrued",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardBorrowSpeeds",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardBorrowState",
+      "outputs": [
+        {
+          "internalType": "uint208",
+          "name": "index",
+          "type": "uint208"
+        },
+        {
+          "internalType": "uint48",
+          "name": "timestamp",
+          "type": "uint48"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardBorrowerIndex",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardSupplierIndex",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardSupplySpeeds",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rewardSupplyState",
+      "outputs": [
+        {
+          "internalType": "uint208",
+          "name": "index",
+          "type": "uint208"
+        },
+        {
+          "internalType": "uint48",
+          "name": "timestamp",
+          "type": "uint48"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newAdmin",
+          "type": "address"
+        }
+      ],
+      "name": "setAdmin",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "contract EIP20Interface",
+          "name": "_joe",
+          "type": "address"
+        }
+      ],
+      "name": "setJoe",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "contract IJoetroller",
+          "name": "_joetroller",
+          "type": "address"
+        }
+      ],
+      "name": "setJoetroller",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "rewardType",
+          "type": "uint8"
+        },
+        {
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rewardSupplySpeed",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rewardBorrowSpeed",
+          "type": "uint256"
+        }
+      ],
+      "name": "setRewardSpeed",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "mantissa",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct Exponential.Exp",
+          "name": "marketBorrowIndex",
+          "type": "tuple"
+        }
+      ],
+      "name": "updateAndDistributeBorrowerRewardsForToken",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "contract IJToken",
+          "name": "jToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "supplier",
+          "type": "address"
+        }
+      ],
+      "name": "updateAndDistributeSupplierRewardsForToken",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xf2c6f1f3fbc27fc951d994e603b4bfce7bb4c987275fe337ede28b9d3424dacf",
+  "receipt": {
+    "to": null,
+    "from": "0x72c5456d731fDd9D3480F997226A631231de61Cc",
+    "contractAddress": "0xb650CCF8073D096fED45C7E2b3CD76725f611daB",
+    "transactionIndex": 3,
+    "gasUsed": "2657402",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x092caf679963f555f734d78ccaf64d69984bff06aecdb575ae03113a98238713",
+    "transactionHash": "0xf2c6f1f3fbc27fc951d994e603b4bfce7bb4c987275fe337ede28b9d3424dacf",
+    "logs": [],
+    "blockNumber": 10652168,
+    "cumulativeGasUsed": "3762885",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "abde82950aaaa588b96a92c276e64209",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"AccruedRewardsSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"oldAdmin\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"AdminTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"borrower\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardDelta\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardBorrowIndex\",\"type\":\"uint256\"}],\"name\":\"DistributedBorrowerReward\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"supplier\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardDelta\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"rewardSupplyIndex\",\"type\":\"uint256\"}],\"name\":\"DistributedSupplierReward\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"InitializeRewardAccruedLocked\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contract EIP20Interface\",\"name\":\"joe\",\"type\":\"address\"}],\"name\":\"JoeSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"contract IJoetroller\",\"name\":\"newJoetroller\",\"type\":\"address\"}],\"name\":\"JoetrollerSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSpeed\",\"type\":\"uint256\"}],\"name\":\"RewardBorrowSpeedUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"RewardGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newSpeed\",\"type\":\"uint256\"}],\"name\":\"RewardSupplySpeedUpdated\",\"type\":\"event\"},{\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"constant\":true,\"inputs\":[],\"name\":\"admin\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address payable\",\"name\":\"holder\",\"type\":\"address\"}],\"name\":\"claimReward\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address payable\",\"name\":\"holder\",\"type\":\"address\"},{\"internalType\":\"contract IJToken[]\",\"name\":\"jTokens\",\"type\":\"address[]\"}],\"name\":\"claimReward\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address payable[]\",\"name\":\"holders\",\"type\":\"address[]\"},{\"internalType\":\"contract IJToken[]\",\"name\":\"jTokens\",\"type\":\"address[]\"},{\"internalType\":\"bool\",\"name\":\"borrowers\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"suppliers\",\"type\":\"bool\"}],\"name\":\"claimReward\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address payable\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"grantReward\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address[]\",\"name\":\"users\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"initializeRewardAccrued\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"isInitializeRewardAccruedLocked\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"joe\",\"outputs\":[{\"internalType\":\"contract EIP20Interface\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"joetroller\",\"outputs\":[{\"internalType\":\"contract IJoetroller\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"lockInitializeRewardAccrued\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"holder\",\"type\":\"address\"}],\"name\":\"pendingReward\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardAccrued\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardBorrowSpeeds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardBorrowState\",\"outputs\":[{\"internalType\":\"uint208\",\"name\":\"index\",\"type\":\"uint208\"},{\"internalType\":\"uint48\",\"name\":\"timestamp\",\"type\":\"uint48\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardBorrowerIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardSupplierIndex\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardSupplySpeeds\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"rewardSupplyState\",\"outputs\":[{\"internalType\":\"uint208\",\"name\":\"index\",\"type\":\"uint208\"},{\"internalType\":\"uint48\",\"name\":\"timestamp\",\"type\":\"uint48\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"newAdmin\",\"type\":\"address\"}],\"name\":\"setAdmin\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contract EIP20Interface\",\"name\":\"_joe\",\"type\":\"address\"}],\"name\":\"setJoe\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contract IJoetroller\",\"name\":\"_joetroller\",\"type\":\"address\"}],\"name\":\"setJoetroller\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"rewardType\",\"type\":\"uint8\"},{\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"rewardSupplySpeed\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"rewardBorrowSpeed\",\"type\":\"uint256\"}],\"name\":\"setRewardSpeed\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"borrower\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint256\",\"name\":\"mantissa\",\"type\":\"uint256\"}],\"internalType\":\"struct Exponential.Exp\",\"name\":\"marketBorrowIndex\",\"type\":\"tuple\"}],\"name\":\"updateAndDistributeBorrowerRewardsForToken\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"contract IJToken\",\"name\":\"jToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"supplier\",\"type\":\"address\"}],\"name\":\"updateAndDistributeSupplierRewardsForToken\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{\"claimReward(uint8,address)\":{\"params\":{\"holder\":\"The address to claim JOE/AVAX for\",\"rewardType\":\"0 = JOE, 1 = AVAX\"}},\"claimReward(uint8,address,address[])\":{\"params\":{\"holder\":\"The address to claim JOE/AVAX for\",\"jTokens\":\"The list of markets to claim JOE/AVAX in\",\"rewardType\":\"0 = JOE, 1 = AVAX\"}},\"claimReward(uint8,address[],address[],bool,bool)\":{\"params\":{\"borrowers\":\"Whether or not to claim JOE/AVAX earned by borrowing\",\"holders\":\"The addresses to claim JOE/AVAX for\",\"jTokens\":\"The list of markets to claim JOE/AVAX in\",\"rewardType\":\"0 = JOE, 1 = AVAX\",\"suppliers\":\"Whether or not to claim JOE/AVAX earned by supplying\"}},\"grantReward(uint8,address,uint256)\":{\"details\":\"Note: If there is not enough JOE, we do not perform the transfer at all.\",\"params\":{\"amount\":\"The amount of JOE to (possibly) transfer\",\"recipient\":\"The address of the recipient to transfer JOE to\",\"rewardType\":\"0 = JOE, 1 = AVAX\"}},\"initialize()\":{\"details\":\"first call is made by the deploy script, the second one by joeTroller when calling `_setRewardDistributor`\"},\"initializeRewardAccrued(uint8,address[],uint256[])\":{\"details\":\"We initialize rewardAccrued to transfer pending rewards from previous rewarder to this one. Must call lockInitializeRewardAccrued() after initialization.\",\"params\":{\"amounts\":\"The list of amounts of unclaimed rewards\",\"rewardType\":\"0 = JOE, 1 = AVAX\",\"users\":\"The list of addresses of users that did not claim their rewards\"}},\"pendingReward(uint8,address)\":{\"params\":{\"holder\":\"The address to check pending JOE/AVAX for\",\"rewardType\":\"0 = JOE, 1 = AVAX\"},\"return\":\"pendingReward The pending JOE/AVAX reward of that holder\"},\"setAdmin(address)\":{\"params\":{\"newAdmin\":\"The address of the new admin\"}},\"setJoe(address)\":{\"params\":{\"_joe\":\"The JOE token address\"}},\"setJoetroller(address)\":{\"params\":{\"_joetroller\":\"The Joetroller address\"}},\"setRewardSpeed(uint8,address,uint256,uint256)\":{\"params\":{\"jToken\":\"The market whose reward speed to update\",\"rewardBorrowSpeed\":\"New reward borrow speed for market\",\"rewardSupplySpeed\":\"New reward supply speed for market\",\"rewardType\":\"0 = JOE, 1 = AVAX\"}},\"updateAndDistributeBorrowerRewardsForToken(address,address,(uint256))\":{\"params\":{\"borrower\":\"Borrower to be rewarded\",\"jToken\":\"The market to verify the mint against\",\"marketBorrowIndex\":\"Current index of the borrow market\"}},\"updateAndDistributeSupplierRewardsForToken(address,address)\":{\"params\":{\"jToken\":\"The market to verify the mint against\",\"supplier\":\"The supplier to be rewarded\"}}}},\"userdoc\":{\"methods\":{\"claimReward(uint8,address)\":{\"notice\":\"Claim all the JOE/AVAX accrued by holder in all markets\"},\"claimReward(uint8,address,address[])\":{\"notice\":\"Claim all the JOE/AVAX accrued by holder in the specified markets\"},\"claimReward(uint8,address[],address[],bool,bool)\":{\"notice\":\"Claim all JOE/AVAX accrued by the holders\"},\"grantReward(uint8,address,uint256)\":{\"notice\":\"Transfer JOE/AVAX to the recipient\"},\"initialize()\":{\"notice\":\"Initialize function, in 2 times to avoid redeploying joetroller\"},\"initializeRewardAccrued(uint8,address[],uint256[])\":{\"notice\":\"Initialize rewardAccrued of users for the first time\"},\"lockInitializeRewardAccrued()\":{\"notice\":\"Lock the initializeRewardAccrued function\"},\"pendingReward(uint8,address)\":{\"notice\":\"Returns the pending JOE/AVAX reward accrued by the holder\"},\"setAdmin(address)\":{\"notice\":\"Set the admin\"},\"setJoe(address)\":{\"notice\":\"Set the JOE token address\"},\"setJoetroller(address)\":{\"notice\":\"Set the Joetroller address\"},\"setRewardSpeed(uint8,address,uint256,uint256)\":{\"notice\":\"Set JOE/AVAX speed for a single market\"},\"updateAndDistributeBorrowerRewardsForToken(address,address,(uint256))\":{\"notice\":\"Refactored function to calc and rewards accounts borrower rewards\"},\"updateAndDistributeSupplierRewardsForToken(address,address)\":{\"notice\":\"Refactored function to calc and rewards accounts supplier rewards\"}}}},\"settings\":{\"compilationTarget\":{\"contracts/RewardDistributorV2.sol\":\"RewardDistributorV2\"},\"evmVersion\":\"istanbul\",\"libraries\":{\"__CACHE_BREAKER__\":\"0x00000000d41867734bbee4c6863d9255b2b06ac1\"},\"metadata\":{\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/CarefulMath.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\n/**\\n * @title Careful Math\\n * @author Compound\\n * @notice Derived from OpenZeppelin's SafeMath library\\n *         https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol\\n */\\ncontract CarefulMath {\\n    /**\\n     * @dev Possible error codes that we can return\\n     */\\n    enum MathError {\\n        NO_ERROR,\\n        DIVISION_BY_ZERO,\\n        INTEGER_OVERFLOW,\\n        INTEGER_UNDERFLOW\\n    }\\n\\n    /**\\n     * @dev Multiplies two numbers, returns an error on overflow.\\n     */\\n    function mulUInt(uint256 a, uint256 b) internal pure returns (MathError, uint256) {\\n        if (a == 0) {\\n            return (MathError.NO_ERROR, 0);\\n        }\\n\\n        uint256 c = a * b;\\n\\n        if (c / a != b) {\\n            return (MathError.INTEGER_OVERFLOW, 0);\\n        } else {\\n            return (MathError.NO_ERROR, c);\\n        }\\n    }\\n\\n    /**\\n     * @dev Integer division of two numbers, truncating the quotient.\\n     */\\n    function divUInt(uint256 a, uint256 b) internal pure returns (MathError, uint256) {\\n        if (b == 0) {\\n            return (MathError.DIVISION_BY_ZERO, 0);\\n        }\\n\\n        return (MathError.NO_ERROR, a / b);\\n    }\\n\\n    /**\\n     * @dev Subtracts two numbers, returns an error on overflow (i.e. if subtrahend is greater than minuend).\\n     */\\n    function subUInt(uint256 a, uint256 b) internal pure returns (MathError, uint256) {\\n        if (b <= a) {\\n            return (MathError.NO_ERROR, a - b);\\n        } else {\\n            return (MathError.INTEGER_UNDERFLOW, 0);\\n        }\\n    }\\n\\n    /**\\n     * @dev Adds two numbers, returns an error on overflow.\\n     */\\n    function addUInt(uint256 a, uint256 b) internal pure returns (MathError, uint256) {\\n        uint256 c = a + b;\\n\\n        if (c >= a) {\\n            return (MathError.NO_ERROR, c);\\n        } else {\\n            return (MathError.INTEGER_OVERFLOW, 0);\\n        }\\n    }\\n\\n    /**\\n     * @dev add a and b and then subtract c\\n     */\\n    function addThenSubUInt(\\n        uint256 a,\\n        uint256 b,\\n        uint256 c\\n    ) internal pure returns (MathError, uint256) {\\n        (MathError err0, uint256 sum) = addUInt(a, b);\\n\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, 0);\\n        }\\n\\n        return subUInt(sum, c);\\n    }\\n}\\n\",\"keccak256\":\"0x458de49aa8c70be5b88d92d242caa5f647ee0f74570eda81a9276e969ba94f7f\"},\"contracts/EIP20Interface.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\n/**\\n * @title ERC 20 Token Standard Interface\\n *  https://eips.ethereum.org/EIPS/eip-20\\n */\\ninterface EIP20Interface {\\n    function name() external view returns (string memory);\\n\\n    function symbol() external view returns (string memory);\\n\\n    function decimals() external view returns (uint8);\\n\\n    /**\\n     * @notice Get the total number of tokens in circulation\\n     * @return The supply of tokens\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @notice Gets the balance of the specified address\\n     * @param owner The address from which the balance will be retrieved\\n     * @return The balance\\n     */\\n    function balanceOf(address owner) external view returns (uint256 balance);\\n\\n    /**\\n     * @notice Transfer `amount` tokens from `msg.sender` to `dst`\\n     * @param dst The address of the destination account\\n     * @param amount The number of tokens to transfer\\n     * @return Whether or not the transfer succeeded\\n     */\\n    function transfer(address dst, uint256 amount) external returns (bool success);\\n\\n    /**\\n     * @notice Transfer `amount` tokens from `src` to `dst`\\n     * @param src The address of the source account\\n     * @param dst The address of the destination account\\n     * @param amount The number of tokens to transfer\\n     * @return Whether or not the transfer succeeded\\n     */\\n    function transferFrom(\\n        address src,\\n        address dst,\\n        uint256 amount\\n    ) external returns (bool success);\\n\\n    /**\\n     * @notice Approve `spender` to transfer up to `amount` from `src`\\n     * @dev This will overwrite the approval amount for `spender`\\n     *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)\\n     * @param spender The address of the account which may transfer tokens\\n     * @param amount The number of tokens that are approved (-1 means infinite)\\n     * @return Whether or not the approval succeeded\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool success);\\n\\n    /**\\n     * @notice Get the current allowance from `owner` for `spender`\\n     * @param owner The address of the account which owns the tokens to be spent\\n     * @param spender The address of the account which may transfer tokens\\n     * @return The number of tokens allowed to be spent (-1 means infinite)\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256 remaining);\\n\\n    event Transfer(address indexed from, address indexed to, uint256 amount);\\n    event Approval(address indexed owner, address indexed spender, uint256 amount);\\n}\\n\",\"keccak256\":\"0xf0c362ddd4ebdde949af559b3d37b6c2b666773fbdc81ed864493ffa9c381bd9\"},\"contracts/Exponential.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\nimport \\\"./CarefulMath.sol\\\";\\n\\n/**\\n * @title Exponential module for storing fixed-precision decimals\\n * @author Compound\\n * @notice Exp is a struct which stores decimals with a fixed precision of 18 decimal places.\\n *         Thus, if we wanted to store the 5.1, mantissa would store 5.1e18. That is:\\n *         `Exp({mantissa: 5100000000000000000})`.\\n */\\ncontract Exponential is CarefulMath {\\n    uint256 constant expScale = 1e18;\\n    uint256 constant doubleScale = 1e36;\\n    uint256 constant halfExpScale = expScale / 2;\\n    uint256 constant mantissaOne = expScale;\\n\\n    struct Exp {\\n        uint256 mantissa;\\n    }\\n\\n    struct Double {\\n        uint256 mantissa;\\n    }\\n\\n    /**\\n     * @dev Creates an exponential from numerator and denominator values.\\n     *      Note: Returns an error if (`num` * 10e18) > MAX_INT,\\n     *            or if `denom` is zero.\\n     */\\n    function getExp(uint256 num, uint256 denom) internal pure returns (MathError, Exp memory) {\\n        (MathError err0, uint256 scaledNumerator) = mulUInt(num, expScale);\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        (MathError err1, uint256 rational) = divUInt(scaledNumerator, denom);\\n        if (err1 != MathError.NO_ERROR) {\\n            return (err1, Exp({mantissa: 0}));\\n        }\\n\\n        return (MathError.NO_ERROR, Exp({mantissa: rational}));\\n    }\\n\\n    /**\\n     * @dev Adds two exponentials, returning a new exponential.\\n     */\\n    function addExp(Exp memory a, Exp memory b) internal pure returns (MathError, Exp memory) {\\n        (MathError error, uint256 result) = addUInt(a.mantissa, b.mantissa);\\n\\n        return (error, Exp({mantissa: result}));\\n    }\\n\\n    /**\\n     * @dev Subtracts two exponentials, returning a new exponential.\\n     */\\n    function subExp(Exp memory a, Exp memory b) internal pure returns (MathError, Exp memory) {\\n        (MathError error, uint256 result) = subUInt(a.mantissa, b.mantissa);\\n\\n        return (error, Exp({mantissa: result}));\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, returning a new Exp.\\n     */\\n    function mulScalar(Exp memory a, uint256 scalar) internal pure returns (MathError, Exp memory) {\\n        (MathError err0, uint256 scaledMantissa) = mulUInt(a.mantissa, scalar);\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        return (MathError.NO_ERROR, Exp({mantissa: scaledMantissa}));\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, then truncate to return an unsigned integer.\\n     */\\n    function mulScalarTruncate(Exp memory a, uint256 scalar) internal pure returns (MathError, uint256) {\\n        (MathError err, Exp memory product) = mulScalar(a, scalar);\\n        if (err != MathError.NO_ERROR) {\\n            return (err, 0);\\n        }\\n\\n        return (MathError.NO_ERROR, truncate(product));\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, truncate, then add an to an unsigned integer, returning an unsigned integer.\\n     */\\n    function mulScalarTruncateAddUInt(\\n        Exp memory a,\\n        uint256 scalar,\\n        uint256 addend\\n    ) internal pure returns (MathError, uint256) {\\n        (MathError err, Exp memory product) = mulScalar(a, scalar);\\n        if (err != MathError.NO_ERROR) {\\n            return (err, 0);\\n        }\\n\\n        return addUInt(truncate(product), addend);\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, then truncate to return an unsigned integer.\\n     */\\n    function mul_ScalarTruncate(Exp memory a, uint256 scalar) internal pure returns (uint256) {\\n        Exp memory product = mul_(a, scalar);\\n        return truncate(product);\\n    }\\n\\n    /**\\n     * @dev Multiply an Exp by a scalar, truncate, then add an to an unsigned integer, returning an unsigned integer.\\n     */\\n    function mul_ScalarTruncateAddUInt(\\n        Exp memory a,\\n        uint256 scalar,\\n        uint256 addend\\n    ) internal pure returns (uint256) {\\n        Exp memory product = mul_(a, scalar);\\n        return add_(truncate(product), addend);\\n    }\\n\\n    /**\\n     * @dev Divide an Exp by a scalar, returning a new Exp.\\n     */\\n    function divScalar(Exp memory a, uint256 scalar) internal pure returns (MathError, Exp memory) {\\n        (MathError err0, uint256 descaledMantissa) = divUInt(a.mantissa, scalar);\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        return (MathError.NO_ERROR, Exp({mantissa: descaledMantissa}));\\n    }\\n\\n    /**\\n     * @dev Divide a scalar by an Exp, returning a new Exp.\\n     */\\n    function divScalarByExp(uint256 scalar, Exp memory divisor) internal pure returns (MathError, Exp memory) {\\n        /*\\n          We are doing this as:\\n          getExp(mulUInt(expScale, scalar), divisor.mantissa)\\n\\n          How it works:\\n          Exp = a / b;\\n          Scalar = s;\\n          `s / (a / b)` = `b * s / a` and since for an Exp `a = mantissa, b = expScale`\\n        */\\n        (MathError err0, uint256 numerator) = mulUInt(expScale, scalar);\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n        return getExp(numerator, divisor.mantissa);\\n    }\\n\\n    /**\\n     * @dev Divide a scalar by an Exp, then truncate to return an unsigned integer.\\n     */\\n    function divScalarByExpTruncate(uint256 scalar, Exp memory divisor) internal pure returns (MathError, uint256) {\\n        (MathError err, Exp memory fraction) = divScalarByExp(scalar, divisor);\\n        if (err != MathError.NO_ERROR) {\\n            return (err, 0);\\n        }\\n\\n        return (MathError.NO_ERROR, truncate(fraction));\\n    }\\n\\n    /**\\n     * @dev Divide a scalar by an Exp, returning a new Exp.\\n     */\\n    function div_ScalarByExp(uint256 scalar, Exp memory divisor) internal pure returns (Exp memory) {\\n        /*\\n          We are doing this as:\\n          getExp(mulUInt(expScale, scalar), divisor.mantissa)\\n\\n          How it works:\\n          Exp = a / b;\\n          Scalar = s;\\n          `s / (a / b)` = `b * s / a` and since for an Exp `a = mantissa, b = expScale`\\n        */\\n        uint256 numerator = mul_(expScale, scalar);\\n        return Exp({mantissa: div_(numerator, divisor)});\\n    }\\n\\n    /**\\n     * @dev Divide a scalar by an Exp, then truncate to return an unsigned integer.\\n     */\\n    function div_ScalarByExpTruncate(uint256 scalar, Exp memory divisor) internal pure returns (uint256) {\\n        Exp memory fraction = div_ScalarByExp(scalar, divisor);\\n        return truncate(fraction);\\n    }\\n\\n    /**\\n     * @dev Multiplies two exponentials, returning a new exponential.\\n     */\\n    function mulExp(Exp memory a, Exp memory b) internal pure returns (MathError, Exp memory) {\\n        (MathError err0, uint256 doubleScaledProduct) = mulUInt(a.mantissa, b.mantissa);\\n        if (err0 != MathError.NO_ERROR) {\\n            return (err0, Exp({mantissa: 0}));\\n        }\\n\\n        // We add half the scale before dividing so that we get rounding instead of truncation.\\n        //  See \\\"Listing 6\\\" and text above it at https://accu.org/index.php/journals/1717\\n        // Without this change, a result like 6.6...e-19 will be truncated to 0 instead of being rounded to 1e-18.\\n        (MathError err1, uint256 doubleScaledProductWithHalfScale) = addUInt(halfExpScale, doubleScaledProduct);\\n        if (err1 != MathError.NO_ERROR) {\\n            return (err1, Exp({mantissa: 0}));\\n        }\\n\\n        (MathError err2, uint256 product) = divUInt(doubleScaledProductWithHalfScale, expScale);\\n        // The only error `div` can return is MathError.DIVISION_BY_ZERO but we control `expScale` and it is not zero.\\n        assert(err2 == MathError.NO_ERROR);\\n\\n        return (MathError.NO_ERROR, Exp({mantissa: product}));\\n    }\\n\\n    /**\\n     * @dev Multiplies two exponentials given their mantissas, returning a new exponential.\\n     */\\n    function mulExp(uint256 a, uint256 b) internal pure returns (MathError, Exp memory) {\\n        return mulExp(Exp({mantissa: a}), Exp({mantissa: b}));\\n    }\\n\\n    /**\\n     * @dev Multiplies three exponentials, returning a new exponential.\\n     */\\n    function mulExp3(\\n        Exp memory a,\\n        Exp memory b,\\n        Exp memory c\\n    ) internal pure returns (MathError, Exp memory) {\\n        (MathError err, Exp memory ab) = mulExp(a, b);\\n        if (err != MathError.NO_ERROR) {\\n            return (err, ab);\\n        }\\n        return mulExp(ab, c);\\n    }\\n\\n    /**\\n     * @dev Divides two exponentials, returning a new exponential.\\n     *     (a/scale) / (b/scale) = (a/scale) * (scale/b) = a/b,\\n     *  which we can scale as an Exp by calling getExp(a.mantissa, b.mantissa)\\n     */\\n    function divExp(Exp memory a, Exp memory b) internal pure returns (MathError, Exp memory) {\\n        return getExp(a.mantissa, b.mantissa);\\n    }\\n\\n    /**\\n     * @dev Truncates the given exp to a whole number value.\\n     *      For example, truncate(Exp{mantissa: 15 * expScale}) = 15\\n     */\\n    function truncate(Exp memory exp) internal pure returns (uint256) {\\n        // Note: We are not using careful math here as we're performing a division that cannot fail\\n        return exp.mantissa / expScale;\\n    }\\n\\n    /**\\n     * @dev Checks if first Exp is less than second Exp.\\n     */\\n    function lessThanExp(Exp memory left, Exp memory right) internal pure returns (bool) {\\n        return left.mantissa < right.mantissa;\\n    }\\n\\n    /**\\n     * @dev Checks if left Exp <= right Exp.\\n     */\\n    function lessThanOrEqualExp(Exp memory left, Exp memory right) internal pure returns (bool) {\\n        return left.mantissa <= right.mantissa;\\n    }\\n\\n    /**\\n     * @dev returns true if Exp is exactly zero\\n     */\\n    function isZeroExp(Exp memory value) internal pure returns (bool) {\\n        return value.mantissa == 0;\\n    }\\n\\n    function safe224(uint256 n, string memory errorMessage) internal pure returns (uint224) {\\n        require(n < 2**224, errorMessage);\\n        return uint224(n);\\n    }\\n\\n    function safe32(uint256 n, string memory errorMessage) internal pure returns (uint32) {\\n        require(n < 2**32, errorMessage);\\n        return uint32(n);\\n    }\\n\\n    function add_(Exp memory a, Exp memory b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: add_(a.mantissa, b.mantissa)});\\n    }\\n\\n    function add_(Double memory a, Double memory b) internal pure returns (Double memory) {\\n        return Double({mantissa: add_(a.mantissa, b.mantissa)});\\n    }\\n\\n    function add_(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return add_(a, b, \\\"addition overflow\\\");\\n    }\\n\\n    function add_(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        uint256 c = a + b;\\n        require(c >= a, errorMessage);\\n        return c;\\n    }\\n\\n    function sub_(Exp memory a, Exp memory b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: sub_(a.mantissa, b.mantissa)});\\n    }\\n\\n    function sub_(Double memory a, Double memory b) internal pure returns (Double memory) {\\n        return Double({mantissa: sub_(a.mantissa, b.mantissa)});\\n    }\\n\\n    function sub_(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return sub_(a, b, \\\"subtraction underflow\\\");\\n    }\\n\\n    function sub_(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        require(b <= a, errorMessage);\\n        return a - b;\\n    }\\n\\n    function mul_(Exp memory a, Exp memory b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: mul_(a.mantissa, b.mantissa) / expScale});\\n    }\\n\\n    function mul_(Exp memory a, uint256 b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: mul_(a.mantissa, b)});\\n    }\\n\\n    function mul_(uint256 a, Exp memory b) internal pure returns (uint256) {\\n        return mul_(a, b.mantissa) / expScale;\\n    }\\n\\n    function mul_(Double memory a, Double memory b) internal pure returns (Double memory) {\\n        return Double({mantissa: mul_(a.mantissa, b.mantissa) / doubleScale});\\n    }\\n\\n    function mul_(Double memory a, uint256 b) internal pure returns (Double memory) {\\n        return Double({mantissa: mul_(a.mantissa, b)});\\n    }\\n\\n    function mul_(uint256 a, Double memory b) internal pure returns (uint256) {\\n        return mul_(a, b.mantissa) / doubleScale;\\n    }\\n\\n    function mul_(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return mul_(a, b, \\\"multiplication overflow\\\");\\n    }\\n\\n    function mul_(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        if (a == 0 || b == 0) {\\n            return 0;\\n        }\\n        uint256 c = a * b;\\n        require(c / a == b, errorMessage);\\n        return c;\\n    }\\n\\n    function div_(Exp memory a, Exp memory b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: div_(mul_(a.mantissa, expScale), b.mantissa)});\\n    }\\n\\n    function div_(Exp memory a, uint256 b) internal pure returns (Exp memory) {\\n        return Exp({mantissa: div_(a.mantissa, b)});\\n    }\\n\\n    function div_(uint256 a, Exp memory b) internal pure returns (uint256) {\\n        return div_(mul_(a, expScale), b.mantissa);\\n    }\\n\\n    function div_(Double memory a, Double memory b) internal pure returns (Double memory) {\\n        return Double({mantissa: div_(mul_(a.mantissa, doubleScale), b.mantissa)});\\n    }\\n\\n    function div_(Double memory a, uint256 b) internal pure returns (Double memory) {\\n        return Double({mantissa: div_(a.mantissa, b)});\\n    }\\n\\n    function div_(uint256 a, Double memory b) internal pure returns (uint256) {\\n        return div_(mul_(a, doubleScale), b.mantissa);\\n    }\\n\\n    function div_(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return div_(a, b, \\\"divide by zero\\\");\\n    }\\n\\n    function div_(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        require(b > 0, errorMessage);\\n        return a / b;\\n    }\\n\\n    function fraction(uint256 a, uint256 b) internal pure returns (Double memory) {\\n        return Double({mantissa: div_(mul_(a, doubleScale), b)});\\n    }\\n\\n    // implementation from https://github.com/Uniswap/uniswap-lib/commit/99f3f28770640ba1bb1ff460ac7c5292fb8291a0\\n    // original implementation: https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol#L687\\n    function sqrt(uint256 x) internal pure returns (uint256) {\\n        if (x == 0) return 0;\\n        uint256 xx = x;\\n        uint256 r = 1;\\n\\n        if (xx >= 0x100000000000000000000000000000000) {\\n            xx >>= 128;\\n            r <<= 64;\\n        }\\n        if (xx >= 0x10000000000000000) {\\n            xx >>= 64;\\n            r <<= 32;\\n        }\\n        if (xx >= 0x100000000) {\\n            xx >>= 32;\\n            r <<= 16;\\n        }\\n        if (xx >= 0x10000) {\\n            xx >>= 16;\\n            r <<= 8;\\n        }\\n        if (xx >= 0x100) {\\n            xx >>= 8;\\n            r <<= 4;\\n        }\\n        if (xx >= 0x10) {\\n            xx >>= 4;\\n            r <<= 2;\\n        }\\n        if (xx >= 0x8) {\\n            r <<= 1;\\n        }\\n\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1;\\n        r = (r + x / r) >> 1; // Seven iterations should be enough\\n        uint256 r1 = x / r;\\n        return (r < r1 ? r : r1);\\n    }\\n}\\n\",\"keccak256\":\"0xf8507369462982bc2fb7200d9039467851b3403afdc637adbee4b629b1927e0f\"},\"contracts/RewardDistributorV2.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\npragma experimental ABIEncoderV2;\\n\\nimport \\\"./EIP20Interface.sol\\\";\\nimport \\\"./Exponential.sol\\\";\\nimport \\\"./SafeMath.sol\\\";\\n\\ninterface IJToken {\\n    function balanceOf(address owner) external view returns (uint256);\\n\\n    function borrowIndex() external view returns (uint256);\\n\\n    function totalSupply() external view returns (uint256);\\n\\n    function totalBorrows() external view returns (uint256);\\n\\n    function borrowBalanceStored(address account) external view returns (uint256);\\n}\\n\\ninterface IJoetroller {\\n    function isMarketListed(address jTokenAddress) external view returns (bool);\\n\\n    function getAllMarkets() external view returns (IJToken[] memory);\\n\\n    function rewardDistributor() external view returns (address);\\n}\\n\\ncontract RewardDistributorStorageV2 {\\n    /// @notice Administrator for this contract\\n    address public admin;\\n\\n    /// @notice Active brains of Unitroller\\n    IJoetroller public joetroller;\\n\\n    struct RewardMarketState {\\n        /// @notice The market's last updated joeBorrowIndex or joeSupplyIndex\\n        uint208 index;\\n        /// @notice The timestamp number the index was last updated at\\n        uint48 timestamp;\\n    }\\n\\n    /// @notice The portion of supply reward rate that each market currently receives\\n    mapping(uint8 => mapping(address => uint256)) public rewardSupplySpeeds;\\n\\n    /// @notice The portion of borrow reward rate that each market currently receives\\n    mapping(uint8 => mapping(address => uint256)) public rewardBorrowSpeeds;\\n\\n    /// @notice The JOE/AVAX market supply state for each market\\n    mapping(uint8 => mapping(address => RewardMarketState)) public rewardSupplyState;\\n\\n    /// @notice The JOE/AVAX market borrow state for each market\\n    mapping(uint8 => mapping(address => RewardMarketState)) public rewardBorrowState;\\n\\n    /// @notice The JOE/AVAX borrow index for each market for each supplier as of the last time they accrued reward\\n    mapping(uint8 => mapping(address => mapping(address => uint256))) public rewardSupplierIndex;\\n\\n    /// @notice The JOE/AVAX borrow index for each market for each borrower as of the last time they accrued reward\\n    mapping(uint8 => mapping(address => mapping(address => uint256))) public rewardBorrowerIndex;\\n\\n    /// @notice The JOE/AVAX accrued but not yet transferred to each user\\n    mapping(uint8 => mapping(address => uint256)) public rewardAccrued;\\n\\n    /// @notice JOE token contract address\\n    EIP20Interface public joe;\\n\\n    /// @notice If initializeRewardAccrued is locked\\n    bool public isInitializeRewardAccruedLocked;\\n}\\n\\ncontract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {\\n    using SafeMath for uint256;\\n\\n    /// @notice Emitted when a new reward supply speed is calculated for a market\\n    event RewardSupplySpeedUpdated(uint8 rewardType, IJToken indexed jToken, uint256 newSpeed);\\n\\n    /// @notice Emitted when a new reward borrow speed is calculated for a market\\n    event RewardBorrowSpeedUpdated(uint8 rewardType, IJToken indexed jToken, uint256 newSpeed);\\n\\n    /// @notice Emitted when JOE/AVAX is distributed to a supplier\\n    event DistributedSupplierReward(\\n        uint8 rewardType,\\n        IJToken indexed jToken,\\n        address indexed supplier,\\n        uint256 rewardDelta,\\n        uint256 rewardSupplyIndex\\n    );\\n\\n    /// @notice Emitted when JOE/AVAX is distributed to a borrower\\n    event DistributedBorrowerReward(\\n        uint8 rewardType,\\n        IJToken indexed jToken,\\n        address indexed borrower,\\n        uint256 rewardDelta,\\n        uint256 rewardBorrowIndex\\n    );\\n\\n    /// @notice Emitted when JOE is granted by admin\\n    event RewardGranted(uint8 rewardType, address recipient, uint256 amount);\\n\\n    /// @notice Emitted when Joe address is changed by admin\\n    event JoeSet(EIP20Interface indexed joe);\\n\\n    /// @notice Emitted when Joetroller address is changed by admin\\n    event JoetrollerSet(IJoetroller indexed newJoetroller);\\n\\n    /// @notice Emitted when admin is transfered\\n    event AdminTransferred(address oldAdmin, address newAdmin);\\n\\n    /// @notice Emitted when accruedRewards is set\\n    event AccruedRewardsSet(uint8 rewardType, address indexed user, uint256 amount);\\n\\n    /// @notice Emitted when the setAccruedRewardsForUsers function is locked\\n    event InitializeRewardAccruedLocked();\\n\\n    /**\\n     * @notice Checks if caller is admin\\n     */\\n    modifier onlyAdmin() {\\n        require(msg.sender == admin, \\\"only admin\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @notice Checks if caller is joetroller or admin\\n     */\\n    modifier onlyJoetrollerOrAdmin() {\\n        require(msg.sender == address(joetroller) || msg.sender == admin, \\\"only joetroller or admin\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @notice Checks that reward type is valid\\n     */\\n    modifier verifyRewardType(uint8 rewardType) {\\n        require(rewardType <= 1, \\\"rewardType is invalid\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @notice Initialize function, in 2 times to avoid redeploying joetroller\\n     * @dev first call is made by the deploy script, the second one by joeTroller\\n     * when calling `_setRewardDistributor`\\n     */\\n    function initialize() public {\\n        require(address(joetroller) == address(0), \\\"already initialized\\\");\\n        if (admin == address(0)) {\\n            admin = msg.sender;\\n        } else {\\n            joetroller = IJoetroller(msg.sender);\\n        }\\n    }\\n\\n    /**\\n     * @notice Payable function needed to receive AVAX\\n     */\\n    function() external payable {}\\n\\n    /*** User functions ***/\\n\\n    /**\\n     * @notice Claim all the JOE/AVAX accrued by holder in all markets\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to claim JOE/AVAX for\\n     */\\n    function claimReward(uint8 rewardType, address payable holder) external {\\n        _claimReward(rewardType, holder, joetroller.getAllMarkets(), true, true);\\n    }\\n\\n    /**\\n     * @notice Claim all the JOE/AVAX accrued by holder in the specified markets\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to claim JOE/AVAX for\\n     * @param jTokens The list of markets to claim JOE/AVAX in\\n     */\\n    function claimReward(\\n        uint8 rewardType,\\n        address payable holder,\\n        IJToken[] calldata jTokens\\n    ) external {\\n        _claimReward(rewardType, holder, jTokens, true, true);\\n    }\\n\\n    /**\\n     * @notice Claim all JOE/AVAX accrued by the holders\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holders The addresses to claim JOE/AVAX for\\n     * @param jTokens The list of markets to claim JOE/AVAX in\\n     * @param borrowers Whether or not to claim JOE/AVAX earned by borrowing\\n     * @param suppliers Whether or not to claim JOE/AVAX earned by supplying\\n     */\\n    function claimReward(\\n        uint8 rewardType,\\n        address payable[] calldata holders,\\n        IJToken[] calldata jTokens,\\n        bool borrowers,\\n        bool suppliers\\n    ) external {\\n        uint256 len = holders.length;\\n        for (uint256 i; i < len; i++) {\\n            _claimReward(rewardType, holders[i], jTokens, borrowers, suppliers);\\n        }\\n    }\\n\\n    /**\\n     * @notice Returns the pending JOE/AVAX reward accrued by the holder\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to check pending JOE/AVAX for\\n     * @return pendingReward The pending JOE/AVAX reward of that holder\\n     */\\n    function pendingReward(uint8 rewardType, address holder) external view returns (uint256) {\\n        return _pendingReward(rewardType, holder, joetroller.getAllMarkets());\\n    }\\n\\n    /*** Joetroller Or Joe Distribution Admin ***/\\n\\n    /**\\n     * @notice Refactored function to calc and rewards accounts supplier rewards\\n     * @param jToken The market to verify the mint against\\n     * @param supplier The supplier to be rewarded\\n     */\\n    function updateAndDistributeSupplierRewardsForToken(IJToken jToken, address supplier)\\n        external\\n        onlyJoetrollerOrAdmin\\n    {\\n        for (uint8 rewardType; rewardType <= 1; rewardType++) {\\n            _updateRewardSupplyIndex(rewardType, jToken);\\n            uint256 reward = _distributeSupplierReward(rewardType, jToken, supplier);\\n            rewardAccrued[rewardType][supplier] = rewardAccrued[rewardType][supplier].add(reward);\\n        }\\n    }\\n\\n    /**\\n     * @notice Refactored function to calc and rewards accounts borrower rewards\\n     * @param jToken The market to verify the mint against\\n     * @param borrower Borrower to be rewarded\\n     * @param marketBorrowIndex Current index of the borrow market\\n     */\\n    function updateAndDistributeBorrowerRewardsForToken(\\n        IJToken jToken,\\n        address borrower,\\n        Exp calldata marketBorrowIndex\\n    ) external onlyJoetrollerOrAdmin {\\n        for (uint8 rewardType; rewardType <= 1; rewardType++) {\\n            _updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex.mantissa);\\n            uint256 reward = _distributeBorrowerReward(rewardType, jToken, borrower, marketBorrowIndex.mantissa);\\n            rewardAccrued[rewardType][borrower] = rewardAccrued[rewardType][borrower].add(reward);\\n        }\\n    }\\n\\n    /*** Joe Distribution Admin ***/\\n\\n    /**\\n     * @notice Set JOE/AVAX speed for a single market\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose reward speed to update\\n     * @param rewardSupplySpeed New reward supply speed for market\\n     * @param rewardBorrowSpeed New reward borrow speed for market\\n     */\\n    function setRewardSpeed(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        uint256 rewardSupplySpeed,\\n        uint256 rewardBorrowSpeed\\n    ) external onlyAdmin verifyRewardType(rewardType) {\\n        _setRewardSupplySpeed(rewardType, jToken, rewardSupplySpeed);\\n        _setRewardBorrowSpeed(rewardType, jToken, rewardBorrowSpeed);\\n    }\\n\\n    /**\\n     * @notice Transfer JOE/AVAX to the recipient\\n     * @dev Note: If there is not enough JOE, we do not perform the transfer at all.\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param recipient The address of the recipient to transfer JOE to\\n     * @param amount The amount of JOE to (possibly) transfer\\n     */\\n    function grantReward(\\n        uint8 rewardType,\\n        address payable recipient,\\n        uint256 amount\\n    ) external onlyAdmin verifyRewardType(rewardType) {\\n        uint256 amountLeft = _grantReward(rewardType, recipient, amount);\\n        require(amountLeft == 0, \\\"insufficient joe for grant\\\");\\n        emit RewardGranted(rewardType, recipient, amount);\\n    }\\n\\n    /**\\n     * @notice Set the JOE token address\\n     * @param _joe The JOE token address\\n     */\\n    function setJoe(EIP20Interface _joe) external onlyAdmin {\\n        joe = _joe;\\n        emit JoeSet(_joe);\\n    }\\n\\n    /**\\n     * @notice Set the Joetroller address\\n     * @param _joetroller The Joetroller address\\n     */\\n    function setJoetroller(IJoetroller _joetroller) external onlyAdmin {\\n        joetroller = _joetroller;\\n        emit JoetrollerSet(_joetroller);\\n    }\\n\\n    /**\\n     * @notice Set the admin\\n     * @param newAdmin The address of the new admin\\n     */\\n    function setAdmin(address newAdmin) external onlyAdmin {\\n        address oldAdmin = admin;\\n        admin = newAdmin;\\n        emit AdminTransferred(oldAdmin, newAdmin);\\n    }\\n\\n    /**\\n     * @notice Initialize rewardAccrued of users for the first time\\n     * @dev We initialize rewardAccrued to transfer pending rewards from previous rewarder to this one.\\n     * Must call lockInitializeRewardAccrued() after initialization.\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param users The list of addresses of users that did not claim their rewards\\n     * @param amounts The list of amounts of unclaimed rewards\\n     */\\n    function initializeRewardAccrued(\\n        uint8 rewardType,\\n        address[] calldata users,\\n        uint256[] calldata amounts\\n    ) external onlyAdmin verifyRewardType(rewardType) {\\n        require(!isInitializeRewardAccruedLocked, \\\"initializeRewardAccrued is locked\\\");\\n        uint256 len = users.length;\\n        require(len == amounts.length, \\\"length mismatch\\\");\\n        for (uint256 i; i < len; i++) {\\n            address user = users[i];\\n            uint256 amount = amounts[i];\\n            rewardAccrued[rewardType][user] = amount;\\n            emit AccruedRewardsSet(rewardType, user, amount);\\n        }\\n    }\\n\\n    /**\\n     * @notice Lock the initializeRewardAccrued function\\n     */\\n    function lockInitializeRewardAccrued() external onlyAdmin {\\n        isInitializeRewardAccruedLocked = true;\\n        emit InitializeRewardAccruedLocked();\\n    }\\n\\n    /*** Private functions ***/\\n\\n    /**\\n     * @notice Set JOE/AVAX supply speed\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose speed to update\\n     * @param newRewardSupplySpeed New JOE or AVAX supply speed for market\\n     */\\n    function _setRewardSupplySpeed(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        uint256 newRewardSupplySpeed\\n    ) private {\\n        // Handle new supply speed\\n        uint256 currentRewardSupplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];\\n\\n        if (currentRewardSupplySpeed != 0) {\\n            // note that JOE speed could be set to 0 to halt liquidity rewards for a market\\n            _updateRewardSupplyIndex(rewardType, jToken);\\n        } else if (newRewardSupplySpeed != 0) {\\n            // Add the JOE market\\n            require(joetroller.isMarketListed(address(jToken)), \\\"reward market is not listed\\\");\\n            rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());\\n        }\\n\\n        if (currentRewardSupplySpeed != newRewardSupplySpeed) {\\n            rewardSupplySpeeds[rewardType][address(jToken)] = newRewardSupplySpeed;\\n            emit RewardSupplySpeedUpdated(rewardType, jToken, newRewardSupplySpeed);\\n        }\\n    }\\n\\n    /**\\n     * @notice Set JOE/AVAX borrow speed\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose speed to update\\n     * @param newRewardBorrowSpeed New JOE or AVAX borrow speed for market\\n     */\\n    function _setRewardBorrowSpeed(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        uint256 newRewardBorrowSpeed\\n    ) private {\\n        // Handle new borrow speed\\n        uint256 currentRewardBorrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];\\n\\n        if (currentRewardBorrowSpeed != 0) {\\n            // note that JOE speed could be set to 0 to halt liquidity rewards for a market\\n            _updateRewardBorrowIndex(rewardType, jToken, jToken.borrowIndex());\\n        } else if (newRewardBorrowSpeed != 0) {\\n            // Add the JOE market\\n            require(joetroller.isMarketListed(address(jToken)), \\\"reward market is not listed\\\");\\n            rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());\\n        }\\n\\n        if (currentRewardBorrowSpeed != newRewardBorrowSpeed) {\\n            rewardBorrowSpeeds[rewardType][address(jToken)] = newRewardBorrowSpeed;\\n            emit RewardBorrowSpeedUpdated(rewardType, jToken, newRewardBorrowSpeed);\\n        }\\n    }\\n\\n    /**\\n     * @notice Accrue JOE/AVAX to the market by updating the supply index\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose supply index to update\\n     */\\n    function _updateRewardSupplyIndex(uint8 rewardType, IJToken jToken) private verifyRewardType(rewardType) {\\n        (uint208 supplyIndex, bool update) = _getUpdatedRewardSupplyIndex(rewardType, jToken);\\n\\n        if (update) {\\n            rewardSupplyState[rewardType][address(jToken)].index = supplyIndex;\\n        }\\n        rewardSupplyState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());\\n    }\\n\\n    /**\\n     * @notice Accrue JOE/AVAX to the market by updating the borrow index\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose borrow index to update\\n     * @param marketBorrowIndex Current index of the borrow market\\n     */\\n    function _updateRewardBorrowIndex(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        uint256 marketBorrowIndex\\n    ) private verifyRewardType(rewardType) {\\n        (uint208 borrowIndex, bool update) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);\\n\\n        if (update) {\\n            rewardBorrowState[rewardType][address(jToken)].index = borrowIndex;\\n        }\\n        rewardBorrowState[rewardType][address(jToken)].timestamp = _safe48(_getBlockTimestamp());\\n    }\\n\\n    /**\\n     * @notice Calculate JOE/AVAX accrued by a supplier\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market in which the supplier is interacting\\n     * @param supplier The address of the supplier to distribute JOE/AVAX to\\n     * @return supplierReward The JOE/AVAX amount of reward from market\\n     */\\n    function _distributeSupplierReward(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        address supplier\\n    ) private verifyRewardType(rewardType) returns (uint208) {\\n        uint256 supplyIndex = rewardSupplyState[rewardType][address(jToken)].index;\\n        uint256 supplierIndex = rewardSupplierIndex[rewardType][address(jToken)][supplier];\\n\\n        uint256 deltaIndex = supplyIndex.sub(supplierIndex);\\n        uint256 supplierAmount = jToken.balanceOf(supplier);\\n        uint208 supplierReward = _safe208(supplierAmount.mul(deltaIndex).div(doubleScale));\\n\\n        if (supplyIndex != supplierIndex) {\\n            rewardSupplierIndex[rewardType][address(jToken)][supplier] = supplyIndex;\\n        }\\n        emit DistributedSupplierReward(rewardType, jToken, supplier, supplierReward, supplyIndex);\\n        return supplierReward;\\n    }\\n\\n    /**\\n     * @notice Calculate JOE/AVAX accrued by a borrower\\n     * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market in which the borrower is interacting\\n     * @param borrower The address of the borrower to distribute JOE/AVAX to\\n     * @param marketBorrowIndex Current index of the borrow market\\n     * @return borrowerReward The JOE/AVAX amount of reward from market\\n     */\\n    function _distributeBorrowerReward(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        address borrower,\\n        uint256 marketBorrowIndex\\n    ) private verifyRewardType(rewardType) returns (uint208) {\\n        uint256 borrowIndex = rewardBorrowState[rewardType][address(jToken)].index;\\n        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][address(jToken)][borrower];\\n\\n        uint256 deltaIndex = borrowIndex.sub(borrowerIndex);\\n        uint256 borrowerAmount = jToken.borrowBalanceStored(borrower).mul(expScale).div(marketBorrowIndex);\\n        uint208 borrowerReward = _safe208(borrowerAmount.mul(deltaIndex).div(doubleScale));\\n\\n        if (borrowIndex != borrowerIndex) {\\n            rewardBorrowerIndex[rewardType][address(jToken)][borrower] = borrowIndex;\\n        }\\n        emit DistributedBorrowerReward(rewardType, jToken, borrower, borrowerReward, borrowIndex);\\n        return borrowerReward;\\n    }\\n\\n    /**\\n     * @notice Claim all JOE/AVAX accrued by the holders\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to claim JOE/AVAX for\\n     * @param jTokens The list of markets to claim JOE/AVAX in\\n     * @param borrower Whether or not to claim JOE/AVAX earned by borrowing\\n     * @param supplier Whether or not to claim JOE/AVAX earned by supplying\\n     */\\n    function _claimReward(\\n        uint8 rewardType,\\n        address payable holder,\\n        IJToken[] memory jTokens,\\n        bool borrower,\\n        bool supplier\\n    ) private verifyRewardType(rewardType) {\\n        uint256 rewards = rewardAccrued[rewardType][holder];\\n        uint256 len = jTokens.length;\\n        for (uint256 i; i < len; i++) {\\n            IJToken jToken = jTokens[i];\\n            require(joetroller.isMarketListed(address(jToken)), \\\"market must be listed\\\");\\n\\n            if (borrower) {\\n                uint256 marketBorrowIndex = jToken.borrowIndex();\\n                _updateRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);\\n                uint256 reward = _distributeBorrowerReward(rewardType, jToken, holder, marketBorrowIndex);\\n                rewards = rewards.add(reward);\\n            }\\n            if (supplier) {\\n                _updateRewardSupplyIndex(rewardType, jToken);\\n                uint256 reward = _distributeSupplierReward(rewardType, jToken, holder);\\n                rewards = rewards.add(reward);\\n            }\\n        }\\n        if (rewards != 0) {\\n            rewardAccrued[rewardType][holder] = _grantReward(rewardType, holder, rewards);\\n        }\\n    }\\n\\n    /**\\n     * @notice Returns the pending JOE/AVAX reward for holder\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to return the pending JOE/AVAX reward for\\n     * @param jTokens The markets to return the pending JOE/AVAX reward in\\n     * @return uint256 The JOE/AVAX reward for that user\\n     */\\n    function _pendingReward(\\n        uint8 rewardType,\\n        address holder,\\n        IJToken[] memory jTokens\\n    ) private view verifyRewardType(rewardType) returns (uint256) {\\n        uint256 rewards = rewardAccrued[rewardType][holder];\\n        uint256 len = jTokens.length;\\n\\n        for (uint256 i; i < len; i++) {\\n            IJToken jToken = jTokens[i];\\n\\n            uint256 supplierReward = _pendingSupplyReward(rewardType, jToken, holder);\\n            uint256 borrowerReward = _pendingBorrowReward(rewardType, jToken, holder, jToken.borrowIndex());\\n\\n            rewards = rewards.add(supplierReward).add(borrowerReward);\\n        }\\n\\n        return rewards;\\n    }\\n\\n    /**\\n     * @notice Returns the pending JOE/AVAX reward for a supplier on a market\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to return the pending JOE/AVAX reward for\\n     * @param jToken The market to return the pending JOE/AVAX reward in\\n     * @return uint256 The JOE/AVAX reward for that user\\n     */\\n    function _pendingSupplyReward(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        address holder\\n    ) private view returns (uint256) {\\n        (uint256 supplyIndex, ) = _getUpdatedRewardSupplyIndex(rewardType, jToken);\\n        uint256 supplierIndex = rewardSupplierIndex[rewardType][address(jToken)][holder];\\n\\n        uint256 deltaIndex = supplyIndex.sub(supplierIndex);\\n        uint256 supplierAmount = jToken.balanceOf(holder);\\n        return supplierAmount.mul(deltaIndex).div(doubleScale);\\n    }\\n\\n    /**\\n     * @notice Returns the pending JOE/AVAX reward for a borrower on a market\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param holder The address to return the pending JOE/AVAX reward for\\n     * @param jToken The market to return the pending JOE/AVAX reward in\\n     * @param marketBorrowIndex Current index of the borrow market\\n     * @return uint256 The JOE/AVAX reward for that user\\n     */\\n    function _pendingBorrowReward(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        address holder,\\n        uint256 marketBorrowIndex\\n    ) private view returns (uint256) {\\n        (uint256 borrowIndex, ) = _getUpdatedRewardBorrowIndex(rewardType, jToken, marketBorrowIndex);\\n        uint256 borrowerIndex = rewardBorrowerIndex[rewardType][address(jToken)][holder];\\n\\n        uint256 deltaIndex = borrowIndex.sub(borrowerIndex);\\n        uint256 borrowerAmount = jToken.borrowBalanceStored(holder).mul(expScale).div(marketBorrowIndex);\\n\\n        return borrowerAmount.mul(deltaIndex).div(doubleScale);\\n    }\\n\\n    /**\\n     * @notice Returns the updated reward supply index\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose supply index to update\\n     * @return uint208 The updated supply state index\\n     * @return bool If the stored supply state index needs to be updated\\n     */\\n    function _getUpdatedRewardSupplyIndex(uint8 rewardType, IJToken jToken) private view returns (uint208, bool) {\\n        RewardMarketState memory supplyState = rewardSupplyState[rewardType][address(jToken)];\\n        uint256 supplySpeed = rewardSupplySpeeds[rewardType][address(jToken)];\\n        uint256 deltaTimestamps = _getBlockTimestamp().sub(supplyState.timestamp);\\n\\n        if (deltaTimestamps != 0 && supplySpeed != 0) {\\n            uint256 supplyTokens = jToken.totalSupply();\\n            if (supplyTokens != 0) {\\n                uint256 reward = deltaTimestamps.mul(supplySpeed);\\n                supplyState.index = _safe208(uint256(supplyState.index).add(reward.mul(doubleScale).div(supplyTokens)));\\n                return (supplyState.index, true);\\n            }\\n        }\\n        return (supplyState.index, false);\\n    }\\n\\n    /**\\n     * @notice Returns the updated reward borrow index\\n     * @param rewardType 0 = JOE, 1 = AVAX\\n     * @param jToken The market whose borrow index to update\\n     * @param marketBorrowIndex Current index of the borrow market\\n     * @return uint208 The updated borrow state index\\n     * @return bool If the stored borrow state index needs to be updated\\n     */\\n    function _getUpdatedRewardBorrowIndex(\\n        uint8 rewardType,\\n        IJToken jToken,\\n        uint256 marketBorrowIndex\\n    ) private view returns (uint208, bool) {\\n        RewardMarketState memory borrowState = rewardBorrowState[rewardType][address(jToken)];\\n        uint256 borrowSpeed = rewardBorrowSpeeds[rewardType][address(jToken)];\\n        uint256 deltaTimestamps = _getBlockTimestamp().sub(borrowState.timestamp);\\n\\n        if (deltaTimestamps != 0 && borrowSpeed != 0) {\\n            uint256 totalBorrows = jToken.totalBorrows();\\n            uint256 borrowAmount = totalBorrows.mul(expScale).div(marketBorrowIndex);\\n            if (borrowAmount != 0) {\\n                uint256 reward = deltaTimestamps.mul(borrowSpeed);\\n                borrowState.index = _safe208(uint256(borrowState.index).add(reward.mul(doubleScale).div(borrowAmount)));\\n                return (borrowState.index, true);\\n            }\\n        }\\n        return (borrowState.index, false);\\n    }\\n\\n    /**\\n     * @notice Transfer JOE/AVAX to the user\\n     * @dev Note: If there is not enough JOE/AVAX, we do not perform the transfer at all.\\n     * @param rewardType 0 = JOE, 1 = AVAX.\\n     * @param user The address of the user to transfer JOE/AVAX to\\n     * @param amount The amount of JOE/AVAX to (possibly) transfer\\n     * @return uint256 The amount of JOE/AVAX which was NOT transferred to the user\\n     */\\n    function _grantReward(\\n        uint8 rewardType,\\n        address payable user,\\n        uint256 amount\\n    ) private returns (uint256) {\\n        if (amount == 0) {\\n            return 0;\\n        }\\n        if (rewardType == 0) {\\n            uint256 joeRemaining = joe.balanceOf(address(this));\\n            if (amount <= joeRemaining) {\\n                joe.transfer(user, amount);\\n                return 0;\\n            }\\n        } else if (rewardType == 1) {\\n            uint256 avaxRemaining = address(this).balance;\\n            if (amount <= avaxRemaining) {\\n                user.transfer(amount);\\n                return 0;\\n            }\\n        }\\n        return amount;\\n    }\\n\\n    /**\\n     * @notice Function to get the current timestamp\\n     * @return uint256 The current timestamp\\n     */\\n    function _getBlockTimestamp() private view returns (uint256) {\\n        return block.timestamp;\\n    }\\n\\n    /**\\n     * @notice Return x written on 48 bits while asserting that x doesn't exceed 48 bits\\n     * @param x The value\\n     * @return uint48 The value x on 48 bits\\n     */\\n    function _safe48(uint256 x) private pure returns (uint48) {\\n        require(x < 2**48, \\\"exceeds 48 bits\\\");\\n        return uint48(x);\\n    }\\n\\n    /**\\n     * @notice Return x written on 208 bits while asserting that x doesn't exceed 208 bits\\n     * @param x The value\\n     * @return uint208 The value x on 208 bits\\n     */\\n    function _safe208(uint256 x) private pure returns (uint208) {\\n        require(x < 2**208, \\\"exceeds 208 bits\\\");\\n        return uint208(x);\\n    }\\n}\\n\",\"keccak256\":\"0x1474dfe6651021bc89d797ee3433815681dc82e22db14e001925799095cdc8da\"},\"contracts/SafeMath.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\n// From https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/Math.sol\\n// Subject to the MIT license.\\n\\n/**\\n * @dev Wrappers over Solidity's arithmetic operations with added overflow\\n * checks.\\n *\\n * Arithmetic operations in Solidity wrap on overflow. This can easily result\\n * in bugs, because programmers usually assume that an overflow raises an\\n * error, which is the standard behavior in high level programming languages.\\n * `SafeMath` restores this intuition by reverting the transaction when an\\n * operation overflows.\\n *\\n * Using this library instead of the unchecked operations eliminates an entire\\n * class of bugs, so it's recommended to use it always.\\n */\\nlibrary SafeMath {\\n    /**\\n     * @dev Returns the addition of two unsigned integers, reverting on overflow.\\n     *\\n     * Counterpart to Solidity's `+` operator.\\n     *\\n     * Requirements:\\n     * - Addition cannot overflow.\\n     */\\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\\n        uint256 c = a + b;\\n        require(c >= a, \\\"SafeMath: addition overflow\\\");\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the addition of two unsigned integers, reverting with custom message on overflow.\\n     *\\n     * Counterpart to Solidity's `+` operator.\\n     *\\n     * Requirements:\\n     * - Addition cannot overflow.\\n     */\\n    function add(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        uint256 c = a + b;\\n        require(c >= a, errorMessage);\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting on underflow (when the result is negative).\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     * - Subtraction cannot underflow.\\n     */\\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return sub(a, b, \\\"SafeMath: subtraction underflow\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on underflow (when the result is negative).\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     * - Subtraction cannot underflow.\\n     */\\n    function sub(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        require(b <= a, errorMessage);\\n        uint256 c = a - b;\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the multiplication of two unsigned integers, reverting on overflow.\\n     *\\n     * Counterpart to Solidity's `*` operator.\\n     *\\n     * Requirements:\\n     * - Multiplication cannot overflow.\\n     */\\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\\n        // benefit is lost if 'b' is also tested.\\n        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522\\n        if (a == 0) {\\n            return 0;\\n        }\\n\\n        uint256 c = a * b;\\n        require(c / a == b, \\\"SafeMath: multiplication overflow\\\");\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the multiplication of two unsigned integers, reverting on overflow.\\n     *\\n     * Counterpart to Solidity's `*` operator.\\n     *\\n     * Requirements:\\n     * - Multiplication cannot overflow.\\n     */\\n    function mul(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\\n        // benefit is lost if 'b' is also tested.\\n        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522\\n        if (a == 0) {\\n            return 0;\\n        }\\n\\n        uint256 c = a * b;\\n        require(c / a == b, errorMessage);\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers.\\n     * Reverts on division by zero. The result is rounded towards zero.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     * - The divisor cannot be zero.\\n     */\\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return div(a, b, \\\"SafeMath: division by zero\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers.\\n     * Reverts with custom message on division by zero. The result is rounded towards zero.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     * - The divisor cannot be zero.\\n     */\\n    function div(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        // Solidity only automatically asserts when dividing by 0\\n        require(b > 0, errorMessage);\\n        uint256 c = a / b;\\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\\n\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * Reverts when dividing by zero.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\\n        return mod(a, b, \\\"SafeMath: modulo by zero\\\");\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * Reverts with custom message when dividing by zero.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(\\n        uint256 a,\\n        uint256 b,\\n        string memory errorMessage\\n    ) internal pure returns (uint256) {\\n        require(b != 0, errorMessage);\\n        return a % b;\\n    }\\n}\\n\",\"keccak256\":\"0xa1da05e95da010c1d90b79c5c6ed4caa27c904a66d022ac0bd18371feccae5e1\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50612f1f806100206000396000f3fe6080604052600436106101665760003560e01c80637e9bedee116100d1578063b985a3a01161008a578063c4792f9b11610064578063c4792f9b1461040d578063cff42ff61461042d578063d81c5e451461044f578063f851a4401461046f57610166565b8063b985a3a0146103b8578063be615335146103cd578063bf095955146103ed57610166565b80637e9bedee146103035780638129fc1c1461032357806387946d53146103385780638805714b1461035857806388e972b8146103785780639c39e2931461039857610166565b80636330533c116101235780636330533c14610241578063670e8afd146102635780636fbd61d014610283578063704b6c02146102a3578063744532ae146102c35780637937969d146102e357610166565b8063030ce6381461016857806305b9783d1461019e5780630952c563146101be5780631f9f3511146101de5780634b3a0a74146101fe5780635b7278691461022c575b005b34801561017457600080fd5b5061018861018336600461261b565b610491565b6040516101959190612d5a565b60405180910390f35b3480156101aa57600080fd5b506101886101b936600461261b565b6104ae565b3480156101ca57600080fd5b506101666101d936600461261b565b6104cb565b3480156101ea57600080fd5b506101666101f9366004612558565b610566565b34801561020a57600080fd5b5061021e61021936600461261b565b6105e3565b604051610195929190612d3f565b34801561023857600080fd5b5061016661061a565b34801561024d57600080fd5b50610256610682565b6040516101959190612c50565b34801561026f57600080fd5b5061016661027e366004612576565b610691565b34801561028f57600080fd5b5061016661029e36600461285d565b61076f565b3480156102af57600080fd5b506101666102be3660046124e7565b6107db565b3480156102cf57600080fd5b506101666102de36600461263a565b610864565b3480156102ef57600080fd5b506101886102fe3660046126e5565b6108ad565b34801561030f57600080fd5b5061016661031e366004612558565b6108d0565b34801561032f57600080fd5b50610166610944565b34801561034457600080fd5b50610166610353366004612728565b6109a9565b34801561036457600080fd5b506101666103733660046127af565b610b07565b34801561038457600080fd5b506101886103933660046126e5565b610b88565b3480156103a457600080fd5b506101666103b33660046125b0565b610bab565b3480156103c457600080fd5b50610256610c88565b3480156103d957600080fd5b506101886103e836600461261b565b610c97565b3480156103f957600080fd5b5061018861040836600461261b565b610d36565b34801561041957600080fd5b506101666104283660046126a2565b610d53565b34801561043957600080fd5b50610442610e11565b6040516101959190612c42565b34801561045b57600080fd5b5061021e61046a36600461261b565b610e21565b34801561047b57600080fd5b50610484610e58565b6040516101959190612bf0565b600260209081526000928352604080842090915290825290205481565b600860209081526000928352604080842090915290825290205481565b6105628282600160009054906101000a90046001600160a01b03166001600160a01b031663b0772d0b6040518163ffffffff1660e01b815260040160006040518083038186803b15801561051e57600080fd5b505afa158015610532573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f1916820160405261055a9190810190612505565b600180610e67565b5050565b6000546001600160a01b031633146105995760405162461bcd60e51b815260040161059090612c8f565b60405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517ffe2b17b6226b7ce137113c82497e9ceeb0533b68ade15f805a6ba4415d9a1e1890600090a250565b60056020908152600092835260408084209091529082529020546001600160d01b03811690600160d01b900465ffffffffffff1682565b6000546001600160a01b031633146106445760405162461bcd60e51b815260040161059090612c8f565b6009805460ff60a01b1916600160a01b1790556040517f2914becc1610c384981e33fd758dea566b16bf386b11f25bfc4927fb4456772790600090a1565b6001546001600160a01b031681565b6001546001600160a01b03163314806106b457506000546001600160a01b031633145b6106d05760405162461bcd60e51b815260040161059090612d1f565b60005b60018160ff161161076a576106e881846110b2565b60006106f5828585611192565b60ff831660009081526008602090815260408083206001600160a01b03881684529091529020546001600160d01b0391909116915061073a908263ffffffff61137416565b60ff831660009081526008602090815260408083206001600160a01b0388168452909152902055506001016106d3565b505050565b6000546001600160a01b031633146107995760405162461bcd60e51b815260040161059090612c8f565b8360018160ff1611156107be5760405162461bcd60e51b815260040161059090612cef565b6107c9858585611399565b6107d485858461153e565b5050505050565b6000546001600160a01b031633146108055760405162461bcd60e51b815260040161059090612c8f565b600080546001600160a01b038381166001600160a01b03198316179092556040519116907ff8ccb027dfcd135e000e9d45e6cc2d662578a8825d4c45b5e32e0adf67e79ec6906108589083908590612c27565b60405180910390a15050565b6108a7848484848080602002602001604051908101604052809392919081815260200183836020028082843760009201919091525060019250829150610e679050565b50505050565b600760209081526000938452604080852082529284528284209052825290205481565b6000546001600160a01b031633146108fa5760405162461bcd60e51b815260040161059090612c8f565b600980546001600160a01b0319166001600160a01b0383169081179091556040517f5f8510a8d2e5071ff8272f0ed89cccbdfbf276bcbc735b1261e806d885f6d3e690600090a250565b6001546001600160a01b03161561096d5760405162461bcd60e51b815260040161059090612caf565b6000546001600160a01b031661099457600080546001600160a01b031916331790556109a7565b600180546001600160a01b031916331790555b565b6000546001600160a01b031633146109d35760405162461bcd60e51b815260040161059090612c8f565b8460018160ff1611156109f85760405162461bcd60e51b815260040161059090612cef565b600954600160a01b900460ff1615610a225760405162461bcd60e51b815260040161059090612d2f565b83828114610a425760405162461bcd60e51b815260040161059090612c6f565b60005b81811015610afd576000878783818110610a5b57fe5b9050602002016020610a7091908101906124e7565b90506000868684818110610a8057fe5b60ff8d1660009081526008602090815260408083206001600160a01b038916808552908352928190209390910294909401359182905592519093507f88d8eb57a4c3a231f2bcd7397528950212e9894bed8fdf3e48be4655662ad66f9150610aeb908d908590612dab565b60405180910390a25050600101610a45565b5050505050505050565b8460005b81811015610b7d57610b7589898984818110610b2357fe5b9050602002016020610b3891908101906124e7565b8888808060200260200160405190810160405280939291908181526020018383602002808284376000920191909152508a9250899150610e679050565b600101610b0b565b505050505050505050565b600660209081526000938452604080852082529284528284209052825290205481565b6001546001600160a01b0316331480610bce57506000546001600160a01b031633145b610bea5760405162461bcd60e51b815260040161059090612d1f565b60005b60018160ff16116108a757610c0481858435611746565b6000610c138286868635611823565b60ff831660009081526008602090815260408083206001600160a01b03891684529091529020546001600160d01b03919091169150610c58908263ffffffff61137416565b60ff831660009081526008602090815260408083206001600160a01b038916845290915290205550600101610bed565b6009546001600160a01b031681565b6000610d2d8383600160009054906101000a90046001600160a01b03166001600160a01b031663b0772d0b6040518163ffffffff1660e01b815260040160006040518083038186803b158015610cec57600080fd5b505afa158015610d00573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f19168201604052610d289190810190612505565b611a11565b90505b92915050565b600360209081526000928352604080842090915290825290205481565b6000546001600160a01b03163314610d7d5760405162461bcd60e51b815260040161059090612c8f565b8260018160ff161115610da25760405162461bcd60e51b815260040161059090612cef565b6000610daf858585611b50565b90508015610dcf5760405162461bcd60e51b815260040161059090612cff565b7fc6d3bad890aa15362e90611f8643bfafcf5b09a9d4781295bd7ba8adffa03711858585604051610e0293929190612d68565b60405180910390a15050505050565b600954600160a01b900460ff1681565b60046020908152600092835260408084209091529082529020546001600160d01b03811690600160d01b900465ffffffffffff1682565b6000546001600160a01b031681565b8460018160ff161115610e8c5760405162461bcd60e51b815260040161059090612cef565b60ff861660009081526008602090815260408083206001600160a01b0389168452909152812054855190915b8181101561106f576000878281518110610ece57fe5b6020908102919091010151600154604051633d98a1e560e01b81529192506001600160a01b031690633d98a1e590610f0a908490600401612bf0565b60206040518083038186803b158015610f2257600080fd5b505afa158015610f36573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250610f5a919081019061253a565b610f765760405162461bcd60e51b815260040161059090612ccf565b861561102a576000816001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b158015610fb757600080fd5b505afa158015610fcb573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250610fef91908101906125fd565b9050610ffc8b8383611746565b600061100a8c848d85611823565b6001600160d01b03169050611025868263ffffffff61137416565b955050505b85156110665761103a8a826110b2565b60006110478b838c611192565b6001600160d01b03169050611062858263ffffffff61137416565b9450505b50600101610eb8565b508115610afd57611081888884611b50565b60ff891660009081526008602090815260408083206001600160a01b038c1684529091529020555050505050505050565b8160018160ff1611156110d75760405162461bcd60e51b815260040161059090612cef565b6000806110e48585611cdc565b91509150801561112e5760ff851660009081526004602090815260408083206001600160a01b0388168452909152902080546001600160d01b0319166001600160d01b0384161790555b61113e611139611e85565b611e89565b60ff90951660009081526004602090815260408083206001600160a01b03909716835295905293909320805465ffffffffffff95909516600160d01b026001600160d01b0390951694909417909355505050565b60008360018160ff1611156111b95760405162461bcd60e51b815260040161059090612cef565b60ff851660008181526004602090815260408083206001600160a01b03808a16808652918452828520549585526006845282852091855290835281842090881684529091528120546001600160d01b03909216919061121e838363ffffffff611eb516565b90506000876001600160a01b03166370a08231886040518263ffffffff1660e01b815260040161124e9190612bf0565b60206040518083038186803b15801561126657600080fd5b505afa15801561127a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061129e91908101906125fd565b905060006112d96112d46ec097ce7bc90715b34b9f10000000006112c8858763ffffffff611ef716565b9063ffffffff611f3116565b611f73565b90508385146113185760ff8a1660009081526006602090815260408083206001600160a01b03808e168552908352818420908c16845290915290208590555b876001600160a01b0316896001600160a01b03167faccd035d02c456be35306aecd5a5fe62320713dde09ccd68b0a5e8ed930399998c848960405161135f93929190612d90565b60405180910390a39998505050505050505050565b600082820183811015610d2d5760405162461bcd60e51b815260040161059090612c7f565b60ff831660009081526002602090815260408083206001600160a01b038616845290915290205480156113d5576113d084846110b2565b6114cd565b81156114cd57600154604051633d98a1e560e01b81526001600160a01b0390911690633d98a1e59061140b908690600401612bf0565b60206040518083038186803b15801561142357600080fd5b505afa158015611437573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061145b919081019061253a565b6114775760405162461bcd60e51b815260040161059090612c9f565b611482611139611e85565b60ff851660009081526004602090815260408083206001600160a01b03881684529091529020805465ffffffffffff92909216600160d01b026001600160d01b039092169190911790555b8181146108a75760ff841660009081526002602090815260408083206001600160a01b03871680855292529182902084905590517f71975117d0c353e131b030f9cf69eecfded777f5ba2a036b066b90da4c89ab42906115309087908690612dab565b60405180910390a250505050565b60ff831660009081526003602090815260408083206001600160a01b038616845290915290205480156115eb576115e68484856001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b1580156115a957600080fd5b505afa1580156115bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052506115e191908101906125fd565b611746565b6116e3565b81156116e357600154604051633d98a1e560e01b81526001600160a01b0390911690633d98a1e590611621908690600401612bf0565b60206040518083038186803b15801561163957600080fd5b505afa15801561164d573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611671919081019061253a565b61168d5760405162461bcd60e51b815260040161059090612c9f565b611698611139611e85565b60ff851660009081526005602090815260408083206001600160a01b03881684529091529020805465ffffffffffff92909216600160d01b026001600160d01b039092169190911790555b8181146108a75760ff841660009081526003602090815260408083206001600160a01b03871680855292529182902084905590517ffc4f93ddd4a06ca99d4cd58e8f2a3eaec8f2f3795f127d83e0c203e08f8997e1906115309087908690612dab565b8260018160ff16111561176b5760405162461bcd60e51b815260040161059090612cef565b600080611779868686611f98565b9150915080156117c35760ff861660009081526005602090815260408083206001600160a01b0389168452909152902080546001600160d01b0319166001600160d01b0384161790555b6117ce611139611e85565b60ff90961660009081526005602090815260408083206001600160a01b03909816835296905294909420805465ffffffffffff96909616600160d01b026001600160d01b039096169590951790945550505050565b60008460018160ff16111561184a5760405162461bcd60e51b815260040161059090612cef565b60ff861660008181526005602090815260408083206001600160a01b03808b16808652918452828520549585526007845282852091855290835281842090891684529091528120546001600160d01b0390921691906118af838363ffffffff611eb516565b9050600061194b876112c8670de0b6b3a76400008c6001600160a01b03166395dd91938d6040518263ffffffff1660e01b81526004016118ef9190612bf0565b60206040518083038186803b15801561190757600080fd5b505afa15801561191b573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061193f91908101906125fd565b9063ffffffff611ef716565b905060006119756112d46ec097ce7bc90715b34b9f10000000006112c8858763ffffffff611ef716565b90508385146119b45760ff8b1660009081526007602090815260408083206001600160a01b03808f168552908352818420908d16845290915290208590555b886001600160a01b03168a6001600160a01b03167fa1b6a046664a0ecf068059f26de56878f8d0e799907ca2e42d9148ccbdc717a78d84896040516119fb93929190612d90565b60405180910390a39a9950505050505050505050565b60008360018160ff161115611a385760405162461bcd60e51b815260040161059090612cef565b60ff851660009081526008602090815260408083206001600160a01b0388168452909152812054845190915b81811015611b44576000868281518110611a7a57fe5b602002602001015190506000611a918a838b612158565b90506000611b118b848c866001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b158015611ad457600080fd5b505afa158015611ae8573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611b0c91908101906125fd565b612268565b9050611b3381611b27888563ffffffff61137416565b9063ffffffff61137416565b95505060019092019150611a649050565b50909695505050505050565b600081611b5f57506000611cd5565b60ff8416611c86576009546040516370a0823160e01b81526000916001600160a01b0316906370a0823190611b98903090600401612bfe565b60206040518083038186803b158015611bb057600080fd5b505afa158015611bc4573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611be891908101906125fd565b9050808311611c805760095460405163a9059cbb60e01b81526001600160a01b039091169063a9059cbb90611c239087908790600401612c0c565b602060405180830381600087803b158015611c3d57600080fd5b505af1158015611c51573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611c75919081019061253a565b506000915050611cd5565b50611cd2565b8360ff1660011415611cd25747808311611cd0576040516001600160a01b0385169084156108fc029085906000818181858888f19350505050158015611c75573d6000803e3d6000fd5b505b50805b9392505050565b600080611ce761239f565b5060ff841660008181526004602090815260408083206001600160a01b0388168085529083528184208251808401845290546001600160d01b038116825265ffffffffffff600160d01b9091048116828601908152968652600285528386209286529190935290832054935191939291611d709116611d64611e85565b9063ffffffff611eb516565b90508015801590611d8057508115155b15611e74576000866001600160a01b03166318160ddd6040518163ffffffff1660e01b815260040160206040518083038186803b158015611dc057600080fd5b505afa158015611dd4573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611df891908101906125fd565b90508015611e72576000611e12838563ffffffff611ef716565b9050611e546112d4611e3d846112c8856ec097ce7bc90715b34b9f100000000063ffffffff611ef716565b87516001600160d01b03169063ffffffff61137416565b6001600160d01b0316948590525092945060019350611e7e92505050565b505b5050519150600090505b9250929050565b4290565b600066010000000000008210611eb15760405162461bcd60e51b815260040161059090612cbf565b5090565b6000610d2d83836040518060400160405280601f81526020017f536166654d6174683a207375627472616374696f6e20756e646572666c6f770081525061233c565b600082611f0657506000610d30565b82820282848281611f1357fe5b0414610d2d5760405162461bcd60e51b815260040161059090612cdf565b6000610d2d83836040518060400160405280601a81526020017f536166654d6174683a206469766973696f6e206279207a65726f000000000000815250612368565b6000600160d01b8210611eb15760405162461bcd60e51b815260040161059090612d0f565b600080611fa361239f565b5060ff851660008181526005602090815260408083206001600160a01b0389168085529083528184208251808401845290546001600160d01b038116825265ffffffffffff600160d01b90910481168286019081529686526003855283862092865291909352908320549351919392916120209116611d64611e85565b9050801580159061203057508115155b15612146576000876001600160a01b03166347bd37186040518163ffffffff1660e01b815260040160206040518083038186803b15801561207057600080fd5b505afa158015612084573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052506120a891908101906125fd565b905060006120c8886112c884670de0b6b3a764000063ffffffff611ef716565b905080156121435760006120e2848663ffffffff611ef716565b90506121246112d461210d846112c8856ec097ce7bc90715b34b9f100000000063ffffffff611ef716565b88516001600160d01b03169063ffffffff61137416565b6001600160d01b03169586905250939550600194506121509350505050565b50505b5050519150600090505b935093915050565b6000806121658585611cdc565b5060ff861660009081526006602090815260408083206001600160a01b03808a16855290835281842090881684529091528120546001600160d01b039290921692506121b7838363ffffffff611eb516565b90506000866001600160a01b03166370a08231876040518263ffffffff1660e01b81526004016121e79190612bf0565b60206040518083038186803b1580156121ff57600080fd5b505afa158015612213573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061223791908101906125fd565b905061225c6ec097ce7bc90715b34b9f10000000006112c8838563ffffffff611ef716565b98975050505050505050565b600080612276868685611f98565b5060ff871660009081526007602090815260408083206001600160a01b03808b16855290835281842090891684529091528120546001600160d01b039290921692506122c8838363ffffffff611eb516565b90506000612308866112c8670de0b6b3a76400008b6001600160a01b03166395dd91938c6040518263ffffffff1660e01b81526004016118ef9190612bf0565b905061232d6ec097ce7bc90715b34b9f10000000006112c8838563ffffffff611ef716565b9450505050505b949350505050565b600081848411156123605760405162461bcd60e51b81526004016105909190612c5e565b505050900390565b600081836123895760405162461bcd60e51b81526004016105909190612c5e565b50600083858161239557fe5b0495945050505050565b604080518082019091526000808252602082015290565b8035610d3081612ea1565b60008083601f8401126123d357600080fd5b50813567ffffffffffffffff8111156123eb57600080fd5b602083019150836020820283011115611e7e57600080fd5b600082601f83011261241457600080fd5b815161242761242282612de0565b612db9565b9150818183526020840193506020810190508385602084028201111561244c57600080fd5b60005b83811015612478578161246288826124a3565b845250602092830192919091019060010161244f565b5050505092915050565b8035610d3081612eb8565b8051610d3081612eb8565b8035610d3081612ec1565b8051610d3081612ec1565b6000602082840312156124c057600080fd5b50919050565b8035610d3081612eca565b8051610d3081612eca565b8035610d3081612ed3565b6000602082840312156124f957600080fd5b600061233484846123b6565b60006020828403121561251757600080fd5b815167ffffffffffffffff81111561252e57600080fd5b61233484828501612403565b60006020828403121561254c57600080fd5b6000612334848461248d565b60006020828403121561256a57600080fd5b60006123348484612498565b6000806040838503121561258957600080fd5b60006125958585612498565b92505060206125a6858286016123b6565b9150509250929050565b6000806000606084860312156125c557600080fd5b60006125d18686612498565b93505060206125e2868287016123b6565b92505060406125f3868287016124ae565b9150509250925092565b60006020828403121561260f57600080fd5b600061233484846124d1565b6000806040838503121561262e57600080fd5b600061259585856124dc565b6000806000806060858703121561265057600080fd5b600061265c87876124dc565b945050602061266d878288016123b6565b935050604085013567ffffffffffffffff81111561268a57600080fd5b612696878288016123c1565b95989497509550505050565b6000806000606084860312156126b757600080fd5b60006126c386866124dc565b93505060206126d4868287016123b6565b92505060406125f3868287016124c6565b6000806000606084860312156126fa57600080fd5b600061270686866124dc565b9350506020612717868287016123b6565b92505060406125f3868287016123b6565b60008060008060006060868803121561274057600080fd5b600061274c88886124dc565b955050602086013567ffffffffffffffff81111561276957600080fd5b612775888289016123c1565b9450945050604086013567ffffffffffffffff81111561279457600080fd5b6127a0888289016123c1565b92509250509295509295909350565b600080600080600080600060a0888a0312156127ca57600080fd5b60006127d68a8a6124dc565b975050602088013567ffffffffffffffff8111156127f357600080fd5b6127ff8a828b016123c1565b9650965050604088013567ffffffffffffffff81111561281e57600080fd5b61282a8a828b016123c1565b9450945050606061283d8a828b01612482565b925050608061284e8a828b01612482565b91505092959891949750929550565b6000806000806080858703121561287357600080fd5b600061287f87876124dc565b945050602061289087828801612498565b93505060406128a1878288016124c6565b92505060606128b2878288016124c6565b91505092959194509250565b6128c781612e55565b82525050565b6128c781612e0e565b6128c781612e19565b6128c781612e1e565b60006128f382612e01565b6128fd8185612e05565b935061290d818560208601612e6b565b61291681612e97565b9093019392505050565b600061292d600f83612e05565b6e0d8cadccee8d040dad2e6dac2e8c6d608b1b815260200192915050565b6000612958601b83612e05565b7f536166654d6174683a206164646974696f6e206f766572666c6f770000000000815260200192915050565b6000612991600a83612e05565b6937b7363c9030b236b4b760b11b815260200192915050565b60006129b7601b83612e05565b7f726577617264206d61726b6574206973206e6f74206c69737465640000000000815260200192915050565b60006129f0601383612e05565b72185b1c9958591e481a5b9a5d1a585b1a5e9959606a1b815260200192915050565b6000612a1f600f83612e05565b6e65786365656473203438206269747360881b815260200192915050565b6000612a4a601583612e05565b741b585c9ad95d081b5d5cdd081899481b1a5cdd1959605a1b815260200192915050565b6000612a7b602183612e05565b7f536166654d6174683a206d756c7469706c69636174696f6e206f766572666c6f8152607760f81b602082015260400192915050565b6000612abe601583612e05565b741c995dd85c99151e5c19481a5cc81a5b9d985b1a59605a1b815260200192915050565b6000612aef601a83612e05565b7f696e73756666696369656e74206a6f6520666f72206772616e74000000000000815260200192915050565b6000612b28601083612e05565b6f6578636565647320323038206269747360801b815260200192915050565b6000612b54601883612e05565b7f6f6e6c79206a6f6574726f6c6c6572206f722061646d696e0000000000000000815260200192915050565b6000612b8d602183612e05565b7f696e697469616c697a6552657761726441636372756564206973206c6f636b658152601960fa1b602082015260400192915050565b6128c781612e35565b6128c781612e60565b6128c781612e41565b6128c781612e44565b6128c781612e4f565b60208101610d3082846128cd565b60208101610d3082846128be565b60408101612c1a82856128be565b611cd56020830184612bd5565b60408101612c3582856128cd565b611cd560208301846128cd565b60208101610d3082846128d6565b60208101610d3082846128df565b60208082528101610d2d81846128e8565b60208082528101610d3081612920565b60208082528101610d308161294b565b60208082528101610d3081612984565b60208082528101610d30816129aa565b60208082528101610d30816129e3565b60208082528101610d3081612a12565b60208082528101610d3081612a3d565b60208082528101610d3081612a6e565b60208082528101610d3081612ab1565b60208082528101610d3081612ae2565b60208082528101610d3081612b1b565b60208082528101610d3081612b47565b60208082528101610d3081612b80565b60408101612d4d8285612bc3565b611cd56020830184612bde565b60208101610d308284612bd5565b60608101612d768286612be7565b612d8360208301856128be565b6123346040830184612bd5565b60608101612d9e8286612be7565b612d836020830185612bcc565b60408101612c1a8285612be7565b60405181810167ffffffffffffffff81118282101715612dd857600080fd5b604052919050565b600067ffffffffffffffff821115612df757600080fd5b5060209081020190565b5190565b90815260200190565b6000610d3082612e29565b151590565b6000610d3082612e0e565b6001600160a01b031690565b6001600160d01b031690565b90565b65ffffffffffff1690565b60ff1690565b6000610d3082612e1e565b6000610d3082612e35565b60005b83811015612e86578181015183820152602001612e6e565b838111156108a75750506000910152565b601f01601f191690565b612eaa81612e0e565b8114612eb557600080fd5b50565b612eaa81612e19565b612eaa81612e1e565b612eaa81612e41565b612eaa81612e4f56fea365627a7a723158202e7f938b7c9d8ebb092d94d9b47380876e292783ee0e97157e78d36c6f5bc27c6c6578706572696d656e74616cf564736f6c63430005100040",
+  "deployedBytecode": "0x6080604052600436106101665760003560e01c80637e9bedee116100d1578063b985a3a01161008a578063c4792f9b11610064578063c4792f9b1461040d578063cff42ff61461042d578063d81c5e451461044f578063f851a4401461046f57610166565b8063b985a3a0146103b8578063be615335146103cd578063bf095955146103ed57610166565b80637e9bedee146103035780638129fc1c1461032357806387946d53146103385780638805714b1461035857806388e972b8146103785780639c39e2931461039857610166565b80636330533c116101235780636330533c14610241578063670e8afd146102635780636fbd61d014610283578063704b6c02146102a3578063744532ae146102c35780637937969d146102e357610166565b8063030ce6381461016857806305b9783d1461019e5780630952c563146101be5780631f9f3511146101de5780634b3a0a74146101fe5780635b7278691461022c575b005b34801561017457600080fd5b5061018861018336600461261b565b610491565b6040516101959190612d5a565b60405180910390f35b3480156101aa57600080fd5b506101886101b936600461261b565b6104ae565b3480156101ca57600080fd5b506101666101d936600461261b565b6104cb565b3480156101ea57600080fd5b506101666101f9366004612558565b610566565b34801561020a57600080fd5b5061021e61021936600461261b565b6105e3565b604051610195929190612d3f565b34801561023857600080fd5b5061016661061a565b34801561024d57600080fd5b50610256610682565b6040516101959190612c50565b34801561026f57600080fd5b5061016661027e366004612576565b610691565b34801561028f57600080fd5b5061016661029e36600461285d565b61076f565b3480156102af57600080fd5b506101666102be3660046124e7565b6107db565b3480156102cf57600080fd5b506101666102de36600461263a565b610864565b3480156102ef57600080fd5b506101886102fe3660046126e5565b6108ad565b34801561030f57600080fd5b5061016661031e366004612558565b6108d0565b34801561032f57600080fd5b50610166610944565b34801561034457600080fd5b50610166610353366004612728565b6109a9565b34801561036457600080fd5b506101666103733660046127af565b610b07565b34801561038457600080fd5b506101886103933660046126e5565b610b88565b3480156103a457600080fd5b506101666103b33660046125b0565b610bab565b3480156103c457600080fd5b50610256610c88565b3480156103d957600080fd5b506101886103e836600461261b565b610c97565b3480156103f957600080fd5b5061018861040836600461261b565b610d36565b34801561041957600080fd5b506101666104283660046126a2565b610d53565b34801561043957600080fd5b50610442610e11565b6040516101959190612c42565b34801561045b57600080fd5b5061021e61046a36600461261b565b610e21565b34801561047b57600080fd5b50610484610e58565b6040516101959190612bf0565b600260209081526000928352604080842090915290825290205481565b600860209081526000928352604080842090915290825290205481565b6105628282600160009054906101000a90046001600160a01b03166001600160a01b031663b0772d0b6040518163ffffffff1660e01b815260040160006040518083038186803b15801561051e57600080fd5b505afa158015610532573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f1916820160405261055a9190810190612505565b600180610e67565b5050565b6000546001600160a01b031633146105995760405162461bcd60e51b815260040161059090612c8f565b60405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040517ffe2b17b6226b7ce137113c82497e9ceeb0533b68ade15f805a6ba4415d9a1e1890600090a250565b60056020908152600092835260408084209091529082529020546001600160d01b03811690600160d01b900465ffffffffffff1682565b6000546001600160a01b031633146106445760405162461bcd60e51b815260040161059090612c8f565b6009805460ff60a01b1916600160a01b1790556040517f2914becc1610c384981e33fd758dea566b16bf386b11f25bfc4927fb4456772790600090a1565b6001546001600160a01b031681565b6001546001600160a01b03163314806106b457506000546001600160a01b031633145b6106d05760405162461bcd60e51b815260040161059090612d1f565b60005b60018160ff161161076a576106e881846110b2565b60006106f5828585611192565b60ff831660009081526008602090815260408083206001600160a01b03881684529091529020546001600160d01b0391909116915061073a908263ffffffff61137416565b60ff831660009081526008602090815260408083206001600160a01b0388168452909152902055506001016106d3565b505050565b6000546001600160a01b031633146107995760405162461bcd60e51b815260040161059090612c8f565b8360018160ff1611156107be5760405162461bcd60e51b815260040161059090612cef565b6107c9858585611399565b6107d485858461153e565b5050505050565b6000546001600160a01b031633146108055760405162461bcd60e51b815260040161059090612c8f565b600080546001600160a01b038381166001600160a01b03198316179092556040519116907ff8ccb027dfcd135e000e9d45e6cc2d662578a8825d4c45b5e32e0adf67e79ec6906108589083908590612c27565b60405180910390a15050565b6108a7848484848080602002602001604051908101604052809392919081815260200183836020028082843760009201919091525060019250829150610e679050565b50505050565b600760209081526000938452604080852082529284528284209052825290205481565b6000546001600160a01b031633146108fa5760405162461bcd60e51b815260040161059090612c8f565b600980546001600160a01b0319166001600160a01b0383169081179091556040517f5f8510a8d2e5071ff8272f0ed89cccbdfbf276bcbc735b1261e806d885f6d3e690600090a250565b6001546001600160a01b03161561096d5760405162461bcd60e51b815260040161059090612caf565b6000546001600160a01b031661099457600080546001600160a01b031916331790556109a7565b600180546001600160a01b031916331790555b565b6000546001600160a01b031633146109d35760405162461bcd60e51b815260040161059090612c8f565b8460018160ff1611156109f85760405162461bcd60e51b815260040161059090612cef565b600954600160a01b900460ff1615610a225760405162461bcd60e51b815260040161059090612d2f565b83828114610a425760405162461bcd60e51b815260040161059090612c6f565b60005b81811015610afd576000878783818110610a5b57fe5b9050602002016020610a7091908101906124e7565b90506000868684818110610a8057fe5b60ff8d1660009081526008602090815260408083206001600160a01b038916808552908352928190209390910294909401359182905592519093507f88d8eb57a4c3a231f2bcd7397528950212e9894bed8fdf3e48be4655662ad66f9150610aeb908d908590612dab565b60405180910390a25050600101610a45565b5050505050505050565b8460005b81811015610b7d57610b7589898984818110610b2357fe5b9050602002016020610b3891908101906124e7565b8888808060200260200160405190810160405280939291908181526020018383602002808284376000920191909152508a9250899150610e679050565b600101610b0b565b505050505050505050565b600660209081526000938452604080852082529284528284209052825290205481565b6001546001600160a01b0316331480610bce57506000546001600160a01b031633145b610bea5760405162461bcd60e51b815260040161059090612d1f565b60005b60018160ff16116108a757610c0481858435611746565b6000610c138286868635611823565b60ff831660009081526008602090815260408083206001600160a01b03891684529091529020546001600160d01b03919091169150610c58908263ffffffff61137416565b60ff831660009081526008602090815260408083206001600160a01b038916845290915290205550600101610bed565b6009546001600160a01b031681565b6000610d2d8383600160009054906101000a90046001600160a01b03166001600160a01b031663b0772d0b6040518163ffffffff1660e01b815260040160006040518083038186803b158015610cec57600080fd5b505afa158015610d00573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f19168201604052610d289190810190612505565b611a11565b90505b92915050565b600360209081526000928352604080842090915290825290205481565b6000546001600160a01b03163314610d7d5760405162461bcd60e51b815260040161059090612c8f565b8260018160ff161115610da25760405162461bcd60e51b815260040161059090612cef565b6000610daf858585611b50565b90508015610dcf5760405162461bcd60e51b815260040161059090612cff565b7fc6d3bad890aa15362e90611f8643bfafcf5b09a9d4781295bd7ba8adffa03711858585604051610e0293929190612d68565b60405180910390a15050505050565b600954600160a01b900460ff1681565b60046020908152600092835260408084209091529082529020546001600160d01b03811690600160d01b900465ffffffffffff1682565b6000546001600160a01b031681565b8460018160ff161115610e8c5760405162461bcd60e51b815260040161059090612cef565b60ff861660009081526008602090815260408083206001600160a01b0389168452909152812054855190915b8181101561106f576000878281518110610ece57fe5b6020908102919091010151600154604051633d98a1e560e01b81529192506001600160a01b031690633d98a1e590610f0a908490600401612bf0565b60206040518083038186803b158015610f2257600080fd5b505afa158015610f36573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250610f5a919081019061253a565b610f765760405162461bcd60e51b815260040161059090612ccf565b861561102a576000816001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b158015610fb757600080fd5b505afa158015610fcb573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250610fef91908101906125fd565b9050610ffc8b8383611746565b600061100a8c848d85611823565b6001600160d01b03169050611025868263ffffffff61137416565b955050505b85156110665761103a8a826110b2565b60006110478b838c611192565b6001600160d01b03169050611062858263ffffffff61137416565b9450505b50600101610eb8565b508115610afd57611081888884611b50565b60ff891660009081526008602090815260408083206001600160a01b038c1684529091529020555050505050505050565b8160018160ff1611156110d75760405162461bcd60e51b815260040161059090612cef565b6000806110e48585611cdc565b91509150801561112e5760ff851660009081526004602090815260408083206001600160a01b0388168452909152902080546001600160d01b0319166001600160d01b0384161790555b61113e611139611e85565b611e89565b60ff90951660009081526004602090815260408083206001600160a01b03909716835295905293909320805465ffffffffffff95909516600160d01b026001600160d01b0390951694909417909355505050565b60008360018160ff1611156111b95760405162461bcd60e51b815260040161059090612cef565b60ff851660008181526004602090815260408083206001600160a01b03808a16808652918452828520549585526006845282852091855290835281842090881684529091528120546001600160d01b03909216919061121e838363ffffffff611eb516565b90506000876001600160a01b03166370a08231886040518263ffffffff1660e01b815260040161124e9190612bf0565b60206040518083038186803b15801561126657600080fd5b505afa15801561127a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061129e91908101906125fd565b905060006112d96112d46ec097ce7bc90715b34b9f10000000006112c8858763ffffffff611ef716565b9063ffffffff611f3116565b611f73565b90508385146113185760ff8a1660009081526006602090815260408083206001600160a01b03808e168552908352818420908c16845290915290208590555b876001600160a01b0316896001600160a01b03167faccd035d02c456be35306aecd5a5fe62320713dde09ccd68b0a5e8ed930399998c848960405161135f93929190612d90565b60405180910390a39998505050505050505050565b600082820183811015610d2d5760405162461bcd60e51b815260040161059090612c7f565b60ff831660009081526002602090815260408083206001600160a01b038616845290915290205480156113d5576113d084846110b2565b6114cd565b81156114cd57600154604051633d98a1e560e01b81526001600160a01b0390911690633d98a1e59061140b908690600401612bf0565b60206040518083038186803b15801561142357600080fd5b505afa158015611437573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061145b919081019061253a565b6114775760405162461bcd60e51b815260040161059090612c9f565b611482611139611e85565b60ff851660009081526004602090815260408083206001600160a01b03881684529091529020805465ffffffffffff92909216600160d01b026001600160d01b039092169190911790555b8181146108a75760ff841660009081526002602090815260408083206001600160a01b03871680855292529182902084905590517f71975117d0c353e131b030f9cf69eecfded777f5ba2a036b066b90da4c89ab42906115309087908690612dab565b60405180910390a250505050565b60ff831660009081526003602090815260408083206001600160a01b038616845290915290205480156115eb576115e68484856001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b1580156115a957600080fd5b505afa1580156115bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052506115e191908101906125fd565b611746565b6116e3565b81156116e357600154604051633d98a1e560e01b81526001600160a01b0390911690633d98a1e590611621908690600401612bf0565b60206040518083038186803b15801561163957600080fd5b505afa15801561164d573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611671919081019061253a565b61168d5760405162461bcd60e51b815260040161059090612c9f565b611698611139611e85565b60ff851660009081526005602090815260408083206001600160a01b03881684529091529020805465ffffffffffff92909216600160d01b026001600160d01b039092169190911790555b8181146108a75760ff841660009081526003602090815260408083206001600160a01b03871680855292529182902084905590517ffc4f93ddd4a06ca99d4cd58e8f2a3eaec8f2f3795f127d83e0c203e08f8997e1906115309087908690612dab565b8260018160ff16111561176b5760405162461bcd60e51b815260040161059090612cef565b600080611779868686611f98565b9150915080156117c35760ff861660009081526005602090815260408083206001600160a01b0389168452909152902080546001600160d01b0319166001600160d01b0384161790555b6117ce611139611e85565b60ff90961660009081526005602090815260408083206001600160a01b03909816835296905294909420805465ffffffffffff96909616600160d01b026001600160d01b039096169590951790945550505050565b60008460018160ff16111561184a5760405162461bcd60e51b815260040161059090612cef565b60ff861660008181526005602090815260408083206001600160a01b03808b16808652918452828520549585526007845282852091855290835281842090891684529091528120546001600160d01b0390921691906118af838363ffffffff611eb516565b9050600061194b876112c8670de0b6b3a76400008c6001600160a01b03166395dd91938d6040518263ffffffff1660e01b81526004016118ef9190612bf0565b60206040518083038186803b15801561190757600080fd5b505afa15801561191b573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061193f91908101906125fd565b9063ffffffff611ef716565b905060006119756112d46ec097ce7bc90715b34b9f10000000006112c8858763ffffffff611ef716565b90508385146119b45760ff8b1660009081526007602090815260408083206001600160a01b03808f168552908352818420908d16845290915290208590555b886001600160a01b03168a6001600160a01b03167fa1b6a046664a0ecf068059f26de56878f8d0e799907ca2e42d9148ccbdc717a78d84896040516119fb93929190612d90565b60405180910390a39a9950505050505050505050565b60008360018160ff161115611a385760405162461bcd60e51b815260040161059090612cef565b60ff851660009081526008602090815260408083206001600160a01b0388168452909152812054845190915b81811015611b44576000868281518110611a7a57fe5b602002602001015190506000611a918a838b612158565b90506000611b118b848c866001600160a01b031663aa5af0fd6040518163ffffffff1660e01b815260040160206040518083038186803b158015611ad457600080fd5b505afa158015611ae8573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611b0c91908101906125fd565b612268565b9050611b3381611b27888563ffffffff61137416565b9063ffffffff61137416565b95505060019092019150611a649050565b50909695505050505050565b600081611b5f57506000611cd5565b60ff8416611c86576009546040516370a0823160e01b81526000916001600160a01b0316906370a0823190611b98903090600401612bfe565b60206040518083038186803b158015611bb057600080fd5b505afa158015611bc4573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611be891908101906125fd565b9050808311611c805760095460405163a9059cbb60e01b81526001600160a01b039091169063a9059cbb90611c239087908790600401612c0c565b602060405180830381600087803b158015611c3d57600080fd5b505af1158015611c51573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611c75919081019061253a565b506000915050611cd5565b50611cd2565b8360ff1660011415611cd25747808311611cd0576040516001600160a01b0385169084156108fc029085906000818181858888f19350505050158015611c75573d6000803e3d6000fd5b505b50805b9392505050565b600080611ce761239f565b5060ff841660008181526004602090815260408083206001600160a01b0388168085529083528184208251808401845290546001600160d01b038116825265ffffffffffff600160d01b9091048116828601908152968652600285528386209286529190935290832054935191939291611d709116611d64611e85565b9063ffffffff611eb516565b90508015801590611d8057508115155b15611e74576000866001600160a01b03166318160ddd6040518163ffffffff1660e01b815260040160206040518083038186803b158015611dc057600080fd5b505afa158015611dd4573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250611df891908101906125fd565b90508015611e72576000611e12838563ffffffff611ef716565b9050611e546112d4611e3d846112c8856ec097ce7bc90715b34b9f100000000063ffffffff611ef716565b87516001600160d01b03169063ffffffff61137416565b6001600160d01b0316948590525092945060019350611e7e92505050565b505b5050519150600090505b9250929050565b4290565b600066010000000000008210611eb15760405162461bcd60e51b815260040161059090612cbf565b5090565b6000610d2d83836040518060400160405280601f81526020017f536166654d6174683a207375627472616374696f6e20756e646572666c6f770081525061233c565b600082611f0657506000610d30565b82820282848281611f1357fe5b0414610d2d5760405162461bcd60e51b815260040161059090612cdf565b6000610d2d83836040518060400160405280601a81526020017f536166654d6174683a206469766973696f6e206279207a65726f000000000000815250612368565b6000600160d01b8210611eb15760405162461bcd60e51b815260040161059090612d0f565b600080611fa361239f565b5060ff851660008181526005602090815260408083206001600160a01b0389168085529083528184208251808401845290546001600160d01b038116825265ffffffffffff600160d01b90910481168286019081529686526003855283862092865291909352908320549351919392916120209116611d64611e85565b9050801580159061203057508115155b15612146576000876001600160a01b03166347bd37186040518163ffffffff1660e01b815260040160206040518083038186803b15801561207057600080fd5b505afa158015612084573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052506120a891908101906125fd565b905060006120c8886112c884670de0b6b3a764000063ffffffff611ef716565b905080156121435760006120e2848663ffffffff611ef716565b90506121246112d461210d846112c8856ec097ce7bc90715b34b9f100000000063ffffffff611ef716565b88516001600160d01b03169063ffffffff61137416565b6001600160d01b03169586905250939550600194506121509350505050565b50505b5050519150600090505b935093915050565b6000806121658585611cdc565b5060ff861660009081526006602090815260408083206001600160a01b03808a16855290835281842090881684529091528120546001600160d01b039290921692506121b7838363ffffffff611eb516565b90506000866001600160a01b03166370a08231876040518263ffffffff1660e01b81526004016121e79190612bf0565b60206040518083038186803b1580156121ff57600080fd5b505afa158015612213573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525061223791908101906125fd565b905061225c6ec097ce7bc90715b34b9f10000000006112c8838563ffffffff611ef716565b98975050505050505050565b600080612276868685611f98565b5060ff871660009081526007602090815260408083206001600160a01b03808b16855290835281842090891684529091528120546001600160d01b039290921692506122c8838363ffffffff611eb516565b90506000612308866112c8670de0b6b3a76400008b6001600160a01b03166395dd91938c6040518263ffffffff1660e01b81526004016118ef9190612bf0565b905061232d6ec097ce7bc90715b34b9f10000000006112c8838563ffffffff611ef716565b9450505050505b949350505050565b600081848411156123605760405162461bcd60e51b81526004016105909190612c5e565b505050900390565b600081836123895760405162461bcd60e51b81526004016105909190612c5e565b50600083858161239557fe5b0495945050505050565b604080518082019091526000808252602082015290565b8035610d3081612ea1565b60008083601f8401126123d357600080fd5b50813567ffffffffffffffff8111156123eb57600080fd5b602083019150836020820283011115611e7e57600080fd5b600082601f83011261241457600080fd5b815161242761242282612de0565b612db9565b9150818183526020840193506020810190508385602084028201111561244c57600080fd5b60005b83811015612478578161246288826124a3565b845250602092830192919091019060010161244f565b5050505092915050565b8035610d3081612eb8565b8051610d3081612eb8565b8035610d3081612ec1565b8051610d3081612ec1565b6000602082840312156124c057600080fd5b50919050565b8035610d3081612eca565b8051610d3081612eca565b8035610d3081612ed3565b6000602082840312156124f957600080fd5b600061233484846123b6565b60006020828403121561251757600080fd5b815167ffffffffffffffff81111561252e57600080fd5b61233484828501612403565b60006020828403121561254c57600080fd5b6000612334848461248d565b60006020828403121561256a57600080fd5b60006123348484612498565b6000806040838503121561258957600080fd5b60006125958585612498565b92505060206125a6858286016123b6565b9150509250929050565b6000806000606084860312156125c557600080fd5b60006125d18686612498565b93505060206125e2868287016123b6565b92505060406125f3868287016124ae565b9150509250925092565b60006020828403121561260f57600080fd5b600061233484846124d1565b6000806040838503121561262e57600080fd5b600061259585856124dc565b6000806000806060858703121561265057600080fd5b600061265c87876124dc565b945050602061266d878288016123b6565b935050604085013567ffffffffffffffff81111561268a57600080fd5b612696878288016123c1565b95989497509550505050565b6000806000606084860312156126b757600080fd5b60006126c386866124dc565b93505060206126d4868287016123b6565b92505060406125f3868287016124c6565b6000806000606084860312156126fa57600080fd5b600061270686866124dc565b9350506020612717868287016123b6565b92505060406125f3868287016123b6565b60008060008060006060868803121561274057600080fd5b600061274c88886124dc565b955050602086013567ffffffffffffffff81111561276957600080fd5b612775888289016123c1565b9450945050604086013567ffffffffffffffff81111561279457600080fd5b6127a0888289016123c1565b92509250509295509295909350565b600080600080600080600060a0888a0312156127ca57600080fd5b60006127d68a8a6124dc565b975050602088013567ffffffffffffffff8111156127f357600080fd5b6127ff8a828b016123c1565b9650965050604088013567ffffffffffffffff81111561281e57600080fd5b61282a8a828b016123c1565b9450945050606061283d8a828b01612482565b925050608061284e8a828b01612482565b91505092959891949750929550565b6000806000806080858703121561287357600080fd5b600061287f87876124dc565b945050602061289087828801612498565b93505060406128a1878288016124c6565b92505060606128b2878288016124c6565b91505092959194509250565b6128c781612e55565b82525050565b6128c781612e0e565b6128c781612e19565b6128c781612e1e565b60006128f382612e01565b6128fd8185612e05565b935061290d818560208601612e6b565b61291681612e97565b9093019392505050565b600061292d600f83612e05565b6e0d8cadccee8d040dad2e6dac2e8c6d608b1b815260200192915050565b6000612958601b83612e05565b7f536166654d6174683a206164646974696f6e206f766572666c6f770000000000815260200192915050565b6000612991600a83612e05565b6937b7363c9030b236b4b760b11b815260200192915050565b60006129b7601b83612e05565b7f726577617264206d61726b6574206973206e6f74206c69737465640000000000815260200192915050565b60006129f0601383612e05565b72185b1c9958591e481a5b9a5d1a585b1a5e9959606a1b815260200192915050565b6000612a1f600f83612e05565b6e65786365656473203438206269747360881b815260200192915050565b6000612a4a601583612e05565b741b585c9ad95d081b5d5cdd081899481b1a5cdd1959605a1b815260200192915050565b6000612a7b602183612e05565b7f536166654d6174683a206d756c7469706c69636174696f6e206f766572666c6f8152607760f81b602082015260400192915050565b6000612abe601583612e05565b741c995dd85c99151e5c19481a5cc81a5b9d985b1a59605a1b815260200192915050565b6000612aef601a83612e05565b7f696e73756666696369656e74206a6f6520666f72206772616e74000000000000815260200192915050565b6000612b28601083612e05565b6f6578636565647320323038206269747360801b815260200192915050565b6000612b54601883612e05565b7f6f6e6c79206a6f6574726f6c6c6572206f722061646d696e0000000000000000815260200192915050565b6000612b8d602183612e05565b7f696e697469616c697a6552657761726441636372756564206973206c6f636b658152601960fa1b602082015260400192915050565b6128c781612e35565b6128c781612e60565b6128c781612e41565b6128c781612e44565b6128c781612e4f565b60208101610d3082846128cd565b60208101610d3082846128be565b60408101612c1a82856128be565b611cd56020830184612bd5565b60408101612c3582856128cd565b611cd560208301846128cd565b60208101610d3082846128d6565b60208101610d3082846128df565b60208082528101610d2d81846128e8565b60208082528101610d3081612920565b60208082528101610d308161294b565b60208082528101610d3081612984565b60208082528101610d30816129aa565b60208082528101610d30816129e3565b60208082528101610d3081612a12565b60208082528101610d3081612a3d565b60208082528101610d3081612a6e565b60208082528101610d3081612ab1565b60208082528101610d3081612ae2565b60208082528101610d3081612b1b565b60208082528101610d3081612b47565b60208082528101610d3081612b80565b60408101612d4d8285612bc3565b611cd56020830184612bde565b60208101610d308284612bd5565b60608101612d768286612be7565b612d8360208301856128be565b6123346040830184612bd5565b60608101612d9e8286612be7565b612d836020830185612bcc565b60408101612c1a8285612be7565b60405181810167ffffffffffffffff81118282101715612dd857600080fd5b604052919050565b600067ffffffffffffffff821115612df757600080fd5b5060209081020190565b5190565b90815260200190565b6000610d3082612e29565b151590565b6000610d3082612e0e565b6001600160a01b031690565b6001600160d01b031690565b90565b65ffffffffffff1690565b60ff1690565b6000610d3082612e1e565b6000610d3082612e35565b60005b83811015612e86578181015183820152602001612e6e565b838111156108a75750506000910152565b601f01601f191690565b612eaa81612e0e565b8114612eb557600080fd5b50565b612eaa81612e19565b612eaa81612e1e565b612eaa81612e41565b612eaa81612e4f56fea365627a7a723158202e7f938b7c9d8ebb092d94d9b47380876e292783ee0e97157e78d36c6f5bc27c6c6578706572696d656e74616cf564736f6c63430005100040",
+  "devdoc": {
+    "methods": {
+      "claimReward(uint8,address)": {
+        "params": {
+          "holder": "The address to claim JOE/AVAX for",
+          "rewardType": "0 = JOE, 1 = AVAX"
+        }
+      },
+      "claimReward(uint8,address,address[])": {
+        "params": {
+          "holder": "The address to claim JOE/AVAX for",
+          "jTokens": "The list of markets to claim JOE/AVAX in",
+          "rewardType": "0 = JOE, 1 = AVAX"
+        }
+      },
+      "claimReward(uint8,address[],address[],bool,bool)": {
+        "params": {
+          "borrowers": "Whether or not to claim JOE/AVAX earned by borrowing",
+          "holders": "The addresses to claim JOE/AVAX for",
+          "jTokens": "The list of markets to claim JOE/AVAX in",
+          "rewardType": "0 = JOE, 1 = AVAX",
+          "suppliers": "Whether or not to claim JOE/AVAX earned by supplying"
+        }
+      },
+      "grantReward(uint8,address,uint256)": {
+        "details": "Note: If there is not enough JOE, we do not perform the transfer at all.",
+        "params": {
+          "amount": "The amount of JOE to (possibly) transfer",
+          "recipient": "The address of the recipient to transfer JOE to",
+          "rewardType": "0 = JOE, 1 = AVAX"
+        }
+      },
+      "initialize()": {
+        "details": "first call is made by the deploy script, the second one by joeTroller when calling `_setRewardDistributor`"
+      },
+      "initializeRewardAccrued(uint8,address[],uint256[])": {
+        "details": "We initialize rewardAccrued to transfer pending rewards from previous rewarder to this one. Must call lockInitializeRewardAccrued() after initialization.",
+        "params": {
+          "amounts": "The list of amounts of unclaimed rewards",
+          "rewardType": "0 = JOE, 1 = AVAX",
+          "users": "The list of addresses of users that did not claim their rewards"
+        }
+      },
+      "pendingReward(uint8,address)": {
+        "params": {
+          "holder": "The address to check pending JOE/AVAX for",
+          "rewardType": "0 = JOE, 1 = AVAX"
+        },
+        "return": "pendingReward The pending JOE/AVAX reward of that holder"
+      },
+      "setAdmin(address)": {
+        "params": {
+          "newAdmin": "The address of the new admin"
+        }
+      },
+      "setJoe(address)": {
+        "params": {
+          "_joe": "The JOE token address"
+        }
+      },
+      "setJoetroller(address)": {
+        "params": {
+          "_joetroller": "The Joetroller address"
+        }
+      },
+      "setRewardSpeed(uint8,address,uint256,uint256)": {
+        "params": {
+          "jToken": "The market whose reward speed to update",
+          "rewardBorrowSpeed": "New reward borrow speed for market",
+          "rewardSupplySpeed": "New reward supply speed for market",
+          "rewardType": "0 = JOE, 1 = AVAX"
+        }
+      },
+      "updateAndDistributeBorrowerRewardsForToken(address,address,(uint256))": {
+        "params": {
+          "borrower": "Borrower to be rewarded",
+          "jToken": "The market to verify the mint against",
+          "marketBorrowIndex": "Current index of the borrow market"
+        }
+      },
+      "updateAndDistributeSupplierRewardsForToken(address,address)": {
+        "params": {
+          "jToken": "The market to verify the mint against",
+          "supplier": "The supplier to be rewarded"
+        }
+      }
+    }
+  },
+  "userdoc": {
+    "methods": {
+      "claimReward(uint8,address)": {
+        "notice": "Claim all the JOE/AVAX accrued by holder in all markets"
+      },
+      "claimReward(uint8,address,address[])": {
+        "notice": "Claim all the JOE/AVAX accrued by holder in the specified markets"
+      },
+      "claimReward(uint8,address[],address[],bool,bool)": {
+        "notice": "Claim all JOE/AVAX accrued by the holders"
+      },
+      "grantReward(uint8,address,uint256)": {
+        "notice": "Transfer JOE/AVAX to the recipient"
+      },
+      "initialize()": {
+        "notice": "Initialize function, in 2 times to avoid redeploying joetroller"
+      },
+      "initializeRewardAccrued(uint8,address[],uint256[])": {
+        "notice": "Initialize rewardAccrued of users for the first time"
+      },
+      "lockInitializeRewardAccrued()": {
+        "notice": "Lock the initializeRewardAccrued function"
+      },
+      "pendingReward(uint8,address)": {
+        "notice": "Returns the pending JOE/AVAX reward accrued by the holder"
+      },
+      "setAdmin(address)": {
+        "notice": "Set the admin"
+      },
+      "setJoe(address)": {
+        "notice": "Set the JOE token address"
+      },
+      "setJoetroller(address)": {
+        "notice": "Set the Joetroller address"
+      },
+      "setRewardSpeed(uint8,address,uint256,uint256)": {
+        "notice": "Set JOE/AVAX speed for a single market"
+      },
+      "updateAndDistributeBorrowerRewardsForToken(address,address,(uint256))": {
+        "notice": "Refactored function to calc and rewards accounts borrower rewards"
+      },
+      "updateAndDistributeSupplierRewardsForToken(address,address)": {
+        "notice": "Refactored function to calc and rewards accounts supplier rewards"
+      }
+    }
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 25903,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "admin",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 25905,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "joetroller",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_contract(IJoetroller)25901"
+      },
+      {
+        "astId": 25916,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardSupplySpeeds",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_uint256))"
+      },
+      {
+        "astId": 25922,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardBorrowSpeeds",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_uint256))"
+      },
+      {
+        "astId": 25928,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardSupplyState",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_struct(RewardMarketState)25910_storage))"
+      },
+      {
+        "astId": 25934,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardBorrowState",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_struct(RewardMarketState)25910_storage))"
+      },
+      {
+        "astId": 25942,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardSupplierIndex",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_mapping(t_address,t_uint256)))"
+      },
+      {
+        "astId": 25950,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardBorrowerIndex",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_mapping(t_address,t_uint256)))"
+      },
+      {
+        "astId": 25956,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "rewardAccrued",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_mapping(t_uint8,t_mapping(t_address,t_uint256))"
+      },
+      {
+        "astId": 25958,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "joe",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_contract(EIP20Interface)268"
+      },
+      {
+        "astId": 25960,
+        "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+        "label": "isInitializeRewardAccruedLocked",
+        "offset": 20,
+        "slot": "9",
+        "type": "t_bool"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_contract(EIP20Interface)268": {
+        "encoding": "inplace",
+        "label": "contract EIP20Interface",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IJoetroller)25901": {
+        "encoding": "inplace",
+        "label": "contract IJoetroller",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_uint256)"
+      },
+      "t_mapping(t_address,t_struct(RewardMarketState)25910_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct RewardDistributorStorageV2.RewardMarketState)",
+        "numberOfBytes": "32",
+        "value": "t_struct(RewardMarketState)25910_storage"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_uint8,t_mapping(t_address,t_mapping(t_address,t_uint256)))": {
+        "encoding": "mapping",
+        "key": "t_uint8",
+        "label": "mapping(uint8 => mapping(address => mapping(address => uint256)))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+      },
+      "t_mapping(t_uint8,t_mapping(t_address,t_struct(RewardMarketState)25910_storage))": {
+        "encoding": "mapping",
+        "key": "t_uint8",
+        "label": "mapping(uint8 => mapping(address => struct RewardDistributorStorageV2.RewardMarketState))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_struct(RewardMarketState)25910_storage)"
+      },
+      "t_mapping(t_uint8,t_mapping(t_address,t_uint256))": {
+        "encoding": "mapping",
+        "key": "t_uint8",
+        "label": "mapping(uint8 => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_address,t_uint256)"
+      },
+      "t_struct(RewardMarketState)25910_storage": {
+        "encoding": "inplace",
+        "label": "struct RewardDistributorStorageV2.RewardMarketState",
+        "members": [
+          {
+            "astId": 25907,
+            "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+            "label": "index",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint208"
+          },
+          {
+            "astId": 25909,
+            "contract": "contracts/RewardDistributorV2.sol:RewardDistributorV2",
+            "label": "timestamp",
+            "offset": 26,
+            "slot": "0",
+            "type": "t_uint48"
+          }
+        ],
+        "numberOfBytes": "32"
+      },
+      "t_uint208": {
+        "encoding": "inplace",
+        "label": "uint208",
+        "numberOfBytes": "26"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint48": {
+        "encoding": "inplace",
+        "label": "uint48",
+        "numberOfBytes": "6"
+      },
+      "t_uint8": {
+        "encoding": "inplace",
+        "label": "uint8",
+        "numberOfBytes": "1"
+      }
+    }
+  }
+}
