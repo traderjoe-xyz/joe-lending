@@ -32,6 +32,7 @@
   "license": "UNLICENSED",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^3.0.3",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^2.5.0",
     "@openzeppelin/hardhat-upgrades": "^1.12.0",
@@ -59,9 +60,11 @@
     "solium": "^1.2.5",
     "solparse": "^2.2.8"
   },
-  "dependencies": {},
   "resolutions": {
     "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
     "**/ganache-core": "github:compound-finance/ganache-core.git#jflatow/unbreak-fork"
+  },
+  "dependencies": {
+    "simple-git": "^3.7.1"
   }
 }
