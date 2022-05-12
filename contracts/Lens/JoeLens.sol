@@ -11,6 +11,26 @@ import "../EIP20Interface.sol";
 import "../Exponential.sol";
 import "./IRewardLens.sol";
 
+contract JoeLensStorage {
+    /**
+     * @notice Administrator for this contract
+     */
+    address public admin;
+
+    /**
+     * @notice The module that handles reward distribution.
+     */ 
+    address payable public rewardDistributor;
+
+    /**
+     * @notice Error codes.
+     */ 
+    enum Error {
+        NO_ERROR,
+        REJECTION
+    }
+}
+
 interface JJLPInterface {
     function claimJoe(address) external returns (uint256);
 }
@@ -23,13 +43,12 @@ interface JJTokenInterface {
  * @notice This is a version of JoeLens that contains write transactions.
  * @dev Call these functions as dry-run transactions for the frontend.
  */
-contract JoeLens is Exponential {
+contract JoeLens is Exponential, JoeLensStorage {
     string public nativeSymbol;
-    address private rewardLensAddress;
 
-    constructor(string memory _nativeSymbol, address _rewardLensAddress) public {
+    constructor(string memory _nativeSymbol) public {
+        admin = msg.sender;
         nativeSymbol = _nativeSymbol;
-        rewardLensAddress = _rewardLensAddress;
     }
 
     /*** Market info functions ***/
@@ -108,8 +127,6 @@ contract JoeLens is Exponential {
             totalCollateralTokens = JCollateralCapErc20Interface(address(jToken)).totalCollateralTokens();
         }
 
-        IRewardLens.MarketRewards memory jTokenRewards = IRewardLens(rewardLensAddress).allMarketRewards(address(jToken));
-
         return
             JTokenMetadata({
                 jToken: address(jToken),
@@ -134,10 +151,10 @@ contract JoeLens is Exponential {
                 borrowPaused: joetroller.borrowGuardianPaused(address(jToken)),
                 supplyCap: joetroller.supplyCaps(address(jToken)),
                 borrowCap: joetroller.borrowCaps(address(jToken)),
-                supplyJoeRewardsPerSecond: jTokenRewards.supplyRewardsJoePerSec,
-                borrowJoeRewardsPerSecond: jTokenRewards.borrowRewardsJoePerSec,
-                supplyAvaxRewardsPerSecond: jTokenRewards.supplyRewardsAvaxPerSec,
-                borrowAvaxRewardsPerSecond: jTokenRewards.borrowRewardsAvaxPerSec
+                supplyJoeRewardsPerSecond: RewardDistributor(rewardDistributor).getSupplyRewardSpeeds(0, jToken),
+                borrowJoeRewardsPerSecond: RewardDistributor(rewardDistributor).getBorrowRewardSpeeds(0, jToken),
+                supplyAvaxRewardsPerSecond: RewardDistributor(rewardDistributor).getSupplyRewardSpeeds(1, jToken),
+                borrowAvaxRewardsPerSecond: RewardDistributor(rewardDistributor).getBorrowRewardSpeeds(1, jToken)
             });
     }
 
@@ -253,6 +270,17 @@ contract JoeLens is Exponential {
             uint256 balanceAfter = account.balance;
             return sub_(balanceAfter, balanceBefore);
         }
+    }
+
+    function _setRewardDistributor(address payable newRewardDistributor) public returns(uint256) {
+        (bool success, ) = newRewardDistributor.call.value(0)(abi.encodeWithSignature("initialize()", 0));
+        if (!success) {
+            return uint256(Error.REJECTION);
+        }
+
+        rewardDistributor = newRewardDistributor;
+
+        return uint256(Error.NO_ERROR);
     }
 
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {

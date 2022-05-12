@@ -101,6 +101,32 @@ contract RewardDistributor is RewardDistributorStorage, Exponential {
     }
 
     /**
+     * @notice Get JOE/AVAX supply speed for a single market
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param jToken The market whose reward speed to get
+     * @return The supply reward speed for the market/type
+     */
+    function getSupplyRewardSpeeds(
+        uint8 rewardType,
+        JToken jToken
+    ) public view returns(uint256) {
+       return rewardSupplySpeeds[rewardType][address(jToken)];
+    }
+
+    /**
+     * @notice Get JOE/AVAX borrow speed for a single market
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param jToken The market whose reward speed to get
+     * @return The borrow reward speed for the market/type
+     */
+    function getBorrowRewardSpeeds(
+        uint8 rewardType,
+        JToken jToken    
+    ) public view returns(uint256) {
+        return rewardBorrowSpeeds[rewardType][address(jToken)];
+    }
+
+    /**
      * @notice Set JOE/AVAX speed for a single market
      * @param rewardType 0 = QI, 1 = AVAX
      * @param jToken The market whose reward speed to update
