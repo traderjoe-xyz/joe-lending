@@ -9,28 +9,7 @@ import "../JToken.sol";
 import "../PriceOracle/PriceOracle.sol";
 import "../EIP20Interface.sol";
 import "../Exponential.sol";
-import "./IRewardLens.sol";
-
-contract JoeLensStorage {
-    /**
-     * @notice Administrator for this contract
-     */
-    address public admin;
-
-    /**
-     * @notice The module that handles reward distribution.
-     */ 
-    address payable public rewardDistributor;
-
-    /**
-     * @notice Error codes.
-     */ 
-    enum Error {
-        NO_ERROR,
-        REJECTION,
-        UNAUTHORIZED
-    }
-}
+import "../IRewardDistributor.sol";
 
 interface JJLPInterface {
     function claimJoe(address) external returns (uint256);
@@ -44,12 +23,15 @@ interface JJTokenInterface {
  * @notice This is a version of JoeLens that contains write transactions.
  * @dev Call these functions as dry-run transactions for the frontend.
  */
-contract JoeLens is Exponential, JoeLensStorage {
+contract JoeLens is Exponential {
+    address public admin;
     string public nativeSymbol;
+    address payable public rewardDistributor;
 
-    constructor(string memory _nativeSymbol) public {
+    constructor(string memory _nativeSymbol, address payable _rewardDistributor) public {
         admin = msg.sender;
         nativeSymbol = _nativeSymbol;
+        rewardDistributor = _rewardDistributor;
     }
 
     /*** Market info functions ***/
@@ -152,10 +134,10 @@ contract JoeLens is Exponential, JoeLensStorage {
                 borrowPaused: joetroller.borrowGuardianPaused(address(jToken)),
                 supplyCap: joetroller.supplyCaps(address(jToken)),
                 borrowCap: joetroller.borrowCaps(address(jToken)),
-                supplyJoeRewardsPerSecond: RewardDistributor(rewardDistributor).getSupplyRewardSpeeds(0, jToken),
-                borrowJoeRewardsPerSecond: RewardDistributor(rewardDistributor).getBorrowRewardSpeeds(0, jToken),
-                supplyAvaxRewardsPerSecond: RewardDistributor(rewardDistributor).getSupplyRewardSpeeds(1, jToken),
-                borrowAvaxRewardsPerSecond: RewardDistributor(rewardDistributor).getBorrowRewardSpeeds(1, jToken)
+                supplyJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(0, address(jToken)),
+                borrowJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(0, address(jToken)),
+                supplyAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(1, address(jToken)),
+                borrowAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(1, address(jToken))
             });
     }
 
@@ -273,22 +255,13 @@ contract JoeLens is Exponential, JoeLensStorage {
         }
     }
 
-    function _setRewardDistributor(address payable newRewardDistributor) public returns(uint256) {
-        if (msg.sender != admin) {
-            return uint256(Error.UNAUTHORIZED);
-        }
-
-        (bool success, ) = newRewardDistributor.call.value(0)(abi.encodeWithSignature("initialize()", 0));
-        if (!success) {
-            return uint256(Error.REJECTION);
-        }
-
-        rewardDistributor = newRewardDistributor;
-
-        return uint256(Error.NO_ERROR);
-    }
-
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
+
+    function _setRewardDistributor(address payable newRewardDistributor) public {
+        require(msg.sender == admin, "not admin");
+
+        rewardDistributor = newRewardDistributor;
     }
 }
