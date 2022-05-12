@@ -27,7 +27,8 @@ contract JoeLensStorage {
      */ 
     enum Error {
         NO_ERROR,
-        REJECTION
+        REJECTION,
+        UNAUTHORIZED
     }
 }
 
@@ -273,6 +274,10 @@ contract JoeLens is Exponential, JoeLensStorage {
     }
 
     function _setRewardDistributor(address payable newRewardDistributor) public returns(uint256) {
+        if (msg.sender != admin) {
+            return uint256(Error.UNAUTHORIZED);
+        }
+
         (bool success, ) = newRewardDistributor.call.value(0)(abi.encodeWithSignature("initialize()", 0));
         if (!success) {
             return uint256(Error.REJECTION);
