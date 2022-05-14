@@ -109,7 +109,7 @@ contract JoeLensV2 is Exponential {
         PriceOracle priceOracle = joetroller.oracle();
         for (uint256 i = 0; i < jTokenCount; i++) {
             require(address(joetroller) == address(_jTokens[i].joetroller()), "mismatch joetroller");
-            res[i] = jTokenMetadataInternal(_jTokens[i], joetroller, priceOracle);
+            res[i] = _jTokenMetadataInternal(_jTokens[i], joetroller, priceOracle);
         }
         return res;
     }
@@ -150,7 +150,7 @@ contract JoeLensV2 is Exponential {
     function jTokenMetadata(JToken _jToken) public returns (JTokenMetadata memory) {
         Joetroller joetroller = Joetroller(address(_jToken.joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
-        return jTokenMetadataInternal(_jToken, joetroller, priceOracle);
+        return _jTokenMetadataInternal(_jToken, joetroller, priceOracle);
     }
 
     /**
@@ -181,7 +181,7 @@ contract JoeLensV2 is Exponential {
         vars.jToken = address(_jToken);
         vars.collateralEnabled = joetroller.checkMembership(_account, _jToken);
 
-        if (compareStrings(_jToken.symbol(), nativeSymbol)) {
+        if (_compareStrings(_jToken.symbol(), nativeSymbol)) {
             vars.underlyingTokenBalance = _account.balance;
             vars.underlyingTokenAllowance = _account.balance;
         } else {
@@ -258,7 +258,7 @@ contract JoeLensV2 is Exponential {
      * @param _priceOracle Address of price oracle used to get underlying price
      * @return The metadata for a given market
      */
-    function jTokenMetadataInternal(
+    function _jTokenMetadataInternal(
         JToken _jToken,
         Joetroller _joetroller,
         PriceOracle _priceOracle
@@ -271,7 +271,7 @@ contract JoeLensV2 is Exponential {
         uint256 collateralCap;
         uint256 totalCollateralTokens;
 
-        if (compareStrings(_jToken.symbol(), nativeSymbol)) {
+        if (_compareStrings(_jToken.symbol(), nativeSymbol)) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {
@@ -322,7 +322,7 @@ contract JoeLensV2 is Exponential {
      * @param _b The second string in the comparison
      * @return Whether two strings are equal or not
      */
-    function compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
+    function _compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
         return (keccak256(abi.encodePacked((_a))) == keccak256(abi.encodePacked((_b))));
     }
 }
