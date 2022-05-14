@@ -13,46 +13,27 @@ import "../IRewardDistributor.sol";
 
 /**
  * @notice This is a version of JoeLens that contains write transactions
- * and pulls reward speeds from a RewardDistributor.
+ * and pulls reward speeds from a RewardDistributor. JoeLensV2 mainly makes calls 
+ * to various contracts to retrieve market/account data from our lending platform  
+ * and wraps it up nicely to be sent to the frontend.
  * @dev Call these functions as dry-run transactions for the frontend.
  */
 contract JoeLensV2 is Exponential {
-    /// @notice Administrator for this contract
+    /** 
+     * @notice Administrator for this contract 
+     */
     address public admin;
 
-    /// @notice The module that handles reward distribution
+    /** 
+     *@notice The module that handles reward distribution 
+     */
     address payable public rewardDistributor;
 
-    /// @notice The native token symbol for this contract
+    /** 
+     * @notice The native token symbol for this contract 
+     */
     string public nativeSymbol;
 
-    /// @notice Metadata for a market
-    /// `jToken`: Market address
-    /// `exchangeRateCurrent`: Exchange rate between jToken and the underlying asset including borrowing interest
-    /// `supplyRatePerSecond`: The per-sec supply interest rate for this jToken
-    /// `borrowRatePerSecond`: The per-sec borrow interest rate for this jToken
-    /// `reserveFactorMantissa`: Multiplier representing the portion of accrued interest retained as reserves
-    /// `totalBorrows`: Number of underlying tokens that have been borrowed from this market
-    /// `totalReserves`: Number of underlying tokens retained as reserves
-    /// `totalSupply`: Number of underlying tokens that have been supplied to this market
-    /// `totalCash`: Number of underlying tokens supplied minus underlying tokens borrowed
-    /// `totalCollateralTokens`: Number of tokens currently available as collateral
-    /// `isListed`: Whether or not this market is listed
-    /// `collateralFactorMantissa`: Multiplier representing amount you can borrow against your collateral between 0 and 1
-    /// `underlyingAssetAddress`: Address of the underlying asset
-    /// `jTokenDecimals`: EIP-20 decimal precision of the jToken
-    /// `underlyingDecimals`: EIP-20 decimal precision of the underlying asset
-    /// `version`: jToken version -> 0 = VANILLA, 1 = COLLATERAL, 2 = WRAPPED
-    /// `collateralCap`: Maximum balance that can be considered as collateral
-    /// `underlyingPrice`: The price of the underlying asset
-    /// `supplyPaused`: Whether or not minting has been paused for this market
-    /// `borrowPaused`: Whether or not borrowing has been paused for this market
-    /// `supplyCap`: The maximum totalSupply that a market can have, minting will be disallowed after reaching this cap
-    /// `borrowCap`: The maximum totalBorrow that a market can have, borrowing will be disallowed after reaching this cap
-    /// `supplyJoeRewardsPerSecond`: The per-sec Joe supply reward rate for this jToken
-    /// `borrowJoeRewardsPerSecond`: The per-sec Joe borrow reward rate for this jToken
-    /// `supplyAvaxRewardsPerSecond`: The per-sec Avax supply reward rate for this jToken
-    /// `borrowAvaxRewardsPerSecond`: The per-sec Avax borrow reward rate for this jToken
     struct JTokenMetadata {
         address jToken;
         uint256 exchangeRateCurrent;
@@ -82,16 +63,6 @@ contract JoeLensV2 is Exponential {
         uint256 borrowAvaxRewardsPerSecond;
     }
 
-    /// @notice Balances for a market
-    /// `jToken`: Market address
-    /// `jTokenBalance`: Balance of underlying asset supplied by. Accrue interest is not called
-    /// `supplyValueUSD`: Value of underlying asset supplied in USD
-    /// `collateralValueUSD`: This is supplyValueUSD multiplied by collateral factor
-    /// `borrowBalanceCurrent`: Borrow balance without accruing interest
-    /// `borrowValueUSD`: Value of underlying asset borrowed in USD
-    /// `underlyingTokenBalance`: Underlying balance currently held in accounts's wallet
-    /// `underlyingTokenAllowance`: The number of underlying tokens allowed to be spent
-    /// `collateralEnabled`: Whether or not this market is being used as collateral
     struct JTokenBalances {
         address jToken;
         uint256 jTokenBalance;
@@ -105,13 +76,6 @@ contract JoeLensV2 is Exponential {
         bool collateralEnabled;
     }
 
-    /// @notice An account's limits, including assets, liquidity, and shortfall
-    /// `markets`: Markets that the account is entered into
-    /// `liquidity`: Account's liquidity
-    /// `shortfall`: Account's shortfall
-    /// `totalCollateralValueUSD`: Total amount of a account's collateral in USD
-    /// `totalBorrowValueUSD`: Total amount borrowed by a account in USD
-    /// `healthFactor`: Ratio of totalCollateralValueUSD to totalBorrowValueUSD
     struct AccountLimits {
         JToken[] markets;
         uint256 liquidity;
@@ -123,7 +87,7 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Constructor function that initializes the native symbol and administrator for this contract
-     * @param _nativeSymbol The native symbol that will be defined for this contract
+     * @param _nativeSymbol The native symbol of the chain, such as jAVAX
      * @param _rewardDistributor The reward distributor for this contract
      */
     constructor(string memory _nativeSymbol, address payable _rewardDistributor) public {
@@ -134,107 +98,107 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Get metadata for all markets
-     * @param jTokens All markets that metadata is being requested for
+     * @param _jTokens All markets that metadata is being requested for
      * @return The metadata for all markets
      */
-    function jTokenMetadataAll(JToken[] calldata jTokens) external returns (JTokenMetadata[] memory) {
-        uint256 jTokenCount = jTokens.length;
+    function jTokenMetadataAll(JToken[] calldata _jTokens) external returns (JTokenMetadata[] memory) {
+        uint256 jTokenCount = _jTokens.length;
         require(jTokenCount > 0, "invalid input");
         JTokenMetadata[] memory res = new JTokenMetadata[](jTokenCount);
-        Joetroller joetroller = Joetroller(address(jTokens[0].joetroller()));
+        Joetroller joetroller = Joetroller(address(_jTokens[0].joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
         for (uint256 i = 0; i < jTokenCount; i++) {
-            require(address(joetroller) == address(jTokens[i].joetroller()), "mismatch joetroller");
-            res[i] = jTokenMetadataInternal(jTokens[i], joetroller, priceOracle);
+            require(address(joetroller) == address(_jTokens[i].joetroller()), "mismatch joetroller");
+            res[i] = jTokenMetadataInternal(_jTokens[i], joetroller, priceOracle);
         }
         return res;
     }
 
     /**
      * @notice Claims available rewards of a given reward type for an account
-     * @param rewardType 0 = JOE, 1 = AVAX
-     * @param joetroller The joetroller address
-     * @param joe The joe token address
-     * @param account The account that will receive the rewards
+     * @param _rewardType 0 = JOE, 1 = AVAX
+     * @param _joetroller The joetroller address
+     * @param _joe The joe token address
+     * @param _account The account that will receive the rewards
      * @return The amount of tokens claimed
      */
     function getClaimableRewards(
-        uint8 rewardType,
-        address joetroller,
-        address joe,
-        address payable account
+        uint8 _rewardType,
+        address _joetroller,
+        address _joe,
+        address payable _account
     ) external returns (uint256) {
-        require(rewardType <= 1, "rewardType is invalid");
-        if (rewardType == 0) {
-            uint256 balanceBefore = EIP20Interface(joe).balanceOf(account);
-            Joetroller(joetroller).claimReward(0, account);
-            uint256 balanceAfter = EIP20Interface(joe).balanceOf(account);
+        require(_rewardType <= 1, "rewardType is invalid");
+        if (_rewardType == 0) {
+            uint256 balanceBefore = EIP20Interface(_joe).balanceOf(_account);
+            Joetroller(_joetroller).claimReward(0, _account);
+            uint256 balanceAfter = EIP20Interface(_joe).balanceOf(_account);
             return sub_(balanceAfter, balanceBefore);
-        } else if (rewardType == 1) {
-            uint256 balanceBefore = account.balance;
-            Joetroller(joetroller).claimReward(1, account);
-            uint256 balanceAfter = account.balance;
+        } else if (_rewardType == 1) {
+            uint256 balanceBefore = _account.balance;
+            Joetroller(_joetroller).claimReward(1, _account);
+            uint256 balanceAfter = _account.balance;
             return sub_(balanceAfter, balanceBefore);
         }
     }
 
     /**
      * @notice Get metadata for a given market
-     * @param jToken The market to get metadata for
+     * @param _jToken The market to get metadata for
      * @return The metadata for a market
      */
-    function jTokenMetadata(JToken jToken) public returns (JTokenMetadata memory) {
-        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
+    function jTokenMetadata(JToken _jToken) public returns (JTokenMetadata memory) {
+        Joetroller joetroller = Joetroller(address(_jToken.joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
-        return jTokenMetadataInternal(jToken, joetroller, priceOracle);
+        return jTokenMetadataInternal(_jToken, joetroller, priceOracle);
     }
 
     /**
      * @notice Get market balances for an account
-     * @param jTokens All markets to retrieve account's balances for
-     * @param account The account who's balances are being retrieved
+     * @param _jTokens All markets to retrieve account's balances for
+     * @param _account The account who's balances are being retrieved
      * @return An account's balances in requested markets
      */
-    function jTokenBalancesAll(JToken[] memory jTokens, address account) public returns (JTokenBalances[] memory) {
-        uint256 jTokenCount = jTokens.length;
+    function jTokenBalancesAll(JToken[] memory _jTokens, address _account) public returns (JTokenBalances[] memory) {
+        uint256 jTokenCount = _jTokens.length;
         JTokenBalances[] memory res = new JTokenBalances[](jTokenCount);
         for (uint256 i = 0; i < jTokenCount; i++) {
-            res[i] = jTokenBalances(jTokens[i], account);
+            res[i] = jTokenBalances(_jTokens[i], _account);
         }
         return res;
     }
 
     /**
      * @notice Get an account's balances in a market
-     * @param jToken The market to retrieve account's balances for
-     * @param account The account who's balances are being retrieved
+     * @param _jToken The market to retrieve account's balances for
+     * @param _account The account who's balances are being retrieved
      * @return An account's balances in a market
      */
-    function jTokenBalances(JToken jToken, address account) public returns (JTokenBalances memory) {
+    function jTokenBalances(JToken _jToken, address _account) public returns (JTokenBalances memory) {
         JTokenBalances memory vars;
-        Joetroller joetroller = Joetroller(address(jToken.joetroller()));
+        Joetroller joetroller = Joetroller(address(_jToken.joetroller()));
 
-        vars.jToken = address(jToken);
-        vars.collateralEnabled = joetroller.checkMembership(account, jToken);
+        vars.jToken = address(_jToken);
+        vars.collateralEnabled = joetroller.checkMembership(_account, _jToken);
 
-        if (compareStrings(jToken.symbol(), nativeSymbol)) {
-            vars.underlyingTokenBalance = account.balance;
-            vars.underlyingTokenAllowance = account.balance;
+        if (compareStrings(_jToken.symbol(), nativeSymbol)) {
+            vars.underlyingTokenBalance = _account.balance;
+            vars.underlyingTokenAllowance = _account.balance;
         } else {
-            JErc20 jErc20 = JErc20(address(jToken));
+            JErc20 jErc20 = JErc20(address(_jToken));
             EIP20Interface underlying = EIP20Interface(jErc20.underlying());
-            vars.underlyingTokenBalance = underlying.balanceOf(account);
-            vars.underlyingTokenAllowance = underlying.allowance(account, address(jToken));
+            vars.underlyingTokenBalance = underlying.balanceOf(_account);
+            vars.underlyingTokenAllowance = underlying.allowance(_account, address(_jToken));
         }
 
-        vars.jTokenBalance = jToken.balanceOf(account);
-        vars.borrowBalanceCurrent = jToken.borrowBalanceCurrent(account);
+        vars.jTokenBalance = _jToken.balanceOf(_account);
+        vars.borrowBalanceCurrent = _jToken.borrowBalanceCurrent(_account);
 
-        vars.balanceOfUnderlyingCurrent = jToken.balanceOfUnderlying(account);
+        vars.balanceOfUnderlyingCurrent = _jToken.balanceOfUnderlying(_account);
         PriceOracle priceOracle = joetroller.oracle();
-        uint256 underlyingPrice = priceOracle.getUnderlyingPrice(jToken);
+        uint256 underlyingPrice = priceOracle.getUnderlyingPrice(_jToken);
 
-        (, uint256 collateralFactorMantissa, ) = joetroller.markets(address(jToken));
+        (, uint256 collateralFactorMantissa, ) = joetroller.markets(address(_jToken));
 
         Exp memory supplyValueInUnderlying = Exp({mantissa: vars.balanceOfUnderlyingCurrent});
         vars.supplyValueUSD = mul_ScalarTruncate(supplyValueInUnderlying, underlyingPrice);
@@ -250,19 +214,19 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Get an account's limits
-     * @param joetroller The joetroller address
-     * @param account The account who's limits are being retrieved
+     * @param _joetroller The joetroller address
+     * @param _account The account who's limits are being retrieved
      * @return An account's limits
      */
-    function getAccountLimits(Joetroller joetroller, address account) public returns (AccountLimits memory) {
+    function getAccountLimits(Joetroller _joetroller, address _account) public returns (AccountLimits memory) {
         AccountLimits memory vars;
         uint256 errorCode;
 
-        (errorCode, vars.liquidity, vars.shortfall) = joetroller.getAccountLiquidity(account);
+        (errorCode, vars.liquidity, vars.shortfall) = _joetroller.getAccountLiquidity(_account);
         require(errorCode == 0, "Can't get account liquidity");
 
-        vars.markets = joetroller.getAssetsIn(account);
-        JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, account);
+        vars.markets = _joetroller.getAssetsIn(_account);
+        JTokenBalances[] memory jTokenBalancesList = jTokenBalancesAll(vars.markets, _account);
         for (uint256 i = 0; i < jTokenBalancesList.length; i++) {
             vars.totalCollateralValueUSD = add_(vars.totalCollateralValueUSD, jTokenBalancesList[i].collateralValueUSD);
             vars.totalBorrowValueUSD = add_(vars.totalBorrowValueUSD, jTokenBalancesList[i].borrowValueUSD);
@@ -279,86 +243,86 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Admin function to set new reward distributor address
-     * @param newRewardDistributor The address of the new reward distributor
+     * @param _newRewardDistributor The address of the new reward distributor
      */
-    function _setRewardDistributor(address payable newRewardDistributor) public {
+    function setRewardDistributor(address payable _newRewardDistributor) public {
         require(msg.sender == admin, "not admin");
 
-        rewardDistributor = newRewardDistributor;
+        rewardDistributor = _newRewardDistributor;
     }
 
     /**
      * @notice Internal function that fetches the metadata for a market
-     * @param jToken The market to get metadata for
-     * @param joetroller The joetroller address
-     * @param priceOracle Address of price oracle used to get underlying price
+     * @param _jToken The market to get metadata for
+     * @param _joetroller The joetroller address
+     * @param _priceOracle Address of price oracle used to get underlying price
      * @return The metadata for a given market
      */
     function jTokenMetadataInternal(
-        JToken jToken,
-        Joetroller joetroller,
-        PriceOracle priceOracle
+        JToken _jToken,
+        Joetroller _joetroller,
+        PriceOracle _priceOracle
     ) internal returns (JTokenMetadata memory) {
-        (bool isListed, uint256 collateralFactorMantissa, JoetrollerV1Storage.Version version) = joetroller.markets(
-            address(jToken)
+        (bool isListed, uint256 collateralFactorMantissa, JoetrollerV1Storage.Version version) = _joetroller.markets(
+            address(_jToken)
         );
         address underlyingAssetAddress;
         uint256 underlyingDecimals;
         uint256 collateralCap;
         uint256 totalCollateralTokens;
 
-        if (compareStrings(jToken.symbol(), nativeSymbol)) {
+        if (compareStrings(_jToken.symbol(), nativeSymbol)) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {
-            JErc20 jErc20 = JErc20(address(jToken));
+            JErc20 jErc20 = JErc20(address(_jToken));
             underlyingAssetAddress = jErc20.underlying();
             underlyingDecimals = EIP20Interface(jErc20.underlying()).decimals();
         }
 
         if (version == JoetrollerV1Storage.Version.COLLATERALCAP) {
-            collateralCap = JCollateralCapErc20Interface(address(jToken)).collateralCap();
-            totalCollateralTokens = JCollateralCapErc20Interface(address(jToken)).totalCollateralTokens();
+            collateralCap = JCollateralCapErc20Interface(address(_jToken)).collateralCap();
+            totalCollateralTokens = JCollateralCapErc20Interface(address(_jToken)).totalCollateralTokens();
         }
 
         return
             JTokenMetadata({
-                jToken: address(jToken),
-                exchangeRateCurrent: jToken.exchangeRateCurrent(),
-                supplyRatePerSecond: jToken.supplyRatePerSecond(),
-                borrowRatePerSecond: jToken.borrowRatePerSecond(),
-                reserveFactorMantissa: jToken.reserveFactorMantissa(),
-                totalBorrows: jToken.totalBorrows(),
-                totalReserves: jToken.totalReserves(),
-                totalSupply: jToken.totalSupply(),
-                totalCash: jToken.getCash(),
+                jToken: address(_jToken),
+                exchangeRateCurrent: _jToken.exchangeRateCurrent(),
+                supplyRatePerSecond: _jToken.supplyRatePerSecond(),
+                borrowRatePerSecond: _jToken.borrowRatePerSecond(),
+                reserveFactorMantissa: _jToken.reserveFactorMantissa(),
+                totalBorrows: _jToken.totalBorrows(),
+                totalReserves: _jToken.totalReserves(),
+                totalSupply: _jToken.totalSupply(),
+                totalCash: _jToken.getCash(),
                 totalCollateralTokens: totalCollateralTokens,
                 isListed: isListed,
                 collateralFactorMantissa: collateralFactorMantissa,
                 underlyingAssetAddress: underlyingAssetAddress,
-                jTokenDecimals: jToken.decimals(),
+                jTokenDecimals: _jToken.decimals(),
                 underlyingDecimals: underlyingDecimals,
                 version: version,
                 collateralCap: collateralCap,
-                underlyingPrice: priceOracle.getUnderlyingPrice(jToken),
-                supplyPaused: joetroller.mintGuardianPaused(address(jToken)),
-                borrowPaused: joetroller.borrowGuardianPaused(address(jToken)),
-                supplyCap: joetroller.supplyCaps(address(jToken)),
-                borrowCap: joetroller.borrowCaps(address(jToken)),
-                supplyJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(0, address(jToken)),
-                borrowJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(0, address(jToken)),
-                supplyAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(1, address(jToken)),
-                borrowAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(1, address(jToken))
+                underlyingPrice: _priceOracle.getUnderlyingPrice(_jToken),
+                supplyPaused: _joetroller.mintGuardianPaused(address(_jToken)),
+                borrowPaused: _joetroller.borrowGuardianPaused(address(_jToken)),
+                supplyCap: _joetroller.supplyCaps(address(_jToken)),
+                borrowCap: _joetroller.borrowCaps(address(_jToken)),
+                supplyJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(0, address(_jToken)),
+                borrowJoeRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(0, address(_jToken)),
+                supplyAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardSupplySpeeds(1, address(_jToken)),
+                borrowAvaxRewardsPerSecond: IRewardDistributor(rewardDistributor).rewardBorrowSpeeds(1, address(_jToken))
             });
     }
 
     /**
      * @notice Helper function to compare two strings
-     * @param a The first string in the comparison
-     * @param b The second string in the comparison
+     * @param _a The first string in the comparison
+     * @param _b The second string in the comparison
      * @return Whether two strings are equal or not
      */
-    function compareStrings(string memory a, string memory b) internal pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    function compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
+        return (keccak256(abi.encodePacked((_a))) == keccak256(abi.encodePacked((_b))));
     }
 }
