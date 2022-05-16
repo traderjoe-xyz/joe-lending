@@ -252,6 +252,16 @@ contract JoeLensV2 is Exponential {
     }
 
     /**
+     * @notice Admin function to set new admin address
+     * @param _admin The address of the new admin
+     */
+    function setAdmin(address payable _admin) external {
+        require(msg.sender == admin, "not admin");
+
+        admin = _admin;
+    }
+
+    /**
      * @notice Internal function that fetches the metadata for a market
      * @param _jToken The market to get metadata for
      * @param _joetroller The joetroller address
