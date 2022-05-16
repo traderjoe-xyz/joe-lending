@@ -147,7 +147,7 @@ contract JoeLensV2 is Exponential {
      * @param _jToken The market to get metadata for
      * @return The metadata for a market
      */
-    function jTokenMetadata(JToken _jToken) public returns (JTokenMetadata memory) {
+    function jTokenMetadata(JToken _jToken) external returns (JTokenMetadata memory) {
         Joetroller joetroller = Joetroller(address(_jToken.joetroller()));
         PriceOracle priceOracle = joetroller.oracle();
         return _jTokenMetadataInternal(_jToken, joetroller, priceOracle);
@@ -218,7 +218,7 @@ contract JoeLensV2 is Exponential {
      * @param _account The account who's limits are being retrieved
      * @return An account's limits
      */
-    function getAccountLimits(Joetroller _joetroller, address _account) public returns (AccountLimits memory) {
+    function getAccountLimits(Joetroller _joetroller, address _account) external returns (AccountLimits memory) {
         AccountLimits memory vars;
         uint256 errorCode;
 
@@ -245,7 +245,7 @@ contract JoeLensV2 is Exponential {
      * @notice Admin function to set new reward distributor address
      * @param _newRewardDistributor The address of the new reward distributor
      */
-    function setRewardDistributor(address payable _newRewardDistributor) public {
+    function setRewardDistributor(address payable _newRewardDistributor) external {
         require(msg.sender == admin, "not admin");
 
         rewardDistributor = _newRewardDistributor;
@@ -262,7 +262,7 @@ contract JoeLensV2 is Exponential {
         JToken _jToken,
         Joetroller _joetroller,
         PriceOracle _priceOracle
-    ) internal returns (JTokenMetadata memory) {
+    ) private returns (JTokenMetadata memory) {
         (bool isListed, uint256 collateralFactorMantissa, JoetrollerV1Storage.Version version) = _joetroller.markets(
             address(_jToken)
         );
@@ -322,7 +322,7 @@ contract JoeLensV2 is Exponential {
      * @param _b The second string in the comparison
      * @return Whether two strings are equal or not
      */
-    function _compareStrings(string memory _a, string memory _b) internal pure returns (bool) {
+    function _compareStrings(string memory _a, string memory _b) private pure returns (bool) {
         return (keccak256(abi.encodePacked((_a))) == keccak256(abi.encodePacked((_b))));
     }
 }
