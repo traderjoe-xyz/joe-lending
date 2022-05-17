@@ -32,7 +32,7 @@ contract JoeLensV2 is Exponential {
     /**
      * @notice Represents the symbol of the market for the native gas token, such as jAVAX
      */
-    string public nativeSymbol;
+    string public nativeSymbolMarket;
 
     struct JTokenMetadata {
         address jToken;
@@ -87,12 +87,12 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Constructor function that initializes the native symbol and administrator for this contract
-     * @param _nativeSymbol Represents the symbol of the market for the native gas token, such as jAVAX
+     * @param _nativeSymbolMarket Represents the symbol of the market for the native gas token, such as jAVAX
      * @param _rewardDistributor The reward distributor for this contract
      */
-    constructor(string memory _nativeSymbol, address payable _rewardDistributor) public {
+    constructor(string memory _nativeSymbolMarket, address payable _rewardDistributor) public {
         admin = msg.sender;
-        nativeSymbol = _nativeSymbol;
+        nativeSymbolMarket = _nativeSymbolMarket;
         rewardDistributor = _rewardDistributor;
     }
 
@@ -181,7 +181,7 @@ contract JoeLensV2 is Exponential {
         vars.jToken = address(_jToken);
         vars.collateralEnabled = joetroller.checkMembership(_account, _jToken);
 
-        if (_compareStrings(_jToken.symbol(), nativeSymbol)) {
+        if (_compareStrings(_jToken.symbol(), nativeSymbolMarket)) {
             vars.underlyingTokenBalance = _account.balance;
             vars.underlyingTokenAllowance = _account.balance;
         } else {
@@ -281,7 +281,7 @@ contract JoeLensV2 is Exponential {
         uint256 collateralCap;
         uint256 totalCollateralTokens;
 
-        if (_compareStrings(_jToken.symbol(), nativeSymbol)) {
+        if (_compareStrings(_jToken.symbol(), nativeSymbolMarket)) {
             underlyingAssetAddress = address(0);
             underlyingDecimals = 18;
         } else {

@@ -21,4 +21,20 @@ interface IRewardDistributor {
      * @return The borrow reward speed for the market/type
      */
     function rewardBorrowSpeeds(uint8 rewardType, address jToken) external view returns (uint256);
+
+    /**
+     * @notice Claim all the JOE/AVAX accrued by holder in all markets
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to claim JOE/AVAX for
+     * @dev This is only for RewardDistributor V1
+     */
+    function claimReward(uint8 rewardType, address payable holder) external;
+
+    /**
+     * @notice The JOE/AVAX accrued but not yet transferred to each user     
+     * @param rewardType 0 = JOE, 1 = AVAX
+     * @param holder The address to claim JOE/AVAX for
+     * @return The JOE/AVAX accrued but not yet transferred to each user 
+     */
+    function rewardAccrued(uint8 rewardType, address holder) external view returns (uint256);
 }
