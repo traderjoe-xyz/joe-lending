@@ -13,24 +13,24 @@ import "../IRewardDistributor.sol";
 
 /**
  * @notice This is a version of JoeLens that contains write transactions
- * and pulls reward speeds from a RewardDistributor. JoeLensV2 mainly makes calls 
- * to various contracts to retrieve market/account data from our lending platform  
+ * and pulls reward speeds from a RewardDistributor. JoeLensV2 mainly makes calls
+ * to various contracts to retrieve market/account data from our lending platform
  * and wraps it up nicely to be sent to the frontend.
  * @dev Call these functions as dry-run transactions for the frontend.
  */
 contract JoeLensV2 is Exponential {
-    /** 
-     * @notice Administrator for this contract 
+    /**
+     * @notice Administrator for this contract
      */
     address public admin;
 
-    /** 
-     *@notice The module that handles reward distribution 
+    /**
+     *@notice The module that handles reward distribution
      */
     address payable public rewardDistributor;
 
-    /** 
-     * @notice The native token symbol for this contract 
+    /**
+     * @notice Represents the symbol of the market for the native gas token, such as jAVAX
      */
     string public nativeSymbol;
 
@@ -87,7 +87,7 @@ contract JoeLensV2 is Exponential {
 
     /**
      * @notice Constructor function that initializes the native symbol and administrator for this contract
-     * @param _nativeSymbol The native symbol of the chain, such as jAVAX
+     * @param _nativeSymbol Represents the symbol of the market for the native gas token, such as jAVAX
      * @param _rewardDistributor The reward distributor for this contract
      */
     constructor(string memory _nativeSymbol, address payable _rewardDistributor) public {
