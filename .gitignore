@@ -43,6 +43,7 @@ junit.xml
 .last_confs
 .saddle_history
 .idea
+deployments/localhost
 #Buidler files
 cache
 artifacts
