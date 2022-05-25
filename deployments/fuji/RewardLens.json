@@ -1,0 +1,284 @@
+{
+  "address": "0x5259A5eE92A88b2efd7386EeD5166DafF696dF5d",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "allMarketRewards",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "supplyRewardsJoePerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "borrowRewardsJoePerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "supplyRewardsAvaxPerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "borrowRewardsAvaxPerSec",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isOwner",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "supplyRewardsJoePerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "borrowRewardsJoePerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "supplyRewardsAvaxPerSec",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "borrowRewardsAvaxPerSec",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMarketRewards",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xf4206c6ac3da6dfda75e855d67253fb8a76eea9f6c918e6121785fb150e7a5b0",
+  "receipt": {
+    "to": null,
+    "from": "0x1119fbb02F38764CD90F2d9fB35FeDcd8378ac2A",
+    "contractAddress": "0x5259A5eE92A88b2efd7386EeD5166DafF696dF5d",
+    "transactionIndex": 0,
+    "gasUsed": "316048",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000020002000000000000000800000000000000000000000000000000400000000000020000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000020000000000000000000020000000000000000000000000000800000000000000000000000000000000000000",
+    "blockHash": "0x9dc70ef9608b955584917acebc6e8a416b163a7b17acdff2f495170cfa56c74f",
+    "transactionHash": "0xf4206c6ac3da6dfda75e855d67253fb8a76eea9f6c918e6121785fb150e7a5b0",
+    "logs": [
+      {
+        "transactionIndex": 0,
+        "blockNumber": 10052852,
+        "transactionHash": "0xf4206c6ac3da6dfda75e855d67253fb8a76eea9f6c918e6121785fb150e7a5b0",
+        "address": "0x5259A5eE92A88b2efd7386EeD5166DafF696dF5d",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000001119fbb02f38764cd90f2d9fb35fedcd8378ac2a"
+        ],
+        "data": "0x",
+        "logIndex": 0,
+        "blockHash": "0x9dc70ef9608b955584917acebc6e8a416b163a7b17acdff2f495170cfa56c74f"
+      }
+    ],
+    "blockNumber": 10052852,
+    "cumulativeGasUsed": "316048",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "3ce6845e432d957e1d506a5f3afc850f",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"allMarketRewards\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"supplyRewardsJoePerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"borrowRewardsJoePerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"supplyRewardsAvaxPerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"borrowRewardsAvaxPerSec\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"isOwner\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"market\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"supplyRewardsJoePerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"borrowRewardsJoePerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"supplyRewardsAvaxPerSec\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"borrowRewardsAvaxPerSec\",\"type\":\"uint256\"}],\"name\":\"setMarketRewards\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{\"isOwner()\":{\"details\":\"Returns true if the caller is the current owner.\"},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner.     * NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}}},\"userdoc\":{\"methods\":{},\"notice\":\"This is a helper for fetching and maintaining supply/borrow rewards for lending markets.\"}},\"settings\":{\"compilationTarget\":{\"contracts/Lens/RewardLens.sol\":\"RewardLens\"},\"evmVersion\":\"istanbul\",\"libraries\":{\"__CACHE_BREAKER__\":\"0x00000000d41867734bbee4c6863d9255b2b06ac1\"},\"metadata\":{\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/GSN/Context.sol\":{\"content\":\"pragma solidity ^0.5.0;\\n\\n/*\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with GSN meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\ncontract Context {\\n    // Empty internal constructor, to prevent people from mistakenly deploying\\n    // an instance of this contract, which should be used via inheritance.\\n    constructor () internal { }\\n    // solhint-disable-previous-line no-empty-blocks\\n\\n    function _msgSender() internal view returns (address payable) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view returns (bytes memory) {\\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0x90a3995645af7562d84b9d69363ffa5ae7217714ab61e951bf7bc450f40e4061\"},\"@openzeppelin/contracts/ownership/Ownable.sol\":{\"content\":\"pragma solidity ^0.5.0;\\n\\nimport \\\"../GSN/Context.sol\\\";\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\ncontract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor () internal {\\n        address msgSender = _msgSender();\\n        _owner = msgSender;\\n        emit OwnershipTransferred(address(0), msgSender);\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(isOwner(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns true if the caller is the current owner.\\n     */\\n    function isOwner() public view returns (bool) {\\n        return _msgSender() == _owner;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public onlyOwner {\\n        emit OwnershipTransferred(_owner, address(0));\\n        _owner = address(0);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public onlyOwner {\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     */\\n    function _transferOwnership(address newOwner) internal {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        emit OwnershipTransferred(_owner, newOwner);\\n        _owner = newOwner;\\n    }\\n}\\n\",\"keccak256\":\"0x6fb9d7889769d7cc161225f9ef7a90e468ba9788b253816f8d8b6894d3472c24\"},\"contracts/Lens/RewardLens.sol\":{\"content\":\"// SPDX-License-Identifier: UNLICENSED\\n\\npragma solidity ^0.5.16;\\n\\nimport \\\"@openzeppelin/contracts/ownership/Ownable.sol\\\";\\n\\n/**\\n * @notice This is a helper for fetching and maintaining supply/borrow rewards for lending markets.\\n */\\ncontract RewardLens is Ownable {\\n    struct MarketRewards { \\n        uint256 supplyRewardsJoePerSec; \\n        uint256 borrowRewardsJoePerSec; \\n        uint256 supplyRewardsAvaxPerSec; \\n        uint256 borrowRewardsAvaxPerSec;\\n    }\\n\\n    mapping(address => MarketRewards) public allMarketRewards;\\n\\n    function setMarketRewards(\\n        address market, \\n        uint256 supplyRewardsJoePerSec, \\n        uint256 borrowRewardsJoePerSec, \\n        uint256 supplyRewardsAvaxPerSec, \\n        uint256 borrowRewardsAvaxPerSec\\n    ) external onlyOwner {\\n        allMarketRewards[market].supplyRewardsJoePerSec = supplyRewardsJoePerSec;\\n        allMarketRewards[market].borrowRewardsJoePerSec = borrowRewardsJoePerSec;\\n        allMarketRewards[market].supplyRewardsAvaxPerSec = supplyRewardsAvaxPerSec;\\n        allMarketRewards[market].borrowRewardsAvaxPerSec = borrowRewardsAvaxPerSec;\\n    }\\n}\\n\",\"keccak256\":\"0x5373da4dd6df5fad298aa0c63cffbeb0d753e0fa142a3340d6344e16dbbd5934\"}},\"version\":1}",
+  "bytecode": "0x608060405260006100176001600160e01b0361006616565b600080546001600160a01b0319166001600160a01b0383169081178255604051929350917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908290a35061006a565b3390565b61044c806100796000396000f3fe608060405234801561001057600080fd5b50600436106100625760003560e01c80636c4100a614610067578063715018a6146100a75780638da5cb5b146100af5780638f32d59b146100d3578063ea220135146100ef578063f2fde38b1461013b575b600080fd5b6100a5600480360360a081101561007d57600080fd5b506001600160a01b038135169060208101359060408101359060608101359060800135610161565b005b6100a56101ea565b6100b761028d565b604080516001600160a01b039092168252519081900360200190f35b6100db61029c565b604080519115158252519081900360200190f35b6101156004803603602081101561010557600080fd5b50356001600160a01b03166102c0565b604080519485526020850193909352838301919091526060830152519081900360800190f35b6100a56004803603602081101561015157600080fd5b50356001600160a01b03166102e8565b61016961029c565b6101ba576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6001600160a01b039094166000908152600160208190526040909120938455830191909155600282015560030155565b6101f261029c565b610243576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b600080546040516001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080546001600160a01b0319169055565b6000546001600160a01b031690565b600080546001600160a01b03166102b161034d565b6001600160a01b031614905090565b6001602081905260009182526040909120805491810154600282015460039092015490919084565b6102f061029c565b610341576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b61034a81610351565b50565b3390565b6001600160a01b0381166103965760405162461bcd60e51b81526004018080602001828103825260268152602001806103f26026913960400191505060405180910390fd5b600080546040516001600160a01b03808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080546001600160a01b0319166001600160a01b039290921691909117905556fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a265627a7a72315820b46f6a929f90133576062a6a7f001d057cff8f08c87cae33d12beceb9c53c10164736f6c63430005100032",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100625760003560e01c80636c4100a614610067578063715018a6146100a75780638da5cb5b146100af5780638f32d59b146100d3578063ea220135146100ef578063f2fde38b1461013b575b600080fd5b6100a5600480360360a081101561007d57600080fd5b506001600160a01b038135169060208101359060408101359060608101359060800135610161565b005b6100a56101ea565b6100b761028d565b604080516001600160a01b039092168252519081900360200190f35b6100db61029c565b604080519115158252519081900360200190f35b6101156004803603602081101561010557600080fd5b50356001600160a01b03166102c0565b604080519485526020850193909352838301919091526060830152519081900360800190f35b6100a56004803603602081101561015157600080fd5b50356001600160a01b03166102e8565b61016961029c565b6101ba576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6001600160a01b039094166000908152600160208190526040909120938455830191909155600282015560030155565b6101f261029c565b610243576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b600080546040516001600160a01b03909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080546001600160a01b0319169055565b6000546001600160a01b031690565b600080546001600160a01b03166102b161034d565b6001600160a01b031614905090565b6001602081905260009182526040909120805491810154600282015460039092015490919084565b6102f061029c565b610341576040805162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b61034a81610351565b50565b3390565b6001600160a01b0381166103965760405162461bcd60e51b81526004018080602001828103825260268152602001806103f26026913960400191505060405180910390fd5b600080546040516001600160a01b03808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080546001600160a01b0319166001600160a01b039290921691909117905556fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a265627a7a72315820b46f6a929f90133576062a6a7f001d057cff8f08c87cae33d12beceb9c53c10164736f6c63430005100032",
+  "devdoc": {
+    "methods": {
+      "isOwner()": {
+        "details": "Returns true if the caller is the current owner."
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner.     * NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    }
+  },
+  "userdoc": {
+    "methods": {},
+    "notice": "This is a helper for fetching and maintaining supply/borrow rewards for lending markets."
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 33,
+        "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 162,
+        "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+        "label": "allMarketRewards",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_address,t_struct(MarketRewards)158_storage)"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_address,t_struct(MarketRewards)158_storage)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => struct RewardLens.MarketRewards)",
+        "numberOfBytes": "32",
+        "value": "t_struct(MarketRewards)158_storage"
+      },
+      "t_struct(MarketRewards)158_storage": {
+        "encoding": "inplace",
+        "label": "struct RewardLens.MarketRewards",
+        "members": [
+          {
+            "astId": 151,
+            "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+            "label": "supplyRewardsJoePerSec",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 153,
+            "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+            "label": "borrowRewardsJoePerSec",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 155,
+            "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+            "label": "supplyRewardsAvaxPerSec",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256"
+          },
+          {
+            "astId": 157,
+            "contract": "contracts/Lens/RewardLens.sol:RewardLens",
+            "label": "borrowRewardsAvaxPerSec",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "128"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
