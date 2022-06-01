@@ -247,14 +247,14 @@ contract JWrappedNative is JToken, JWrappedNativeInterface, JProtocolSeizeShareS
     /**
      * @notice Flash loan funds to a given account.
      * @param receiver The receiver address for the funds
-     * @param initiator flash loan initiator
+     * @param token Token to be borrowed. This is a requirement from eip-3156
      * @param amount The amount of the funds to be loaned
      * @param data The other data
      * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
      */
     function flashLoan(
         ERC3156FlashBorrowerInterface receiver,
-        address initiator,
+        address token,
         uint256 amount,
         bytes calldata data
     ) external nonReentrant returns (bool) {
@@ -269,6 +269,8 @@ contract JWrappedNative is JToken, JWrappedNativeInterface, JProtocolSeizeShareS
             ),
             "flashloan is paused"
         );
+        // Shh -- currently unused
+        token;
         uint256 cashBefore = getCashPrior();
         require(cashBefore >= amount, "INSUFFICIENT_LIQUIDITY");
 
@@ -283,8 +285,8 @@ contract JWrappedNative is JToken, JWrappedNativeInterface, JProtocolSeizeShareS
 
         // 4. execute receiver's callback function
         require(
-            receiver.onFlashLoan(initiator, underlying, amount, totalFee, data) ==
-                keccak256("ERC3156FlashBorrowerInterface.onFlashLoan"),
+            receiver.onFlashLoan(msg.sender, underlying, amount, totalFee, data) ==
+                keccak256("ERC3156FlashBorrower.onFlashLoan"),
             "IERC3156: Callback failed"
         );
 

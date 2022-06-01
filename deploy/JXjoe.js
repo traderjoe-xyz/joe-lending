@@ -25,13 +25,7 @@ module.exports = async function ({
     "GovernanceInterestRateModel"
   );
 
-  await deploy("JXjoeDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jXjoeDelegate = await ethers.getContract("JXjoeDelegate");
+  const jXjoeDelegate = await ethers.getContract("JERC20Delegate");
 
   const deployment = await deploy("JXjoeDelegator", {
     from: deployer,
@@ -86,3 +80,10 @@ module.exports.tags = ["jXJOE"];
 //   "TripleSlopeRateModel",
 //   "PriceOracle",
 // ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!XJOE.has(chainId)) {
+    console.log("XJOE address missing");
+    return true;
+  }
+};

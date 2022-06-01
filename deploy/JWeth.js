@@ -1,10 +1,12 @@
 const WETH = new Map();
 WETH.set("4", "0xc778417e063141139fce010982780140aa0cd5ab");
 WETH.set("43114", "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab");
+WETH.set("43113", "0x1886D09C9Ade0c5DB822D85D21678Db67B6c2982");
 
 const ETH_PRICE_FEED = new Map();
 ETH_PRICE_FEED.set("4", "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e");
 ETH_PRICE_FEED.set("43114", "0x976B3D034E162d8bD72D6b9C989d545b839003b0");
+ETH_PRICE_FEED.set("43113", "0x86d67c3D38D2bCeE722E601025C25a575021c6EA");
 
 module.exports = async function ({
   getChainId,
@@ -21,13 +23,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("MajorInterestRateModel");
 
-  await deploy("JWethDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jWethDelegate = await ethers.getContract("JWethDelegate");
+  const jWethDelegate = await ethers.getContract("JERC20Delegate");
 
   const deployment = await deploy("JWethDelegator", {
     from: deployer,
@@ -81,4 +77,5 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JERC20Delegate",
 ];

@@ -21,13 +21,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("MajorInterestRateModel");
 
-  await deploy("JWbtcDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jWbtcDelegate = await ethers.getContract("JWbtcDelegate");
+  const jWbtcDelegate = await ethers.getContract("JERC20Delegate");
 
   const deployment = await deploy("JWbtcDelegator", {
     from: deployer,
@@ -81,4 +75,12 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JERC20Delegate",
 ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!WBTC.has(chainId)) {
+    console.log("WBTC address missing");
+    return true;
+  }
+};

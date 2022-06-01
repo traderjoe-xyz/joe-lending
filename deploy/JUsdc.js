@@ -21,13 +21,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  await deploy("JUsdcDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jUsdcDelegate = await ethers.getContract("JUsdcDelegate");
+  const jUsdcDelegate = await ethers.getContract("JERC20Delegate");
 
   const deployment = await deploy("JUsdcDelegator", {
     from: deployer,
@@ -81,4 +75,12 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JERC20Delegate",
 ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!USDC.has(chainId)) {
+    console.log("USDC address missing");
+    return true;
+  }
+};

@@ -1,8 +1,10 @@
 const USDT = new Map();
 USDT.set("43114", "0xc7198437980c041c805a1edcba50c1ce5db95118");
+USDT.set("43113", "0xf96b121f18e2c41aa4f4d3e87a15ebc054f4284c");
 
 const USDT_PRICE_FEED = new Map();
 USDT_PRICE_FEED.set("43114", "0xEBE676ee90Fe1112671f19b6B7459bC678B67e8a");
+USDT_PRICE_FEED.set("43113", "0x7898AcCC83587C3C55116c5230C17a6Cd9C71bad");
 
 module.exports = async function ({
   getChainId,
@@ -23,13 +25,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  await deploy("JUsdtDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jUsdtDelegate = await ethers.getContract("JUsdtDelegate");
+  const jUsdtDelegate = await ethers.getContract("JERC20Delegate");
 
   const deployment = await deploy("JUsdtDelegator", {
     from: deployer,
@@ -83,4 +79,12 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JERC20Delegate",
 ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!USDT.has(chainId)) {
+    console.log("USDT address missing");
+    return true;
+  }
+};
