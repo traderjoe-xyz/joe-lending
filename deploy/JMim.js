@@ -23,7 +23,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  const jMimDelegate = await ethers.getContract("JERC20Delegate");
+  const jMimDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JMimDelegator", {
     from: deployer,

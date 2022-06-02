@@ -21,7 +21,9 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  const jUsdcNativeDelegate = await ethers.getContract("JERC20Delegate");
+  const jUsdcNativeDelegate = await ethers.getContract(
+    "JCollateralCapErc20Delegate"
+  );
 
   const deployment = await deploy("JUsdcNativeDelegator", {
     from: deployer,
@@ -81,7 +83,7 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
-  "JERC20Delegate",
+  "JCollateralCapErc20Delegate",
 ];
 module.exports.skip = async () => {
   const chainId = await getChainId();

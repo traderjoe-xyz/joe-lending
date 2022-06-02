@@ -3,12 +3,11 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const { deployer } = await getNamedAccounts();
 
-  await deploy("JERC20Delegate", {
+  await deploy("JCollateralCapErc20Delegate", {
     from: deployer,
     log: true,
     deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
   });
 };
 
-module.exports.tags = ["JERC20Delegate", "Delegates"];
+module.exports.tags = ["JCollateralCapErc20Delegate", "Delegates"];

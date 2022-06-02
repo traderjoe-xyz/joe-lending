@@ -23,7 +23,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("MajorInterestRateModel");
 
-  const jWethDelegate = await ethers.getContract("JERC20Delegate");
+  const jWethDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JWethDelegator", {
     from: deployer,
@@ -77,5 +77,5 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
-  "JERC20Delegate",
+  "JCollateralCapErc20Delegate",
 ];

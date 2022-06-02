@@ -25,7 +25,7 @@ module.exports = async function ({
     "GovernanceInterestRateModel"
   );
 
-  const jXjoeDelegate = await ethers.getContract("JERC20Delegate");
+  const jXjoeDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JXjoeDelegator", {
     from: deployer,
