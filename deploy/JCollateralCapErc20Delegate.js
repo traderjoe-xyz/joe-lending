@@ -3,14 +3,11 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
 
   const { deployer } = await getNamedAccounts();
 
-  const rewardDistributor = await deployments.get("RewardDistributor");
-
-  await deploy("JoeLens", {
+  await deploy("JCollateralCapErc20Delegate", {
     from: deployer,
-    args: ["jAVAX", rewardDistributor.address],
     log: true,
     deterministicDeployment: false,
   });
 };
 
-module.exports.tags = ["JoeLens"];
+module.exports.tags = ["JCollateralCapErc20Delegate", "Delegates"];

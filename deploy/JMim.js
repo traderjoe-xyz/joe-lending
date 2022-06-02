@@ -23,13 +23,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  await deploy("JMimDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jMimDelegate = await ethers.getContract("JMimDelegate");
+  const jMimDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JMimDelegator", {
     from: deployer,
@@ -82,3 +76,10 @@ module.exports.tags = ["jMIM"];
 //   "TripleSlopeRateModel",
 //   "PriceOracle",
 // ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!MIM.has(chainId)) {
+    console.log("MIM address missing");
+    return true;
+  }
+};

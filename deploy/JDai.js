@@ -23,13 +23,7 @@ module.exports = async function ({
 
   const interestRateModel = await ethers.getContract("StableInterestRateModel");
 
-  await deploy("JDaiDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jDaiDelegate = await ethers.getContract("JDaiDelegate");
+  const jDaiDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JDaiDelegator", {
     from: deployer,
@@ -81,4 +75,12 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JCollateralCapErc20Delegate",
 ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!DAI.has(chainId)) {
+    console.log("DAI address missing");
+    return true;
+  }
+};

@@ -25,13 +25,7 @@ module.exports = async function ({
     "GovernanceInterestRateModel"
   );
 
-  await deploy("JLinkDelegate", {
-    from: deployer,
-    log: true,
-    deterministicDeployment: false,
-    contract: "JCollateralCapErc20Delegate",
-  });
-  const jLinkDelegate = await ethers.getContract("JLinkDelegate");
+  const jLinkDelegate = await ethers.getContract("JCollateralCapErc20Delegate");
 
   const deployment = await deploy("JLinkDelegator", {
     from: deployer,
@@ -85,4 +79,12 @@ module.exports.dependencies = [
   "Joetroller",
   "TripleSlopeRateModel",
   "PriceOracle",
+  "JCollateralCapErc20Delegate",
 ];
+module.exports.skip = async () => {
+  const chainId = await getChainId();
+  if (!LINK.has(chainId)) {
+    console.log("LINK address missing");
+    return true;
+  }
+};
