@@ -1,8 +1,10 @@
 const JOE = new Map();
 JOE.set("43114", "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd");
+JOE.set("43113", "0xaE4EC9901c3076D0DdBe76A520F9E90a6227aCB7");
 
 const JOE_PRICE_FEED = new Map();
 JOE_PRICE_FEED.set("43114", "0x02D35d3a8aC3e1626d3eE09A78Dd87286F5E8e3a");
+JOE_PRICE_FEED.set("43113", "0x34C4c526902d88a3Aa98DB8a9b802603EB1E3470"); // Actually LINK price feed
 
 module.exports = async function ({
   getChainId,

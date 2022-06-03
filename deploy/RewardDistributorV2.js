@@ -1,4 +1,8 @@
-const { verify } = require("../utils/index")
+const { verify } = require("../utils/index");
+
+const JOE = new Map();
+JOE.set("43114", "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd");
+JOE.set("43113", "0xaE4EC9901c3076D0DdBe76A520F9E90a6227aCB7");
 
 module.exports = async function ({ getNamedAccounts, deployments }) {
   const { deploy } = deployments;
@@ -17,7 +21,7 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     proxyOwner = deployer.address;
   }
 
-  const rewardDistributorV2 = await deploy("RewardDistributorV2", {
+  const rewardDistributorV2Deploy = await deploy("RewardDistributorV2", {
     from: deployer,
     proxy: {
       owner: proxyOwner,
@@ -32,9 +36,13 @@ module.exports = async function ({ getNamedAccounts, deployments }) {
     },
     log: true,
   });
+  await rewardDistributorV2Deploy.receipt;
+
+  const rewardDistributorV2 = await ethers.getContract("RewardDistributorV2");
+  await rewardDistributorV2.setJoe(JOE.get(chainId));
 
   if (rewardDistributorV2.newlyDeployed) {
-    await verify(rewardDistributorV2.implementation)
+    await verify(rewardDistributorV2.implementation);
   }
 };
 
