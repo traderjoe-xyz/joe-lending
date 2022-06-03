@@ -290,17 +290,9 @@ contract RewardDistributorV2 is RewardDistributorStorageV2, Exponential {
      * @param _joe The JOE token address
      */
     function setJoe(EIP20Interface _joe) external onlyAdmin {
+        require(address(joe) == address(0), "joe already initialized");
         joe = _joe;
         emit JoeSet(_joe);
-    }
-
-    /**
-     * @notice Set the Joetroller address
-     * @param _joetroller The Joetroller address
-     */
-    function setJoetroller(IJoetroller _joetroller) external onlyAdmin {
-        joetroller = _joetroller;
-        emit JoetrollerSet(_joetroller);
     }
 
     /**
