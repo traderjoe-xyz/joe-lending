@@ -6,6 +6,10 @@ const USDT_PRICE_FEED = new Map();
 USDT_PRICE_FEED.set("43114", "0xEBE676ee90Fe1112671f19b6B7459bC678B67e8a");
 USDT_PRICE_FEED.set("43113", "0x7898AcCC83587C3C55116c5230C17a6Cd9C71bad");
 
+const MULTI_SIG = new Map();
+MULTI_SIG.set("43113", "0xdB40a7b71642FE24CC546bdF4749Aa3c0B042f78");
+MULTI_SIG.set("43114", "0x3876183b75916e20d2ADAB202D1A3F9e9bf320ad");
+
 module.exports = async function ({
   getChainId,
   getNamedAccounts,
@@ -39,7 +43,7 @@ module.exports = async function ({
       "Banker Joe USD Tether (Native)",
       "jUSDTNative",
       8,
-      deployer,
+      MULTI_SIG.get(chainId),
       jUsdtNativeDelegate.address,
       "0x",
     ],
@@ -51,44 +55,82 @@ module.exports = async function ({
   const jUsdtNativeDelegator = await ethers.getContract("JUsdtNativeDelegator");
 
   console.log("Supporting jUSDT market...");
-  await joetroller._supportMarket(jUsdtNativeDelegator.address, 1, {
-    gasLimit: 2000000,
-  });
+  // await joetroller._supportMarket(jUsdtNativeDelegator.address, 1, {
+  //   gasLimit: 2000000,
+  // });
+
+  console.log(
+    joetroller.address,
+    joetroller.interface.encodeFunctionData("_supportMarket", [
+      jUsdtNativeDelegator.address,
+      1,
+    ])
+  );
 
   const priceOracle = await ethers.getContract("PriceOracleProxyUSD");
   console.log("Setting price feed source for jUSDTNative");
-  await priceOracle._setAggregators(
-    [jUsdtNativeDelegator.address],
-    [USDT_PRICE_FEED.get(chainId)]
+  // await priceOracle._setAggregators(
+  //   [jUsdtNativeDelegator.address],
+  //   [USDT_PRICE_FEED.get(chainId)]
+  // );
+
+  console.log(
+    priceOracle.address,
+    priceOracle.interface.encodeFunctionData("_setAggregators", [
+      [jUsdtNativeDelegator.address],
+      [USDT_PRICE_FEED.get(chainId)],
+    ])
   );
 
   const collateralFactor = "0.80";
   console.log("Setting collateral factor ", collateralFactor);
-  await joetroller._setCollateralFactor(
-    jUsdtNativeDelegator.address,
-    ethers.utils.parseEther(collateralFactor)
+  // await joetroller._setCollateralFactor(
+  //   jUsdtNativeDelegator.address,
+  //   ethers.utils.parseEther(collateralFactor)
+  // );
+
+  console.log(
+    joetroller.address,
+    joetroller.interface.encodeFunctionData("_setCollateralFactor", [
+      jUsdtNativeDelegator.address,
+      ethers.utils.parseEther(collateralFactor),
+    ])
   );
 
   const reserveFactor = "0.20";
   console.log("Setting reserve factor ", reserveFactor);
-  await jUsdtNativeDelegator._setReserveFactor(
-    ethers.utils.parseEther(reserveFactor)
+  // await jUsdtNativeDelegator._setReserveFactor(
+  //   ethers.utils.parseEther(reserveFactor)
+  // );
+
+  console.log(
+    jUsdtNativeDelegator.address,
+    jUsdtNativeDelegate.interface.encodeFunctionData("_setReserveFactor", [
+      ethers.utils.parseEther(reserveFactor),
+    ])
   );
 
   const protocolSeizeShare = "0.016";
   console.log("Setting protocol seize share ", protocolSeizeShare);
-  await jUsdtNativeDelegator._setProtocolSeizeShare(
-    ethers.utils.parseEther(protocolSeizeShare)
+  // await jUsdtNativeDelegator._setProtocolSeizeShare(
+  //   ethers.utils.parseEther(protocolSeizeShare)
+  // );
+
+  console.log(
+    jUsdtNativeDelegator.address,
+    jUsdtNativeDelegate.interface.encodeFunctionData("_setProtocolSeizeShare", [
+      ethers.utils.parseEther(protocolSeizeShare),
+    ])
   );
 };
 
 module.exports.tags = ["jUSDTNative"];
-module.exports.dependencies = [
-  "Joetroller",
-  "TripleSlopeRateModel",
-  "PriceOracle",
-  "JCollateralCapErc20Delegate",
-];
+// module.exports.dependencies = [
+//   "Joetroller",
+//   "TripleSlopeRateModel",
+//   "PriceOracle",
+//   "JCollateralCapErc20Delegate",
+// ];
 module.exports.skip = async () => {
   const chainId = await getChainId();
   if (!USDT.has(chainId)) {
