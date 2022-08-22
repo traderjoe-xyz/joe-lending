@@ -67,7 +67,7 @@ module.exports = async function ({
     ethers.utils.parseEther(collateralFactor)
   );
 
-  const reserveFactor = "0.15";
+  const reserveFactor = "0.20";
   console.log("Setting reserve factor ", reserveFactor);
   await jUsdtDelegator._setReserveFactor(
     ethers.utils.parseEther(reserveFactor)

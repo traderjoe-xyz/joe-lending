@@ -91,7 +91,7 @@ module.exports = async function ({
     ])
   );
 
-  const reserveFactor = "0.20";
+  const reserveFactor = "0.25";
   console.log("Setting reserve factor ", reserveFactor);
   // await jBtcDelegator._setReserveFactor(ethers.utils.parseEther(reserveFactor));
 
